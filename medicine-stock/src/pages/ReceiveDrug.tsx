@@ -1,4 +1,4 @@
-import { ImagePlus, PackagePlus, Printer, Wand2 } from 'lucide-react'
+import { ImagePlus, PackagePlus, Printer, Search, Wand2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
@@ -145,7 +145,13 @@ function ReceiveDrug({ onLogout, onSwitchLocation }: PageProps) {
             {tab === 'restock' && (
                 <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
                     <Card className="p-5 space-y-4">
-                        <BarcodeInput ref={rsInputRef} label="Scan barcode on cabinet" placeholder="Scan or enter barcode" value={rsBarcode} onChange={setRsBarcode} onScan={(code) => void handleRsScan(code)} />
+                        <div className="space-y-2">
+                            <BarcodeInput ref={rsInputRef} label="Scan barcode on cabinet" placeholder="Scan or enter barcode" value={rsBarcode} onChange={setRsBarcode} onScan={(code) => void handleRsScan(code)} />
+                            <button type="button" onClick={() => void handleRsScan(rsBarcode)}
+                                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800">
+                                <Search className="size-4" />Look Up
+                            </button>
+                        </div>
                         {rsMedicine && (
                             <>
                                 <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">

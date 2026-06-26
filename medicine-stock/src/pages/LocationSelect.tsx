@@ -18,7 +18,8 @@ function LocationSelect({ locations, onSelect, onOverview, username, isAdmin }: 
                         <Building2 className="size-7 text-white" />
                     </div>
                     <h1 className="text-2xl font-bold text-slate-900">Select Location</h1>
-                    <p className="mt-2 text-sm text-slate-500">
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-blue-600">IS-C · MedStock HIS</p>
+                    <p className="mt-3 text-sm text-slate-500">
                         Welcome, <span className="font-semibold text-slate-700">{username}</span>. Select the pharmacy location to work with.
                     </p>
                 </div>

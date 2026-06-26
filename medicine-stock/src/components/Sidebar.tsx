@@ -49,7 +49,7 @@ function Sidebar({ onLogout, onSwitchLocation }: SidebarProps) {
                     </div>
                     <div>
                         <div className="text-base font-bold tracking-wide">MedStock HIS</div>
-                        <div className="text-xs text-blue-300">Pharmacy Inventory</div>
+                        <div className="text-xs text-blue-300">IS-C · Information Systems</div>
                     </div>
                 </div>
 

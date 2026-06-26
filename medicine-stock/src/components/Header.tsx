@@ -18,7 +18,7 @@ function Header({ title, subtitle, onLogout }: HeaderProps) {
             <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-8">
                 <div>
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-600">
-                        <span>HIS · Pharmacy</span>
+                        <span>IS-C · MedStock</span>
                         {location && (
                             <>
                                 <span className="text-slate-300">·</span>

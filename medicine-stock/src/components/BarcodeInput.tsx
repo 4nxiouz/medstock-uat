@@ -49,7 +49,7 @@ const BarcodeInput = forwardRef<HTMLInputElement, BarcodeInputProps>(function Ba
                             {...props}
                             ref={ref}
                             value={value}
-                            inputMode="none"
+                            inputMode="text"
                             autoComplete="off"
                             autoCorrect="off"
                             spellCheck={false}
