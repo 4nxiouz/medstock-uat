@@ -34,7 +34,7 @@ function LocationSelect({ locations, onSelect, username }: Props) {
                             </div>
                             <div>
                                 <div className="text-lg font-bold text-slate-900">{loc.code}</div>
-                                <div className="text-sm text-slate-500">{loc.name}</div>
+                                {loc.name !== loc.code && <div className="text-sm text-slate-500">{loc.name}</div>}
                             </div>
                         </button>
                     ))}
