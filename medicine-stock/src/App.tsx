@@ -100,8 +100,13 @@ function AppInner() {
         setAvailableLocations(locs)
 
         if (locs.length === 0) {
+            if (user.role === 'admin') {
+                // Admin with no locations yet → go straight to app so they can add locations
+                setStatus('ready')
+                navigate('/locations')
+                return
+            }
             setLocationError('No location assigned to your account. Contact an administrator.')
-            // clear login so they don't get stuck
             localStorage.removeItem('isLogin')
             sessionStorage.removeItem('isLogin')
             clearCurrentUser()
@@ -133,6 +138,12 @@ function AppInner() {
         if (locs.length === 0) {
             locs = await loadLocations(user.id, user.role)
             setAvailableLocations(locs)
+        }
+
+        if (locs.length === 0 && user.role === 'admin') {
+            setStatus('ready')
+            navigate('/locations')
+            return
         }
 
         setStatus('pick-location')
