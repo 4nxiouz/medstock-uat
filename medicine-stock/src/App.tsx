@@ -5,6 +5,7 @@ import { clearCurrentUser, getCurrentUser } from './lib/auth'
 import { LocationProvider, useLocation } from './lib/LocationContext'
 import { supabase } from './lib/supabase'
 
+import AdminOverview from './pages/AdminOverview'
 import Home from './pages/Home'
 import Inventory from './pages/Inventory'
 import IssueDrug from './pages/IssueDrug'
@@ -48,6 +49,7 @@ function AppRoutes({ onLogout, onSwitchLocation }: { onLogout: () => void; onSwi
             <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
             <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
             <Route path="/locations" element={<AdminOnly element={<LocationManage onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
+            <Route path="/overview" element={<AdminOnly element={<AdminOverview onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )
@@ -188,7 +190,9 @@ function AppInner() {
             <LocationSelect
                 locations={availableLocations}
                 onSelect={handleSelectLocation}
+                onOverview={() => { setStatus('ready'); navigate('/overview') }}
                 username={user?.fullname || user?.username || 'User'}
+                isAdmin={user?.role === 'admin'}
             />
         )
     }

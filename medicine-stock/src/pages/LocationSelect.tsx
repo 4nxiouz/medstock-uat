@@ -1,13 +1,15 @@
-import { Building2, MapPin } from 'lucide-react'
+import { Building2, LayoutDashboard, MapPin } from 'lucide-react'
 import type { Location } from '../types'
 
 type Props = {
     locations: Location[]
     onSelect: (loc: Location) => void
+    onOverview?: () => void
     username: string
+    isAdmin?: boolean
 }
 
-function LocationSelect({ locations, onSelect, username }: Props) {
+function LocationSelect({ locations, onSelect, onOverview, username, isAdmin }: Props) {
     return (
         <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-10">
             <div className="w-full max-w-2xl">
@@ -39,6 +41,16 @@ function LocationSelect({ locations, onSelect, username }: Props) {
                         </button>
                     ))}
                 </div>
+
+                {isAdmin && onOverview && (
+                    <div className="mt-6 text-center">
+                        <button type="button" onClick={onOverview}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                            <LayoutDashboard className="size-4 text-blue-600" />
+                            View All Locations Overview
+                        </button>
+                    </div>
+                )}
             </div>
         </main>
     )

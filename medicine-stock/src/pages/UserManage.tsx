@@ -1,4 +1,4 @@
-import { AlertTriangle, Pencil, Shield, ShieldOff, Trash2, UserPlus, X } from 'lucide-react'
+import { AlertTriangle, KeyRound, Pencil, Shield, ShieldOff, Trash2, UserPlus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
@@ -27,6 +27,8 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
     const [columnMissing, setColumnMissing] = useState(false)
     const [editingUser, setEditingUser] = useState<UserProfile | null>(null)
     const [editPages, setEditPages] = useState<string[]>([])
+    const [resetUser, setResetUser] = useState<UserProfile | null>(null)
+    const [newPassword, setNewPassword] = useState('')
 
     useEffect(() => {
         void loadUsers()
@@ -157,6 +159,15 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
 
         setUsers((current) => current.filter((u) => u.id !== user.id))
         showMsg(`User "${user.username}" deleted.`)
+    }
+
+    async function handleResetPassword() {
+        if (!resetUser || !newPassword.trim()) return
+        const { error } = await supabase.from('user_profile').update({ password_hash: newPassword.trim() }).eq('id', resetUser.id!)
+        if (error) { showMsg('Reset failed: ' + error.message, 'error'); return }
+        setResetUser(null)
+        setNewPassword('')
+        showMsg(`Password reset for "${resetUser.username}".`)
     }
 
     return (
@@ -361,6 +372,13 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
                                                     </button>
                                                     <button
                                                         type="button"
+                                                        onClick={() => { setResetUser(user); setNewPassword('') }}
+                                                        className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50"
+                                                    >
+                                                        <KeyRound className="size-3" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
                                                         onClick={() => void handleDeleteUser(user)}
                                                         className="inline-flex items-center justify-center rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                                     >
@@ -427,6 +445,35 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
                                 className="flex-1 rounded-lg bg-blue-700 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
                             >
                                 Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reset Password Modal */}
+            {resetUser && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold text-slate-900">Reset Password</h3>
+                                <p className="text-sm text-slate-500">{resetUser.fullname || resetUser.username}</p>
+                            </div>
+                            <button type="button" onClick={() => setResetUser(null)}
+                                className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50">
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                        <FormInput label="New Password" type="password" placeholder="Enter new password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                        <div className="mt-4 flex gap-2">
+                            <button type="button" onClick={() => setResetUser(null)}
+                                className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                Cancel
+                            </button>
+                            <button type="button" onClick={() => void handleResetPassword()} disabled={!newPassword.trim()}
+                                className="flex-1 rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:bg-slate-300">
+                                Reset Password
                             </button>
                         </div>
                     </div>

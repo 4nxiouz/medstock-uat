@@ -3,6 +3,7 @@ import {
     Building2,
     ClipboardList,
     Home,
+    LayoutDashboard,
     LogOut,
     MapPin,
     PackageMinus,
@@ -28,6 +29,7 @@ const baseItems = [
     { label: 'Receive Medicine', path: '/receive', icon: PackagePlus, adminOnly: false },
     { label: 'Stock Lookup', path: '/scan', icon: Barcode, adminOnly: false },
     { label: 'Print Barcode', path: '/print', icon: Printer, adminOnly: false },
+    { label: 'Overview', path: '/overview', icon: LayoutDashboard, adminOnly: true },
     { label: 'Manage Locations', path: '/locations', icon: Building2, adminOnly: true },
     { label: 'User Management', path: '/user', icon: Users, adminOnly: true },
 ]
