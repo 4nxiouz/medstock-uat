@@ -1,6 +1,5 @@
 import { AlertTriangle, Boxes, Download, ImagePlus, Package, Pencil, Pill, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import Barcode from 'react-barcode'
+import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
 import FormInput from '../components/FormInput'
@@ -37,8 +36,6 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
-    const [printDrug, setPrintDrug] = useState<Drug | null>(null)
-    const printRef = useRef<HTMLDivElement>(null)
 
     async function loadDrugs() {
         if (!location) return
@@ -126,8 +123,29 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
     }
 
     function handlePrint(drug: Drug) {
-        setPrintDrug(drug)
-        setTimeout(() => window.print(), 100)
+        const win = window.open('', '_blank', 'width=400,height=300')
+        if (!win) return
+        win.document.write(`<!DOCTYPE html><html><head><title>Label</title>
+<style>
+  body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
+  .name { font-weight: 700; font-size: 13pt; margin-bottom: 6px; text-align: center; }
+  .loc { font-size: 9pt; color: #666; margin-top: 4px; }
+  @media print { @page { margin: 8mm; } }
+</style>
+</head><body>
+<div class="name">${drug.drug_name}</div>
+<svg id="bc"></svg>
+<div class="loc">${location?.code ?? ''}</div>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+<script>
+  window.onload = function() {
+    JsBarcode("#bc", "${drug.barcode}", { format:"CODE128", height:56, displayValue:true, fontSize:11, margin:4 });
+    window.print();
+    window.onafterprint = function() { window.close(); };
+  };
+<\/script>
+</body></html>`)
+        win.document.close()
     }
 
     return (
@@ -271,14 +289,6 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
                 </div>
             )}
 
-            {/* Print single label — hidden until print */}
-            {printDrug && (
-                <div ref={printRef} className="hidden print:block print:text-center">
-                    <div style={{ fontWeight: 700, fontSize: '11pt', marginBottom: '3mm' }}>{printDrug.drug_name}</div>
-                    <Barcode value={printDrug.barcode} format="CODE128" height={56} displayValue fontSize={10} />
-                    <div style={{ fontSize: '9pt', color: '#555', marginTop: '2mm' }}>{location?.code}</div>
-                </div>
-            )}
         </PageLayout>
     )
 }
