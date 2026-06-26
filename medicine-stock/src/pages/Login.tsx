@@ -1,7 +1,8 @@
 import { Lock, PillBottle, ShieldCheck, User, Zap } from 'lucide-react'
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { setCurrentUser } from '../lib/auth'
+import { hashPassword, isHashed } from '../lib/crypto'
+import { supabase } from '../lib/supabase'
 import type { UserProfile } from '../types'
 
 type LoginProps = {
@@ -28,7 +29,19 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
         const user = users.find((item) => item.username === cleanUsername)
         if (!user) { setMessage('User not found.'); return }
         if (!user.s_active) { setMessage('This account is disabled.'); return }
-        if (user.password_hash !== password) { setMessage('Password is incorrect.'); return }
+
+        const hashed = await hashPassword(password)
+        const storedHash = user.password_hash
+
+        if (isHashed(storedHash)) {
+            // Normal hashed comparison
+            if (storedHash !== hashed) { setMessage('Password is incorrect.'); return }
+        } else {
+            // Plaintext (legacy) — compare then silently migrate to hash
+            if (storedHash !== password) { setMessage('Password is incorrect.'); return }
+            await supabase.from('user_profile').update({ password_hash: hashed }).eq('id', user.id!)
+        }
+
         setCurrentUser(user)
         onLoginSuccess(rememberSession)
     }

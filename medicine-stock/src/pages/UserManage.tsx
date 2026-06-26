@@ -5,6 +5,7 @@ import EmptyState from '../components/EmptyState'
 import FormInput from '../components/FormInput'
 import PageLayout from '../components/PageLayout'
 import Table from '../components/Table'
+import { hashPassword } from '../lib/crypto'
 import { supabase } from '../lib/supabase'
 import { PAGE_PERMISSIONS, type UserProfile } from '../types'
 
@@ -75,7 +76,7 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
 
         const insertPayload: Record<string, unknown> = {
             username: username.trim(),
-            password_hash: password,
+            password_hash: await hashPassword(password),
             fullname: fullname.trim(),
             role: newUserRole,
             s_active: true,
@@ -163,7 +164,7 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
 
     async function handleResetPassword() {
         if (!resetUser || !newPassword.trim()) return
-        const { error } = await supabase.from('user_profile').update({ password_hash: newPassword.trim() }).eq('id', resetUser.id!)
+        const { error } = await supabase.from('user_profile').update({ password_hash: await hashPassword(newPassword.trim()) }).eq('id', resetUser.id!)
         if (error) { showMsg('Reset failed: ' + error.message, 'error'); return }
         setResetUser(null)
         setNewPassword('')

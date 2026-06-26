@@ -19,6 +19,7 @@ import {
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { getCurrentUser } from '../lib/auth'
+import { hashPassword, isHashed } from '../lib/crypto'
 import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import FormInput from './FormInput'
@@ -58,8 +59,12 @@ function Sidebar({ onLogout, onSwitchLocation }: SidebarProps) {
         if (!user?.username) return
         if (!oldPw || !newPw) { setPwMsg('Fill in both fields.'); setPwMsgType('error'); return }
         const { data } = await supabase.from('user_profile').select('password_hash').eq('username', user.username).single()
-        if (!data || data.password_hash !== oldPw) { setPwMsg('Current password is incorrect.'); setPwMsgType('error'); return }
-        const { error } = await supabase.from('user_profile').update({ password_hash: newPw }).eq('username', user.username)
+        if (!data) { setPwMsg('User not found.'); setPwMsgType('error'); return }
+        const stored = data.password_hash as string
+        const oldHashed = await hashPassword(oldPw)
+        const matches = isHashed(stored) ? stored === oldHashed : stored === oldPw
+        if (!matches) { setPwMsg('Current password is incorrect.'); setPwMsgType('error'); return }
+        const { error } = await supabase.from('user_profile').update({ password_hash: await hashPassword(newPw) }).eq('username', user.username)
         if (error) { setPwMsg('Update failed.'); setPwMsgType('error'); return }
         setPwMsg('Password changed successfully.'); setPwMsgType('ok')
         setOldPw(''); setNewPw('')
