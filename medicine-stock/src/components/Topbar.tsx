@@ -8,7 +8,7 @@ function Topbar({ onLogout }: TopbarProps) {
     return (
         <Header
             title="Dashboard"
-            subtitle="Pharmacy inventory overview"
+            subtitle="Medical supply inventory overview"
             onLogout={onLogout}
         />
     )

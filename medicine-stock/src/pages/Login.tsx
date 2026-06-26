@@ -74,7 +74,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                                 <span className="text-blue-400">Made Simple.</span>
                             </h1>
                             <p className="mt-5 text-sm leading-7 text-blue-300">
-                                Real-time stock control, barcode scanning, and multi-location visibility — built for hospital pharmacy teams.
+                                Real-time stock control, barcode scanning, and multi-location visibility — built for employee medical services.
                             </p>
                         </div>
                     </div>
@@ -115,7 +115,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                     <div className="mb-8">
                         <p className="text-xs font-bold uppercase tracking-widest text-blue-600">IS-C Department</p>
                         <h2 className="mt-2 text-3xl font-extrabold text-slate-900">Welcome back</h2>
-                        <p className="mt-2 text-sm text-slate-500">Sign in to your pharmacy inventory account.</p>
+                        <p className="mt-2 text-sm text-slate-500">Sign in to your medical inventory account.</p>
                     </div>
 
                     <div className="space-y-5">
