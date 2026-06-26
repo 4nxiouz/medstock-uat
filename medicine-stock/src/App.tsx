@@ -62,8 +62,21 @@ function AppInner() {
     const { setLocation, setAvailableLocations, availableLocations, clearLocation } = useLocation()
 
     const [status, setStatus] = useState<AppStatus>(() => {
-        const loggedIn = localStorage.getItem('isLogin') === 'true' || sessionStorage.getItem('isLogin') === 'true'
-        if (!loggedIn) return 'login'
+        // Check session storage (tab-scoped, no expiry needed)
+        const sessionLogin = sessionStorage.getItem('isLogin') === 'true'
+        // Check localStorage with 12-hour expiry
+        let localLogin = false
+        const expiry = localStorage.getItem('isLoginExpiry')
+        if (localStorage.getItem('isLogin') === 'true' && expiry) {
+            if (Date.now() < parseInt(expiry)) {
+                localLogin = true
+            } else {
+                // Expired — clear it
+                localStorage.removeItem('isLogin')
+                localStorage.removeItem('isLoginExpiry')
+            }
+        }
+        if (!sessionLogin && !localLogin) return 'login'
         const locRaw = sessionStorage.getItem('medstock_location')
         return locRaw ? 'ready' : 'pick-location'
     })
@@ -112,7 +125,9 @@ function AppInner() {
 
     async function handleLoginSuccess(rememberSession: boolean) {
         if (rememberSession) {
+            const expiry = Date.now() + 12 * 60 * 60 * 1000 // 12 hours
             localStorage.setItem('isLogin', 'true')
+            localStorage.setItem('isLoginExpiry', String(expiry))
         } else {
             sessionStorage.setItem('isLogin', 'true')
         }
@@ -132,6 +147,7 @@ function AppInner() {
             }
             setLocationError('No location assigned to your account. Contact an administrator.')
             localStorage.removeItem('isLogin')
+            localStorage.removeItem('isLoginExpiry')
             sessionStorage.removeItem('isLogin')
             clearCurrentUser()
             return
@@ -175,6 +191,7 @@ function AppInner() {
 
     function handleLogout() {
         localStorage.removeItem('isLogin')
+        localStorage.removeItem('isLoginExpiry')
         sessionStorage.removeItem('isLogin')
         clearCurrentUser()
         clearLocation()
