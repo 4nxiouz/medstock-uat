@@ -7,6 +7,7 @@ import { supabase } from './lib/supabase'
 
 import AdminOverview from './pages/AdminOverview'
 import Home from './pages/Home'
+import TransactionHistory from './pages/TransactionHistory'
 import Inventory from './pages/Inventory'
 import IssueDrug from './pages/IssueDrug'
 import LocationManage from './pages/LocationManage'
@@ -49,6 +50,7 @@ function AppRoutes({ onLogout, onSwitchLocation }: { onLogout: () => void; onSwi
             <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
             <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
             <Route path="/locations" element={<AdminOnly element={<LocationManage onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
+            <Route path="/history" element={<TransactionHistory onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />
             <Route path="/overview" element={<AdminOnly element={<AdminOverview onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

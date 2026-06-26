@@ -1,6 +1,7 @@
 import {
     Barcode,
     Building2,
+    History,
     Home,
     LayoutDashboard,
     Menu,
@@ -29,6 +30,7 @@ function MobileNav() {
     const moreItems = [
         { label: 'Dispense', path: '/issue', icon: PackageMinus },
         { label: 'Print', path: '/print', icon: Printer },
+        { label: 'History', path: '/history', icon: History },
         ...(isAdmin ? [{ label: 'Overview', path: '/overview', icon: LayoutDashboard }, { label: 'Users', path: '/user', icon: Users }, { label: 'Locations', path: '/locations', icon: Building2 }] : []),
     ]
 
