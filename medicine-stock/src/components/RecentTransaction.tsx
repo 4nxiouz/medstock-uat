@@ -5,39 +5,35 @@ import Card from './Card'
 import EmptyState from './EmptyState'
 import Table from './Table'
 
+type Props = { locationId: number | null }
+
 function formatDate(raw?: string | null) {
     if (!raw) return '-'
-    const d = new Date(raw)
-    return d.toLocaleString('th-TH', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
+    return new Date(raw).toLocaleString('th-TH', {
+        day: '2-digit', month: '2-digit', year: '2-digit',
+        hour: '2-digit', minute: '2-digit',
     })
 }
 
-function RecentTransaction() {
+function RecentTransaction({ locationId }: Props) {
     const [transactions, setTransactions] = useState<StockTransaction[]>([])
 
     useEffect(() => {
-        async function loadTransactions() {
-            const { data, error } = await supabase
+        if (locationId === null) return
+
+        async function load() {
+            const { data } = await supabase
                 .from('stock_transaction')
                 .select('id, barcode, qty, action, created_by, created_at')
+                .eq('location_id', locationId!)
                 .order('id', { ascending: false })
                 .limit(20)
-
-            if (error) {
-                setTransactions([])
-                return
-            }
 
             setTransactions((data || []) as StockTransaction[])
         }
 
-        void loadTransactions()
-    }, [])
+        void load()
+    }, [locationId])
 
     return (
         <Card className="mt-6 p-5">
@@ -62,29 +58,19 @@ function RecentTransaction() {
                     <tbody className="divide-y divide-slate-100">
                         {transactions.map((tx) => (
                             <tr key={tx.id}>
-                                <td className="px-4 py-3 font-medium text-slate-900">
-                                    {tx.barcode}
-                                </td>
+                                <td className="px-4 py-3 font-medium text-slate-900">{tx.barcode}</td>
                                 <td className="px-4 py-3">
-                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                        tx.action === 'IN'
-                                            ? 'bg-emerald-50 text-emerald-700'
-                                            : 'bg-red-50 text-red-700'
-                                    }`}>
+                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tx.action === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                         {tx.action === 'IN' ? '▲ IN' : '▼ OUT'}
                                     </span>
                                 </td>
-                                <td className="px-4 py-3 tabular-nums text-slate-700">
-                                    {tx.qty}
-                                </td>
+                                <td className="px-4 py-3 tabular-nums text-slate-700">{tx.qty}</td>
                                 <td className="px-4 py-3">
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                                         {tx.created_by || 'system'}
                                     </span>
                                 </td>
-                                <td className="px-4 py-3 text-xs text-slate-500">
-                                    {formatDate(tx.created_at)}
-                                </td>
+                                <td className="px-4 py-3 text-xs text-slate-500">{formatDate(tx.created_at)}</td>
                             </tr>
                         ))}
                     </tbody>

@@ -4,23 +4,28 @@ import Barcode from 'react-barcode'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
 import SearchInput from '../components/SearchInput'
+import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
 type PageProps = {
     onLogout: () => void
+    onSwitchLocation: () => void
 }
 
-function PrintBarcode({ onLogout }: PageProps) {
+function PrintBarcode({ onLogout, onSwitchLocation }: PageProps) {
+    const { location } = useLocation()
     const [drugs, setDrugs] = useState<Drug[]>([])
     const [search, setSearch] = useState('')
     const [selected, setSelected] = useState<Set<number>>(new Set())
 
     useEffect(() => {
+        if (!location) return
         async function loadDrugs() {
             const { data, error } = await supabase
                 .from('drug_master')
                 .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url')
+                .eq('location_id', location!.id)
                 .order('drug_name')
 
             if (!error) {
@@ -31,7 +36,7 @@ function PrintBarcode({ onLogout }: PageProps) {
         }
 
         void loadDrugs()
-    }, [])
+    }, [location])
 
     const filtered = useMemo(() => {
         const kw = search.toLowerCase()
@@ -63,8 +68,9 @@ function PrintBarcode({ onLogout }: PageProps) {
     return (
         <PageLayout
             title="Print Barcode"
-            subtitle="Select medicines and print barcode labels."
+            subtitle={`Select medicines and print barcode labels — ${location?.name ?? '—'}`}
             onLogout={onLogout}
+            onSwitchLocation={onSwitchLocation}
         >
             {/* Toolbar — hidden when printing */}
             <div className="no-print mb-5 flex flex-wrap items-center gap-3">

@@ -6,9 +6,10 @@ import type { UserProfile } from '../types'
 
 type LoginProps = {
     onLoginSuccess: (rememberSession: boolean) => void
+    errorMessage?: string
 }
 
-function Login({ onLoginSuccess }: LoginProps) {
+function Login({ onLoginSuccess, errorMessage }: LoginProps) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [rememberSession, setRememberSession] = useState(true)
@@ -149,9 +150,9 @@ function Login({ onLoginSuccess }: LoginProps) {
                             Remember session
                         </label>
 
-                        {message && (
+                        {(message || errorMessage) && (
                             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                {message}
+                                {message || errorMessage}
                             </div>
                         )}
 

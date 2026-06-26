@@ -11,9 +11,10 @@ import type { Drug } from '../types'
 
 type PageProps = {
     onLogout: () => void
+    onSwitchLocation: () => void
 }
 
-function Dashboard({ onLogout }: PageProps) {
+function Dashboard({ onLogout, onSwitchLocation }: PageProps) {
     const [drugs, setDrugs] = useState<Drug[]>([])
     const [search, setSearch] = useState('')
     const [message, setMessage] = useState('')
@@ -96,6 +97,7 @@ function Dashboard({ onLogout }: PageProps) {
             title="Inventory"
             subtitle="Edit stock records and review low-stock medicines."
             onLogout={onLogout}
+            onSwitchLocation={onSwitchLocation}
         >
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard title="Total Drugs" value={drugs.length} tone="blue" icon={Package} />

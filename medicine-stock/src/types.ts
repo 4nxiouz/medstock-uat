@@ -6,6 +6,7 @@ export type Drug = {
     min_stock: number
     unit_per_scan: number
     image_url?: string | null
+    location_id?: number | null
 }
 
 export type StockTransaction = {
@@ -15,16 +16,24 @@ export type StockTransaction = {
     action: 'IN' | 'OUT' | string
     created_by?: string | null
     created_at?: string | null
+    location_id?: number | null
 }
 
 export type UserProfile = {
-    id?: number
+    id?: string
     username: string
     password_hash: string
     fullname?: string | null
     role?: string | null
     s_active: boolean
     allowed_pages?: string[] | null
+}
+
+export type Location = {
+    id: number
+    code: string
+    name: string
+    s_active: boolean
 }
 
 export const PAGE_PERMISSIONS: { path: string; label: string }[] = [

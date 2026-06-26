@@ -1,5 +1,6 @@
-import { LogOut, UserCircle } from 'lucide-react'
+import { LogOut, MapPin, UserCircle } from 'lucide-react'
 import { getCurrentUser } from '../lib/auth'
+import { useLocation } from '../lib/LocationContext'
 
 type HeaderProps = {
     title: string
@@ -10,20 +11,26 @@ type HeaderProps = {
 function Header({ title, subtitle, onLogout }: HeaderProps) {
     const user = getCurrentUser()
     const displayName = user?.fullname || user?.username || 'Staff'
+    const { location } = useLocation()
 
     return (
         <header className="border-b border-slate-200 bg-white">
             <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-8">
                 <div>
-                    <div className="text-xs font-semibold uppercase tracking-widest text-blue-600">
-                        HIS · Pharmacy Inventory
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-600">
+                        <span>HIS · Pharmacy</span>
+                        {location && (
+                            <>
+                                <span className="text-slate-300">·</span>
+                                <span className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
+                                    <MapPin className="size-3" />
+                                    {location.code}
+                                </span>
+                            </>
+                        )}
                     </div>
-                    <h1 className="mt-1 text-2xl font-bold text-slate-900">
-                        {title}
-                    </h1>
-                    {subtitle && (
-                        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
-                    )}
+                    <h1 className="mt-1 text-2xl font-bold text-slate-900">{title}</h1>
+                    {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
                 </div>
 
                 <div className="flex items-center gap-3">

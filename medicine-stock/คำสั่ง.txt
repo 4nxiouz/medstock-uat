@@ -1,0 +1,253 @@
+You have full access to my machine and the entire project folder.
+
+Project stack:
+
+React
+TypeScript
+Vite
+TailwindCSS v4
+React Router
+Supabase
+lucide-react
+
+Your mission is to completely redesign and refactor the UI while preserving all existing functionality.
+
+IMPORTANT:
+
+You may read, modify, create, rename and reorganize files.
+You may install packages when needed.
+You may run npm commands.
+You may run build commands.
+You may fix TypeScript errors.
+You may fix ESLint warnings.
+You may refactor components.
+You may improve folder structure.
+You may repeatedly test and fix issues until everything works.
+
+DO NOT break existing business logic.
+
+Current pages:
+
+Login
+Home
+Dashboard
+Receive Drug
+Withdraw Drug
+Scan Barcode
+Print Barcode
+User Management
+
+Keep all Supabase functionality working.
+
+==================================================
+
+DESIGN GOAL
+
+Create a professional Hospital Information System (HIS) and Pharmacy Inventory Management System.
+
+Style:
+
+Dark left sidebar
+White content area
+Modern ERP dashboard
+Rounded cards
+Responsive layout
+Consistent spacing
+Professional typography
+No emoji
+Use lucide-react icons
+Beautiful tables
+Professional forms
+
+==================================================
+
+CREATE REUSABLE COMPONENTS
+
+components/
+
+Sidebar
+Header
+PageContainer
+Card
+StatCard
+Table
+FormInput
+SearchInput
+EmptyState
+LoadingState
+
+==================================================
+
+GLOBAL RULES
+
+Remove:
+
+alert()
+
+
+inline styles
+border={1}
+emoji icons
+
+Replace alerts with:
+
+react-hot-toast
+
+Install packages if necessary.
+
+==================================================
+
+LAYOUT
+
+Sidebar:
+
+Dashboard
+Withdraw Drug
+Receive Drug
+Scan Barcode
+Print Barcode
+User Management
+Logout
+
+Top header:
+
+Page title
+User information
+Breadcrumb
+
+==================================================
+
+LOGIN PAGE
+
+Modern login card.
+
+Hospital style.
+
+Features:
+
+Enter key login
+Error messages
+Remember session
+Professional appearance
+
+==================================================
+
+HOME PAGE
+
+Modern dashboard.
+
+KPI cards:
+
+Total Drugs
+Total Stock
+Low Stock Count
+
+Low stock section.
+
+Responsive layout.
+
+==================================================
+
+DASHBOARD PAGE
+
+Display:
+
+Total Drugs
+Total Stock
+Low Stock Count
+
+Low stock table should show:
+
+current_stock <= min_stock
+
+==================================================
+
+RECEIVE DRUG PAGE
+
+Card layout.
+
+Fields:
+
+Barcode
+Quantity
+
+Clear success and error messages.
+
+==================================================
+
+WITHDRAW DRUG PAGE
+
+POS style interface.
+
+Fields:
+
+Barcode
+Quantity
+
+==================================================
+
+SCAN BARCODE PAGE
+
+Convenience store scanner style.
+
+Auto focus input.
+
+Show:
+
+Drug name
+Barcode
+Current stock
+Minimum stock
+
+Prepare space for future drug image support.
+
+==================================================
+
+PRINT BARCODE PAGE
+
+Clean barcode cards.
+
+Print button.
+
+Responsive layout.
+
+==================================================
+
+USER MANAGEMENT PAGE
+
+Card form.
+
+Table layout.
+
+Modern appearance.
+
+==================================================
+
+TYPESCRIPT
+
+Avoid "any" whenever possible.
+
+Create interfaces and types.
+
+==================================================
+
+QUALITY REQUIREMENTS
+
+After modifications:
+
+Run npm install if needed.
+Run npm run build.
+Fix every error.
+Fix TypeScript issues.
+Fix ESLint issues.
+Continue until build succeeds.
+Ensure hot reload works.
+Ensure routing works.
+Ensure login/logout works.
+Ensure all pages render correctly.
+
+Do not stop after editing files.
+
+Keep testing and fixing until the project is stable and production-ready.
+
+Prioritize maintainability, UI/UX quality, and professional hospital software appearance.
