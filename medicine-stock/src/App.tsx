@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { useState, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 
 import { clearCurrentUser, getCurrentUser } from './lib/auth'
 import { LocationProvider, useLocation } from './lib/LocationContext'
@@ -65,6 +65,26 @@ function AppInner() {
     })
 
     const [locationError, setLocationError] = useState('')
+
+    // On page refresh: status='pick-location' but locations not loaded yet → load them now
+    useEffect(() => {
+        if (status !== 'pick-location') return
+        const user = getCurrentUser()
+        if (!user?.id) { setStatus('login'); return }
+        void loadLocations(user.id, user.role).then((locs) => {
+            setAvailableLocations(locs)
+            if (locs.length === 0) {
+                if (user.role === 'admin') { setStatus('ready'); navigate('/locations'); return }
+                setLocationError('No location assigned to your account. Contact an administrator.')
+                localStorage.removeItem('isLogin'); sessionStorage.removeItem('isLogin')
+                clearCurrentUser(); setStatus('login')
+            } else if (locs.length === 1) {
+                setLocation(locs[0]); setStatus('ready'); navigate('/')
+            }
+            // else: >1 location → stay on pick-location with cards
+        })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     async function loadLocations(userId: string, role: string | null | undefined): Promise<Location[]> {
         if (role === 'admin') {
