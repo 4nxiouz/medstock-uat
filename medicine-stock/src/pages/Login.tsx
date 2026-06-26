@@ -13,7 +13,7 @@ type LoginProps = {
 function Login({ onLoginSuccess, errorMessage }: LoginProps) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [rememberSession, setRememberSession] = useState(true)
+    const [rememberSession, setRememberSession] = useState(false)
     const [message, setMessage] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
