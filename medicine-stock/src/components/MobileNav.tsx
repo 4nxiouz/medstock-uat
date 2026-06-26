@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { getCurrentUser } from '../lib/auth'
 
 const mainItems = [
     { label: 'Home', path: '/', icon: Home },
@@ -19,14 +20,15 @@ const mainItems = [
     { label: 'Lookup', path: '/scan', icon: Barcode },
 ]
 
-const moreItems = [
-    { label: 'Dispense', path: '/issue', icon: PackageMinus },
-    { label: 'Print', path: '/print', icon: Printer },
-    { label: 'Users', path: '/user', icon: Users },
-]
-
 function MobileNav() {
     const [menuOpen, setMenuOpen] = useState(false)
+    const isAdmin = getCurrentUser()?.role === 'admin'
+
+    const moreItems = [
+        { label: 'Dispense', path: '/issue', icon: PackageMinus },
+        { label: 'Print', path: '/print', icon: Printer },
+        ...(isAdmin ? [{ label: 'Users', path: '/user', icon: Users }] : []),
+    ]
 
     return (
         <>

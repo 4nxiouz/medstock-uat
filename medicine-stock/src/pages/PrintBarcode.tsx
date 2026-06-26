@@ -1,9 +1,9 @@
 import { Printer } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Barcode from 'react-barcode'
-import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
+import SearchInput from '../components/SearchInput'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
@@ -13,6 +13,8 @@ type PageProps = {
 
 function PrintBarcode({ onLogout }: PageProps) {
     const [drugs, setDrugs] = useState<Drug[]>([])
+    const [search, setSearch] = useState('')
+    const [selected, setSelected] = useState<Set<number>>(new Set())
 
     useEffect(() => {
         async function loadDrugs() {
@@ -21,47 +23,125 @@ function PrintBarcode({ onLogout }: PageProps) {
                 .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url')
                 .order('drug_name')
 
-            if (error) {
-                setDrugs([])
-                return
+            if (!error) {
+                const list = (data || []) as Drug[]
+                setDrugs(list)
+                setSelected(new Set(list.map((d) => d.id)))
             }
-
-            setDrugs((data || []) as Drug[])
         }
 
         void loadDrugs()
     }, [])
 
+    const filtered = useMemo(() => {
+        const kw = search.toLowerCase()
+        return drugs.filter(
+            (d) =>
+                d.drug_name.toLowerCase().includes(kw) ||
+                d.barcode.includes(search),
+        )
+    }, [drugs, search])
+
+    const toPrint = filtered.filter((d) => selected.has(d.id))
+
+    function toggleSelect(id: number) {
+        setSelected((prev) => {
+            const next = new Set(prev)
+            next.has(id) ? next.delete(id) : next.add(id)
+            return next
+        })
+    }
+
+    function selectAll() {
+        setSelected(new Set(filtered.map((d) => d.id)))
+    }
+
+    function selectNone() {
+        setSelected(new Set())
+    }
+
     return (
         <PageLayout
             title="Print Barcode"
-            subtitle="Generate printable barcode labels for registered medicines."
+            subtitle="Select medicines and print barcode labels."
             onLogout={onLogout}
         >
-            <div className="mb-5 flex justify-end">
+            {/* Toolbar — hidden when printing */}
+            <div className="no-print mb-5 flex flex-wrap items-center gap-3">
+                <div className="flex-1">
+                    <SearchInput value={search} onChange={setSearch} placeholder="Search medicine or barcode" />
+                </div>
+                <button type="button" onClick={selectAll} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    Select All
+                </button>
+                <button type="button" onClick={selectNone} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    Clear
+                </button>
                 <button
                     type="button"
                     onClick={() => window.print()}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-cyan-700 px-5 text-sm font-semibold text-white hover:bg-cyan-800"
+                    disabled={toPrint.length === 0}
+                    className="inline-flex h-10 items-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                     <Printer className="size-4" />
-                    Print
+                    Print {toPrint.length > 0 ? `(${toPrint.length})` : ''}
                 </button>
             </div>
 
             {drugs.length === 0 ? (
-                <EmptyState title="No barcode labels" description="Add drugs before printing barcode labels." />
+                <EmptyState title="No medicines registered" description="Register medicines in Receive Medicine first." />
+            ) : filtered.length === 0 ? (
+                <EmptyState title="No results" description="Try a different search." />
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {drugs.map((drug) => (
-                        <Card key={drug.id} className="p-5 text-center">
-                            <div className="mb-3 text-base font-semibold text-slate-950">
-                                {drug.drug_name}
+                <>
+                    {/* Screen: selectable card grid */}
+                    <div className="no-print grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {filtered.map((drug) => {
+                            const isSelected = selected.has(drug.id)
+                            return (
+                                <button
+                                    key={drug.id}
+                                    type="button"
+                                    onClick={() => toggleSelect(drug.id)}
+                                    className={`rounded-xl border-2 p-4 text-center transition ${
+                                        isSelected
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-slate-200 bg-white hover:border-slate-300'
+                                    }`}
+                                >
+                                    <div className={`mb-2 text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-slate-900'}`}>
+                                        {drug.drug_name}
+                                    </div>
+                                    <div className="flex justify-center overflow-hidden">
+                                        <Barcode value={drug.barcode} format="CODE128" height={48} width={1.4} displayValue fontSize={11} />
+                                    </div>
+                                    <div className="mt-2 text-xs text-slate-400">
+                                        {isSelected ? '✓ Selected' : 'Click to select'}
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    {/* Print-only: tight label grid, only selected */}
+                    <div className="print-label-grid hidden print:block">
+                        {toPrint.map((drug) => (
+                            <div key={drug.id} className="print-label">
+                                <div style={{ fontSize: '10pt', fontWeight: 700, marginBottom: '2mm' }}>
+                                    {drug.drug_name}
+                                </div>
+                                <Barcode
+                                    value={drug.barcode}
+                                    format="CODE128"
+                                    height={48}
+                                    width={1.4}
+                                    displayValue
+                                    fontSize={10}
+                                />
                             </div>
-                            <Barcode value={drug.barcode} format="CODE128" height={56} displayValue />
-                        </Card>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                </>
             )}
         </PageLayout>
     )

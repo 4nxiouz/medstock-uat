@@ -12,6 +12,10 @@ import ReceiveDrug from './pages/ReceiveDrug'
 import ScanBarcode from './pages/ScanBarcode'
 import UserManage from './pages/UserManage'
 
+function isAdmin(): boolean {
+    return getCurrentUser()?.role === 'admin'
+}
+
 function canAccess(path: string): boolean {
     const user = getCurrentUser()
     if (!user?.allowed_pages) return true
@@ -20,6 +24,10 @@ function canAccess(path: string): boolean {
 
 function Guarded({ path, element }: { path: string; element: ReactElement }) {
     return canAccess(path) ? element : <Navigate to="/" replace />
+}
+
+function AdminOnly({ element }: { element: ReactElement }) {
+    return isAdmin() ? element : <Navigate to="/" replace />
 }
 
 function App() {
@@ -58,7 +66,7 @@ function App() {
             <Route path="/issue" element={<Guarded path="/issue" element={<IssueDrug onLogout={handleLogout} />} />} />
             <Route path="/scan" element={<Guarded path="/scan" element={<ScanBarcode onLogout={handleLogout} />} />} />
             <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={handleLogout} />} />} />
-            <Route path="/user" element={<UserManage onLogout={handleLogout} />} />
+            <Route path="/user" element={<AdminOnly element={<UserManage onLogout={handleLogout} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )

@@ -10,22 +10,26 @@ import {
     Users,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
+import { getCurrentUser } from '../lib/auth'
 
 type SidebarProps = {
     onLogout: () => void
 }
 
-const menuItems = [
-    { label: 'Dashboard', path: '/', icon: Home },
-    { label: 'Inventory', path: '/inventory', icon: Pill },
-    { label: 'Dispense', path: '/issue', icon: PackageMinus },
-    { label: 'Receive Medicine', path: '/receive', icon: PackagePlus },
-    { label: 'Stock Lookup', path: '/scan', icon: Barcode },
-    { label: 'Print Barcode', path: '/print', icon: Printer },
-    { label: 'User Management', path: '/user', icon: Users },
+const baseItems = [
+    { label: 'Dashboard', path: '/', icon: Home, adminOnly: false },
+    { label: 'Inventory', path: '/inventory', icon: Pill, adminOnly: false },
+    { label: 'Dispense', path: '/issue', icon: PackageMinus, adminOnly: false },
+    { label: 'Receive Medicine', path: '/receive', icon: PackagePlus, adminOnly: false },
+    { label: 'Stock Lookup', path: '/scan', icon: Barcode, adminOnly: false },
+    { label: 'Print Barcode', path: '/print', icon: Printer, adminOnly: false },
+    { label: 'User Management', path: '/user', icon: Users, adminOnly: true },
 ]
 
 function Sidebar({ onLogout }: SidebarProps) {
+    const isAdmin = getCurrentUser()?.role === 'admin'
+    const menuItems = baseItems.filter((item) => !item.adminOnly || isAdmin)
+
     return (
         <aside className="fixed inset-y-0 left-0 z-20 hidden w-[17rem] flex-col bg-blue-950 text-white lg:flex">
             <div className="border-b border-white/10 px-6 py-5">
@@ -43,7 +47,6 @@ function Sidebar({ onLogout }: SidebarProps) {
             <nav className="flex-1 space-y-0.5 px-3 py-4">
                 {menuItems.map((item) => {
                     const Icon = item.icon
-
                     return (
                         <NavLink
                             key={item.path}
@@ -65,6 +68,14 @@ function Sidebar({ onLogout }: SidebarProps) {
             </nav>
 
             <div className="border-t border-white/10 p-3">
+                <div className="mb-1 px-3 py-1.5">
+                    <div className="text-xs text-blue-400">
+                        Signed in as <span className="font-semibold text-blue-200">{getCurrentUser()?.username}</span>
+                    </div>
+                    <div className="text-[10px] capitalize text-blue-500">
+                        {getCurrentUser()?.role ?? 'user'}
+                    </div>
+                </div>
                 <button
                     type="button"
                     onClick={onLogout}

@@ -1,20 +1,51 @@
 @import "tailwindcss";
 
 @media print {
-
-    button {
-        display: none;
-    }
-
-    nav {
-        display: none;
-    }
-
-    header {
-        display: none;
-    }
-
+    /* Hide all UI chrome */
+    aside,
+    header,
+    nav,
+    button,
     .no-print {
         display: none !important;
     }
+
+    /* Remove sidebar offset so content fills the full page */
+    body,
+    #root,
+    .min-h-screen {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Remove the lg:pl-[17rem] sidebar offset */
+    [class*="lg:pl-"] {
+        padding-left: 0 !important;
+    }
+
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Label grid: 3 per row, tight */
+    .print-label-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6mm !important;
+        padding: 8mm !important;
+    }
+
+    .print-label {
+        border: 1px dashed #ccc !important;
+        border-radius: 4px !important;
+        padding: 4mm !important;
+        text-align: center !important;
+        page-break-inside: avoid !important;
+        background: white !important;
+    }
+
+    /* Keep page header (date / URL) from browser — let it show naturally */
 }

@@ -5,6 +5,18 @@ import Card from './Card'
 import EmptyState from './EmptyState'
 import Table from './Table'
 
+function formatDate(raw?: string | null) {
+    if (!raw) return '-'
+    const d = new Date(raw)
+    return d.toLocaleString('th-TH', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+
 function RecentTransaction() {
     const [transactions, setTransactions] = useState<StockTransaction[]>([])
 
@@ -14,7 +26,7 @@ function RecentTransaction() {
                 .from('stock_transaction')
                 .select('id, barcode, qty, action, created_by, created_at')
                 .order('id', { ascending: false })
-                .limit(10)
+                .limit(20)
 
             if (error) {
                 setTransactions([])
@@ -30,9 +42,8 @@ function RecentTransaction() {
     return (
         <Card className="mt-6 p-5">
             <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-950">
-                    Recent Transactions
-                </h2>
+                <h2 className="text-lg font-bold text-slate-900">Recent Transactions</h2>
+                <span className="text-xs text-slate-400">Last 20 entries</span>
             </div>
 
             {transactions.length === 0 ? (
@@ -41,28 +52,38 @@ function RecentTransaction() {
                 <Table>
                     <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                         <tr>
-                            <th className="px-4 py-3 font-semibold">Barcode</th>
-                            <th className="px-4 py-3 font-semibold">Qty</th>
-                            <th className="px-4 py-3 font-semibold">Action</th>
+                            <th className="px-4 py-3 text-left font-semibold">Barcode</th>
+                            <th className="px-4 py-3 text-left font-semibold">Action</th>
+                            <th className="px-4 py-3 text-left font-semibold">Qty</th>
+                            <th className="px-4 py-3 text-left font-semibold">By</th>
+                            <th className="px-4 py-3 text-left font-semibold">Time</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {transactions.map((transaction) => (
-                            <tr key={transaction.id}>
+                        {transactions.map((tx) => (
+                            <tr key={tx.id}>
                                 <td className="px-4 py-3 font-medium text-slate-900">
-                                    {transaction.barcode}
+                                    {tx.barcode}
                                 </td>
-                                <td className="px-4 py-3">{transaction.qty}</td>
                                 <td className="px-4 py-3">
-                                    <span
-                                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                            transaction.action === 'IN'
-                                                ? 'bg-emerald-50 text-emerald-700'
-                                                : 'bg-red-50 text-red-700'
-                                        }`}
-                                    >
-                                        {transaction.action}
+                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                        tx.action === 'IN'
+                                            ? 'bg-emerald-50 text-emerald-700'
+                                            : 'bg-red-50 text-red-700'
+                                    }`}>
+                                        {tx.action === 'IN' ? '▲ IN' : '▼ OUT'}
                                     </span>
+                                </td>
+                                <td className="px-4 py-3 tabular-nums text-slate-700">
+                                    {tx.qty}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                                        {tx.created_by || 'system'}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 text-xs text-slate-500">
+                                    {formatDate(tx.created_at)}
                                 </td>
                             </tr>
                         ))}
