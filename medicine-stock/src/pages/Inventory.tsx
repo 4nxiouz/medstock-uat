@@ -92,8 +92,24 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
     }
 
     async function handleDelete(id: number) {
-        if (!window.confirm('Delete this item?')) return
+        const drug = drugs.find((d) => d.id === id)
+        if (!drug) return
+        if (!window.confirm(`Delete "${drug.drug_name}"? This cannot be undone.`)) return
         setMessage('')
+
+        // Record deletion as transaction before removing
+        if (drug.current_stock > 0) {
+            await supabase.from('transaction').insert({
+                barcode: drug.barcode,
+                drug_name: drug.drug_name,
+                quantity: drug.current_stock,
+                transaction_type: 'OUT',
+                remark: '[deleted] item removed from inventory',
+                created_by: getCreatedBy(),
+                location_id: location?.id,
+            })
+        }
+
         const { error } = await supabase.from('drug_master').delete().eq('id', id)
         if (error) { setMessage('Delete failed.'); return }
         setDrugs((cur) => cur.filter((d) => d.id !== id))
