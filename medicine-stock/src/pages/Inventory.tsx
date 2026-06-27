@@ -1,6 +1,7 @@
 import { AlertTriangle, Boxes, Download, ImagePlus, Package, Pencil, Pill, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/Card'
+import DrugIcon from '../components/DrugIcon'
 import EmptyState from '../components/EmptyState'
 import FormInput from '../components/FormInput'
 import PageLayout from '../components/PageLayout'
@@ -180,9 +181,7 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
                                         {drug.image_url ? (
                                             <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
                                         ) : (
-                                            <div className="flex size-full flex-col items-center justify-center text-slate-400">
-                                                <Pill className="size-10" /><span className="mt-2 text-xs">No image</span>
-                                            </div>
+                                            <DrugIcon name={drug.drug_name} />
                                         )}
                                     </div>
                                     <div className="space-y-3 p-4">
