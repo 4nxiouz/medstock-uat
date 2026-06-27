@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 type Props = { name: string; className?: string }
 
 type Category = {
@@ -5,7 +7,7 @@ type Category = {
     bg: string
     iconBg: string
     label: string
-    svg: () => React.ReactNode
+    svg: () => ReactNode
 }
 
 const categories: Category[] = [
