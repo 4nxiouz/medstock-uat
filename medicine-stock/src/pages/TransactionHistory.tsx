@@ -1,5 +1,6 @@
 import { Download, Filter } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import * as XLSX from 'xlsx'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
@@ -19,52 +20,24 @@ function formatDate(raw?: string | null) {
     return new Date(raw).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-// SpreadsheetML export — no external library needed
 function exportXlsx(rows: TxRow[], isAdminMode: boolean, locationCode?: string) {
-    const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-
-    const headers = isAdminMode
-        ? ['#', 'Location', 'Barcode', 'Action', 'Qty', 'By', 'Date/Time']
-        : ['#', 'Barcode', 'Action', 'Qty', 'By', 'Date/Time']
-
-    const dataRows = rows.map((r) => {
-        const cells = isAdminMode
-            ? [r.id, r.location_name ?? '-', r.barcode, r.action, r.qty, r.created_by ?? 'system', r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '']
-            : [r.id, r.barcode, r.action, r.qty, r.created_by ?? 'system', r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '']
-        return cells
+    const data = rows.map((r) => {
+        const base = {
+            'ID': r.id,
+            'Barcode': r.barcode,
+            'Action': r.action,
+            'Qty': r.qty,
+            'By': r.created_by ?? 'system',
+            'Date/Time': r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '',
+        }
+        if (isAdminMode) return { 'Location': r.location_name ?? '-', ...base }
+        return base
     })
 
-    const headerXml = headers.map((h) => `<Cell ss:StyleID="h"><Data ss:Type="String">${esc(h)}</Data></Cell>`).join('')
-    const bodyXml = dataRows.map((row) =>
-        `<Row>${row.map((v) => `<Cell><Data ss:Type="${typeof v === 'number' ? 'Number' : 'String'}">${esc(v)}</Data></Cell>`).join('')}</Row>`
-    ).join('\n')
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Styles>
-  <Style ss:ID="h">
-   <Font ss:Bold="1"/>
-   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
-   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Transactions">
-  <Table>
-   <Row>${headerXml}</Row>
-   ${bodyXml}
-  </Table>
- </Worksheet>
-</Workbook>`
-
-    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `transactions_${isAdminMode ? 'all' : (locationCode ?? 'export')}_${new Date().toISOString().slice(0, 10)}.xls`
-    a.click()
-    URL.revokeObjectURL(url)
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions')
+    XLSX.writeFile(wb, `transactions_${isAdminMode ? 'all' : (locationCode ?? 'export')}_${new Date().toISOString().slice(0, 10)}.xlsx`)
 }
 
 function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
