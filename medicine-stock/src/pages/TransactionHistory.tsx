@@ -5,65 +5,128 @@ import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
 import SearchInput from '../components/SearchInput'
 import Table from '../components/Table'
+import { getCurrentUser } from '../lib/auth'
 import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { StockTransaction } from '../types'
 
 type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
 
+type TxRow = StockTransaction & { location_name?: string }
+
 function formatDate(raw?: string | null) {
     if (!raw) return '-'
     return new Date(raw).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function toCSV(rows: StockTransaction[]): string {
-    const header = ['ID', 'Barcode', 'Action', 'Qty', 'By', 'Date']
-    const lines = rows.map((r) => [
-        r.id, r.barcode, r.action, r.qty,
-        r.created_by || 'system',
-        r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '',
-    ].map(String).join(','))
-    return [header.join(','), ...lines].join('\n')
-}
+// SpreadsheetML export — no external library needed
+function exportXlsx(rows: TxRow[], isAdminMode: boolean, locationCode?: string) {
+    const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-function downloadCSV(content: string, filename: string) {
-    const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8' })
+    const headers = isAdminMode
+        ? ['#', 'Location', 'Barcode', 'Action', 'Qty', 'By', 'Date/Time']
+        : ['#', 'Barcode', 'Action', 'Qty', 'By', 'Date/Time']
+
+    const dataRows = rows.map((r) => {
+        const cells = isAdminMode
+            ? [r.id, r.location_name ?? '-', r.barcode, r.action, r.qty, r.created_by ?? 'system', r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '']
+            : [r.id, r.barcode, r.action, r.qty, r.created_by ?? 'system', r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '']
+        return cells
+    })
+
+    const headerXml = headers.map((h) => `<Cell ss:StyleID="h"><Data ss:Type="String">${esc(h)}</Data></Cell>`).join('')
+    const bodyXml = dataRows.map((row) =>
+        `<Row>${row.map((v) => `<Cell><Data ss:Type="${typeof v === 'number' ? 'Number' : 'String'}">${esc(v)}</Data></Cell>`).join('')}</Row>`
+    ).join('\n')
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="h">
+   <Font ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Transactions">
+  <Table>
+   <Row>${headerXml}</Row>
+   ${bodyXml}
+  </Table>
+ </Worksheet>
+</Workbook>`
+
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `transactions_${isAdminMode ? 'all' : (locationCode ?? 'export')}_${new Date().toISOString().slice(0, 10)}.xls`
+    a.click()
     URL.revokeObjectURL(url)
 }
 
 function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
     const { location } = useLocation()
-    const [transactions, setTransactions] = useState<StockTransaction[]>([])
+    const adminMode = getCurrentUser()?.role === 'admin'
+
+    const [transactions, setTransactions] = useState<TxRow[]>([])
+    const [locationMap, setLocationMap] = useState<Record<number, string>>({})
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [actionFilter, setActionFilter] = useState<'ALL' | 'IN' | 'OUT'>('ALL')
+    const [locationFilter, setLocationFilter] = useState<string>('ALL')
     const [dateFrom, setDateFrom] = useState('')
     const [dateTo, setDateTo] = useState('')
     const [page, setPage] = useState(0)
     const PAGE_SIZE = 50
 
     useEffect(() => {
-        if (!location) return
         void load()
-    }, [location])
+    }, [adminMode, location])
 
     async function load() {
-        if (!location) return
         setLoading(true)
-        const { data } = await supabase
+
+        // Load location lookup for admin
+        if (adminMode) {
+            const { data: locs } = await supabase.from('location').select('id, name, code')
+            if (locs) {
+                const map: Record<number, string> = {}
+                locs.forEach((l: { id: number; code: string }) => { map[l.id] = l.code })
+                setLocationMap(map)
+            }
+        }
+
+        let query = supabase
             .from('stock_transaction')
-            .select('id, barcode, qty, action, created_by, created_at')
-            .eq('location_id', location.id)
+            .select('id, barcode, qty, action, created_by, created_at, location_id')
             .order('id', { ascending: false })
-            .limit(2000)
-        setTransactions((data || []) as StockTransaction[])
+            .limit(5000)
+
+        if (!adminMode && location) {
+            query = query.eq('location_id', location.id)
+        }
+
+        const { data } = await query
+        setTransactions((data || []) as TxRow[])
         setLoading(false)
     }
 
-    const filtered = transactions.filter((tx) => {
+    // Enrich rows with location name for admin
+    const enriched: TxRow[] = transactions.map((tx) => ({
+        ...tx,
+        location_name: tx.location_id != null ? (locationMap[tx.location_id] ?? String(tx.location_id)) : '-',
+    }))
+
+    const locationOptions = adminMode
+        ? ['ALL', ...Array.from(new Set(enriched.map((tx) => tx.location_name ?? '-')))]
+        : []
+
+    const filtered = enriched.filter((tx) => {
         if (actionFilter !== 'ALL' && tx.action !== actionFilter) return false
+        if (adminMode && locationFilter !== 'ALL' && tx.location_name !== locationFilter) return false
         if (search && !tx.barcode.includes(search) && !(tx.created_by || '').toLowerCase().includes(search.toLowerCase())) return false
         if (dateFrom && tx.created_at && new Date(tx.created_at) < new Date(dateFrom)) return false
         if (dateTo && tx.created_at && new Date(tx.created_at) > new Date(dateTo + 'T23:59:59')) return false
@@ -73,18 +136,20 @@ function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
     const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
-    function handleExport() {
-        downloadCSV(toCSV(filtered), `transactions_${location?.code}_${new Date().toISOString().slice(0, 10)}.csv`)
-    }
-
     return (
-        <PageLayout title="Transaction History" subtitle={`All stock movements at ${location?.name ?? '—'}`} onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout
+            title="Transaction History"
+            subtitle={adminMode ? 'All locations — admin view' : `All stock movements at ${location?.name ?? '—'}`}
+            onLogout={onLogout}
+            onSwitchLocation={onSwitchLocation}
+        >
             <Card className="p-5">
                 {/* Filters */}
                 <div className="mb-5 flex flex-wrap gap-3">
                     <div className="flex-1 min-w-[200px]">
                         <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(0) }} placeholder="Search barcode or user" />
                     </div>
+                    {/* IN/OUT toggle */}
                     <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
                         {(['ALL', 'IN', 'OUT'] as const).map((a) => (
                             <button key={a} type="button" onClick={() => { setActionFilter(a); setPage(0) }}
@@ -93,6 +158,16 @@ function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
                             </button>
                         ))}
                     </div>
+                    {/* Location filter (admin only) */}
+                    {adminMode && (
+                        <select value={locationFilter} onChange={(e) => { setLocationFilter(e.target.value); setPage(0) }}
+                            className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500">
+                            {locationOptions.map((loc) => (
+                                <option key={loc} value={loc}>{loc === 'ALL' ? 'All Locations' : loc}</option>
+                            ))}
+                        </select>
+                    )}
+                    {/* Date range */}
                     <div className="flex items-center gap-2">
                         <Filter className="size-4 text-slate-400" />
                         <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0) }}
@@ -101,14 +176,15 @@ function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
                         <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0) }}
                             className="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500" />
                     </div>
-                    <button type="button" onClick={handleExport}
+                    {/* Export */}
+                    <button type="button" onClick={() => exportXlsx(filtered, adminMode, location?.code)}
                         className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
-                        <Download className="size-4" />Export CSV
+                        <Download className="size-4" />Export Excel
                     </button>
                 </div>
 
                 <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
-                    <span>{filtered.length} records</span>
+                    <span>{filtered.length.toLocaleString()} records {adminMode && <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">Admin — All Locations</span>}</span>
                     {totalPages > 1 && (
                         <div className="flex items-center gap-2">
                             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
@@ -129,6 +205,7 @@ function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                             <tr>
                                 <th className="px-4 py-3 text-left font-semibold">#</th>
+                                {adminMode && <th className="px-4 py-3 text-left font-semibold">Location</th>}
                                 <th className="px-4 py-3 text-left font-semibold">Barcode</th>
                                 <th className="px-4 py-3 text-left font-semibold">Action</th>
                                 <th className="px-4 py-3 text-left font-semibold">Qty</th>
@@ -140,6 +217,11 @@ function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
                             {paged.map((tx) => (
                                 <tr key={tx.id} className="hover:bg-slate-50">
                                     <td className="px-4 py-3 text-xs text-slate-400">{tx.id}</td>
+                                    {adminMode && (
+                                        <td className="px-4 py-3">
+                                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tx.location_name}</span>
+                                        </td>
+                                    )}
                                     <td className="px-4 py-3 font-medium text-slate-900">{tx.barcode}</td>
                                     <td className="px-4 py-3">
                                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tx.action === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
