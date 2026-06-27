@@ -78,9 +78,20 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
                 imageUrl = data.publicUrl
             }
         }
+        const newStock = Number(editForm.current_stock)
+        const diff = newStock - Number(editingDrug.current_stock)
+        if (diff !== 0) {
+            await supabase.from('stock_transaction').insert([{
+                barcode: editingDrug.barcode,
+                qty: Math.abs(diff),
+                action: diff > 0 ? 'IN' : 'OUT',
+                created_by: getCreatedBy() + ' [edit]',
+                location_id: location?.id,
+            }])
+        }
         const { error } = await supabase.from('drug_master').update({
             drug_name: editForm.drug_name.trim(),
-            current_stock: Number(editForm.current_stock),
+            current_stock: newStock,
             min_stock: Number(editForm.min_stock),
             unit_per_scan: Number(editForm.unit_per_scan),
             image_url: imageUrl,
