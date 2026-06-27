@@ -1,4 +1,4 @@
-import { AlertTriangle, Boxes, Download, ImagePlus, Package, Pencil, Pill, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Boxes, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/Card'
 import DrugIcon from '../components/DrugIcon'
