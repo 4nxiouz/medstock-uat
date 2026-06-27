@@ -99,15 +99,13 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
 
         // Record deletion as transaction before removing
         if (drug.current_stock > 0) {
-            await supabase.from('transaction').insert({
+            await supabase.from('stock_transaction').insert([{
                 barcode: drug.barcode,
-                drug_name: drug.drug_name,
-                quantity: drug.current_stock,
-                transaction_type: 'OUT',
-                remark: '[deleted] item removed from inventory',
-                created_by: getCreatedBy(),
+                qty: drug.current_stock,
+                action: 'OUT',
+                created_by: getCreatedBy() + ' [deleted]',
                 location_id: location?.id,
-            })
+            }])
         }
 
         const { error } = await supabase.from('drug_master').delete().eq('id', id)
