@@ -42,7 +42,7 @@ function exportXlsx(rows: TxRow[], isAdminMode: boolean, locationCode?: string) 
 
 function TransactionHistory({ onLogout }: PageProps) {
     const { location } = useLocation()
-    const adminMode = getCurrentUser()?.role === 'admin'
+    const adminMode = false // single-warehouse: no location UI needed
 
     const [transactions, setTransactions] = useState<TxRow[]>([])
     const [locationMap, setLocationMap] = useState<Record<number, string>>({})
