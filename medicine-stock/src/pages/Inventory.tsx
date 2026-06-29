@@ -183,23 +183,26 @@ function Inventory({ onLogout }: PageProps) {
                 <StatCard title="Low Stock" value={lowStock.length} tone="red" icon={AlertTriangle} />
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-                <div className="flex flex-1 min-w-[200px] gap-2">
-                    <SearchInput value={search} onChange={setSearch} placeholder="พิมพ์ชื่อยา หรือ scan barcode" />
-                    <button type="button" onClick={() => setCameraOpen(true)} title="สแกนด้วยกล้อง"
-                        className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border border-cyan-200 bg-cyan-50 px-3 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
-                        <Camera className="size-4" /><span className="hidden sm:inline">กล้อง</span>
+            <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                {/* Toolbar */}
+                <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+                    <div className="flex flex-1 min-w-[200px] gap-2">
+                        <SearchInput value={search} onChange={setSearch} placeholder="พิมพ์ชื่อยา หรือ scan barcode" />
+                        <button type="button" onClick={() => setCameraOpen(true)} title="สแกนด้วยกล้อง"
+                            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border border-cyan-200 bg-cyan-50 px-3 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
+                            <Camera className="size-4" /><span className="hidden sm:inline">กล้อง</span>
+                        </button>
+                    </div>
+                    <CameraScanner open={cameraOpen} onClose={() => setCameraOpen(false)} onScan={(code) => { setSearch(code); setCameraOpen(false) }} />
+                    <button type="button" onClick={() => downloadCSV(filteredDrugs, location?.code ?? 'export')}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+                        <Download className="size-4" />CSV
                     </button>
+                    {message && <div className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">{message}</div>}
                 </div>
-                <CameraScanner open={cameraOpen} onClose={() => setCameraOpen(false)} onScan={(code) => { setSearch(code); setCameraOpen(false) }} />
-                <button type="button" onClick={() => downloadCSV(filteredDrugs, location?.code ?? 'export')}
-                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
-                    <Download className="size-4" />CSV
-                </button>
-                {message && <div className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">{message}</div>}
-            </div>
 
-            <div className="mt-4">
+                {/* Grid */}
+                <div className="p-5">
                 {loading ? (
                     <div className="py-16 text-center text-sm text-slate-500">Loading...</div>
                 ) : filteredDrugs.length === 0 ? (
@@ -255,7 +258,8 @@ function Inventory({ onLogout }: PageProps) {
                         })}
                     </div>
                 )}
-            </div>
+                </div>{/* /Grid */}
+            </div>{/* /Container */}
 
             {/* Edit Modal */}
             {editingDrug && (
