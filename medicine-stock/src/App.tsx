@@ -37,7 +37,7 @@ function AdminOnly({ element }: { element: ReactElement }) {
     return isAdmin() ? element : <Navigate to="/" replace />
 }
 
-type AppStatus = 'login' | 'pick-location' | 'ready'
+type AppStatus = 'login' | 'ready'
 
 function AppRoutes({ onLogout, onSwitchLocation }: { onLogout: () => void; onSwitchLocation: () => void }) {
     return (
@@ -77,28 +77,19 @@ function AppInner() {
             }
         }
         if (!sessionLogin && !localLogin) return 'login'
-        const locRaw = sessionStorage.getItem('medstock_location')
-        return locRaw ? 'ready' : 'pick-location'
+        return 'ready'
     })
 
     const [locationError, setLocationError] = useState('')
 
-    // On page refresh: status='pick-location' but locations not loaded yet → load them now
+    // On mount when already logged in: auto-pick the first available location
     useEffect(() => {
-        if (status !== 'pick-location') return
+        if (status !== 'ready') return
         const user = getCurrentUser()
-        if (!user?.id) { setStatus('login'); return }
+        if (!user?.id) return
         void loadLocations(user.id, user.role).then((locs) => {
             setAvailableLocations(locs)
-            if (locs.length === 0) {
-                if (user.role === 'admin') { setStatus('ready'); navigate('/locations'); return }
-                setLocationError('No location assigned to your account. Contact an administrator.')
-                localStorage.removeItem('isLogin'); sessionStorage.removeItem('isLogin')
-                clearCurrentUser(); setStatus('login')
-            } else if (locs.length === 1) {
-                setLocation(locs[0]); setStatus('ready'); navigate('/')
-            }
-            // else: >1 location → stay on pick-location with cards
+            if (locs.length > 0) setLocation(locs[0])
         })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -138,13 +129,7 @@ function AppInner() {
         const locs = await loadLocations(user.id, user.role)
         setAvailableLocations(locs)
 
-        if (locs.length === 0) {
-            if (user.role === 'admin') {
-                // Admin with no locations yet → go straight to app so they can add locations
-                setStatus('ready')
-                navigate('/locations')
-                return
-            }
+        if (locs.length === 0 && user.role !== 'admin') {
             setLocationError('No location assigned to your account. Contact an administrator.')
             localStorage.removeItem('isLogin')
             localStorage.removeItem('isLoginExpiry')
@@ -153,40 +138,13 @@ function AppInner() {
             return
         }
 
-        if (locs.length === 1) {
-            setLocation(locs[0])
-            setStatus('ready')
-            navigate('/')
-        } else {
-            setStatus('pick-location')
-        }
-    }
-
-    function handleSelectLocation(loc: Location) {
-        setLocation(loc)
+        if (locs.length > 0) setLocation(locs[0])
         setStatus('ready')
         navigate('/')
     }
 
-    async function handleSwitchLocation() {
-        const user = getCurrentUser()
-        if (!user?.id) return
-
-        clearLocation()
-
-        let locs = availableLocations
-        if (locs.length === 0) {
-            locs = await loadLocations(user.id, user.role)
-            setAvailableLocations(locs)
-        }
-
-        if (locs.length === 0 && user.role === 'admin') {
-            setStatus('ready')
-            navigate('/locations')
-            return
-        }
-
-        setStatus('pick-location')
+    function handleSwitchLocation() {
+        // No-op: location switching removed
     }
 
     function handleLogout() {
@@ -201,19 +159,6 @@ function AppInner() {
 
     if (status === 'login') {
         return <Login onLoginSuccess={handleLoginSuccess} errorMessage={locationError} />
-    }
-
-    if (status === 'pick-location') {
-        const user = getCurrentUser()
-        return (
-            <LocationSelect
-                locations={availableLocations}
-                onSelect={handleSelectLocation}
-                onOverview={() => { setStatus('ready'); navigate('/overview') }}
-                username={user?.fullname || user?.username || 'User'}
-                isAdmin={user?.role === 'admin'}
-            />
-        )
     }
 
     return <AppRoutes onLogout={handleLogout} onSwitchLocation={handleSwitchLocation} />

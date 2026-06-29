@@ -7,12 +7,10 @@ import {
     KeyRound,
     LayoutDashboard,
     LogOut,
-    MapPin,
     PackageMinus,
     PackagePlus,
     Pill,
     Printer,
-    RefreshCw,
     Users,
     X,
 } from 'lucide-react'
@@ -20,7 +18,6 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { getCurrentUser } from '../lib/auth'
 import { hashPassword, isHashed } from '../lib/crypto'
-import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import FormInput from './FormInput'
 
@@ -42,11 +39,9 @@ const baseItems = [
     { label: 'User Management', path: '/user', icon: Users, adminOnly: true },
 ]
 
-function Sidebar({ onLogout, onSwitchLocation }: SidebarProps) {
+function Sidebar({ onLogout }: SidebarProps) {
     const isAdmin = getCurrentUser()?.role === 'admin'
-    const { location, availableLocations } = useLocation()
     const menuItems = baseItems.filter((item) => !item.adminOnly || isAdmin)
-    const canSwitch = availableLocations.length > 1 || isAdmin
     const [changePwOpen, setChangePwOpen] = useState(false)
     const [oldPw, setOldPw] = useState('')
     const [newPw, setNewPw] = useState('')
@@ -84,23 +79,6 @@ function Sidebar({ onLogout, onSwitchLocation }: SidebarProps) {
                         </div>
                     </div>
 
-                    <div className="mt-4 rounded-lg bg-white/10 px-3 py-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <MapPin className="size-3.5 shrink-0 text-blue-300" />
-                                <div className="min-w-0">
-                                    <div className="text-xs font-bold text-white truncate">{location?.code ?? '—'}</div>
-                                    <div className="text-[10px] text-blue-300 truncate">{location?.name ?? 'No location'}</div>
-                                </div>
-                            </div>
-                            {canSwitch && (
-                                <button type="button" onClick={onSwitchLocation} title="Switch location"
-                                    className="shrink-0 rounded-md p-1.5 text-blue-300 hover:bg-white/10 hover:text-white transition">
-                                    <RefreshCw className="size-3.5" />
-                                </button>
-                            )}
-                        </div>
-                    </div>
                 </div>
 
                 <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
