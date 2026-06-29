@@ -1,4 +1,4 @@
-﻿import { Download, Filter } from 'lucide-react'
+import { Download, Filter } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
 import Card from '../components/Card'
@@ -17,9 +17,10 @@ function formatDate(raw?: string | null) {
     return new Date(raw).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function exportXlsx(rows: StockTransaction[], locationCode?: string) {
+function exportXlsx(rows: StockTransaction[], nameMap: Record<string, string>, locationCode?: string) {
     const data = rows.map((r) => ({
         'ID': r.id,
+        'Drug Name': nameMap[r.barcode] ?? '(deleted)',
         'Barcode': r.barcode,
         'Action': r.action,
         'Qty': r.qty,
@@ -36,6 +37,7 @@ function TransactionHistory({ onLogout }: PageProps) {
     const { location } = useLocation()
 
     const [transactions, setTransactions] = useState<StockTransaction[]>([])
+    const [drugNameMap, setDrugNameMap] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [actionFilter, setActionFilter] = useState<'ALL' | 'IN' | 'OUT'>('ALL')
@@ -44,30 +46,48 @@ function TransactionHistory({ onLogout }: PageProps) {
     const [page, setPage] = useState(0)
     const PAGE_SIZE = 50
 
-    useEffect(() => {
-        void load()
-    }, [location])
+    useEffect(() => { void load() }, [location])
 
     async function load() {
         setLoading(true)
-        let query = supabase
+
+        const txPromise = supabase
             .from('stock_transaction')
             .select('id, barcode, qty, action, created_by, created_at, location_id')
             .order('id', { ascending: false })
             .limit(5000)
+            .then((r) => location ? supabase
+                .from('stock_transaction')
+                .select('id, barcode, qty, action, created_by, created_at, location_id')
+                .eq('location_id', location.id)
+                .order('id', { ascending: false })
+                .limit(5000) : r)
 
-        if (location) {
-            query = query.eq('location_id', location.id)
+        const drugPromise = location
+            ? supabase.from('drug_master').select('barcode, drug_name').eq('location_id', location.id)
+            : Promise.resolve({ data: [] as { barcode: string; drug_name: string }[] })
+
+        const [txRes, drugRes] = await Promise.all([txPromise, drugPromise])
+        const { data: txData } = await txRes
+        setTransactions((txData || []) as StockTransaction[])
+
+        const map: Record<string, string> = {}
+        for (const d of (drugRes.data || []) as { barcode: string; drug_name: string }[]) {
+            map[d.barcode] = d.drug_name
         }
-
-        const { data } = await query
-        setTransactions((data || []) as StockTransaction[])
+        setDrugNameMap(map)
         setLoading(false)
     }
 
     const filtered = transactions.filter((tx) => {
         if (actionFilter !== 'ALL' && tx.action !== actionFilter) return false
-        if (search && !tx.barcode.includes(search) && !(tx.created_by || '').toLowerCase().includes(search.toLowerCase())) return false
+        if (search) {
+            const q = search.toLowerCase()
+            const nameMatch = (drugNameMap[tx.barcode] ?? '').toLowerCase().includes(q)
+            const barcodeMatch = tx.barcode.toLowerCase().includes(q)
+            const userMatch = (tx.created_by ?? '').toLowerCase().includes(q)
+            if (!nameMatch && !barcodeMatch && !userMatch) return false
+        }
         if (dateFrom && tx.created_at && new Date(tx.created_at) < new Date(dateFrom)) return false
         if (dateTo && tx.created_at && new Date(tx.created_at) > new Date(dateTo + 'T23:59:59')) return false
         return true
@@ -77,15 +97,11 @@ function TransactionHistory({ onLogout }: PageProps) {
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
     return (
-        <PageLayout
-            title="Transaction History"
-            subtitle="All stock movements"
-            onLogout={onLogout}
-        >
+        <PageLayout title="Transaction History" subtitle="All stock movements" onLogout={onLogout}>
             <Card className="p-5">
                 <div className="mb-5 flex flex-wrap gap-3">
                     <div className="flex-1 min-w-[200px]">
-                        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(0) }} placeholder="Search barcode or user" />
+                        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(0) }} placeholder="Search drug name, barcode or user" />
                     </div>
                     <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
                         {(['ALL', 'IN', 'OUT'] as const).map((a) => (
@@ -103,7 +119,7 @@ function TransactionHistory({ onLogout }: PageProps) {
                         <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0) }}
                             className="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500" />
                     </div>
-                    <button type="button" onClick={() => exportXlsx(filtered, location?.code)}
+                    <button type="button" onClick={() => exportXlsx(filtered, drugNameMap, location?.code)}
                         className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
                         <Download className="size-4" />Export Excel
                     </button>
@@ -131,6 +147,7 @@ function TransactionHistory({ onLogout }: PageProps) {
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                             <tr>
                                 <th className="px-4 py-3 text-left font-semibold">#</th>
+                                <th className="px-4 py-3 text-left font-semibold">Drug Name</th>
                                 <th className="px-4 py-3 text-left font-semibold">Barcode</th>
                                 <th className="px-4 py-3 text-left font-semibold">Action</th>
                                 <th className="px-4 py-3 text-left font-semibold">Qty</th>
@@ -139,22 +156,31 @@ function TransactionHistory({ onLogout }: PageProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {paged.map((tx) => (
-                                <tr key={tx.id} className="hover:bg-slate-50">
-                                    <td className="px-4 py-3 text-xs text-slate-400">{tx.id}</td>
-                                    <td className="px-4 py-3 font-medium text-slate-900">{tx.barcode}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tx.action === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                            {tx.action === 'IN' ? '▲ IN' : '▼ OUT'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 tabular-nums text-slate-700">{tx.qty}</td>
-                                    <td className="px-4 py-3">
-                                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{tx.created_by || 'system'}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-xs text-slate-500">{formatDate(tx.created_at)}</td>
-                                </tr>
-                            ))}
+                            {paged.map((tx) => {
+                                const drugName = drugNameMap[tx.barcode]
+                                return (
+                                    <tr key={tx.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3 text-xs text-slate-400">{tx.id}</td>
+                                        <td className="px-4 py-3">
+                                            {drugName
+                                                ? <span className="font-medium text-slate-900">{drugName}</span>
+                                                : <span className="text-xs text-slate-400 italic">deleted</span>
+                                            }
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-slate-500">{tx.barcode}</td>
+                                        <td className="px-4 py-3">
+                                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tx.action === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                {tx.action === 'IN' ? '▲ IN' : '▼ OUT'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 tabular-nums text-slate-700">{tx.qty}</td>
+                                        <td className="px-4 py-3">
+                                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{tx.created_by || 'system'}</span>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-slate-500">{formatDate(tx.created_at)}</td>
+                                    </tr>
+                                )
+                            })}
                         </tbody>
                     </Table>
                 )}
