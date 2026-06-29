@@ -1,5 +1,6 @@
 import { AlertTriangle, Boxes, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
 import DrugIcon from '../components/DrugIcon'
 import EmptyState from '../components/EmptyState'
@@ -37,6 +38,8 @@ function Inventory({ onLogout }: PageProps) {
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
+    const [scanBarcode, setScanBarcode] = useState('')
+    const scanRef = useRef<HTMLInputElement>(null)
 
     async function loadDrugs() {
         if (!location) return
@@ -185,6 +188,15 @@ function Inventory({ onLogout }: PageProps) {
             <Card className="mt-6 p-5">
                 <div className="mb-5 flex flex-wrap items-center gap-3">
                     <div className="flex-1 min-w-[200px]"><SearchInput value={search} onChange={setSearch} placeholder="Search item or barcode" /></div>
+                    <div className="w-60">
+                        <BarcodeInput
+                            ref={scanRef}
+                            placeholder="Scan barcode"
+                            value={scanBarcode}
+                            onChange={setScanBarcode}
+                            onScan={(code) => { setSearch(code); setScanBarcode('') }}
+                        />
+                    </div>
                     <button type="button" onClick={() => downloadCSV(filteredDrugs, location?.code ?? 'export')}
                         className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
                         <Download className="size-4" />CSV

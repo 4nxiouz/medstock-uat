@@ -1,5 +1,4 @@
 import {
-    Barcode,
     ClipboardList,
     History,
     Home,
@@ -28,7 +27,6 @@ const baseItems = [
     { label: 'Inventory', path: '/inventory', icon: Pill, adminOnly: false },
     { label: 'Dispense', path: '/issue', icon: PackageMinus, adminOnly: false },
     { label: 'Receive Medicine', path: '/receive', icon: PackagePlus, adminOnly: false },
-    { label: 'Stock Lookup', path: '/scan', icon: Barcode, adminOnly: false },
     { label: 'Print Barcode', path: '/print', icon: Printer, adminOnly: false },
     { label: 'Transaction History', path: '/history', icon: History, adminOnly: false },
     { label: 'User Management', path: '/user', icon: Users, adminOnly: true },

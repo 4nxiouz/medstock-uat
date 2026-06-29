@@ -12,7 +12,6 @@ import IssueDrug from './pages/IssueDrug'
 import Login from './pages/Login'
 import PrintBarcode from './pages/PrintBarcode'
 import ReceiveDrug from './pages/ReceiveDrug'
-import ScanBarcode from './pages/ScanBarcode'
 import UserManage from './pages/UserManage'
 import type { Location } from './types'
 
@@ -43,8 +42,7 @@ function AppRoutes({ onLogout }: { onLogout: () => void }) {
             <Route path="/inventory" element={<Guarded path="/inventory" element={<Inventory onLogout={onLogout} />} />} />
             <Route path="/receive" element={<Guarded path="/receive" element={<ReceiveDrug onLogout={onLogout} />} />} />
             <Route path="/issue" element={<Guarded path="/issue" element={<IssueDrug onLogout={onLogout} />} />} />
-            <Route path="/scan" element={<Guarded path="/scan" element={<ScanBarcode onLogout={onLogout} />} />} />
-            <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
+<Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
             <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} />} />} />
             <Route path="/history" element={<TransactionHistory onLogout={onLogout} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
