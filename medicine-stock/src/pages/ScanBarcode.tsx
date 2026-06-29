@@ -1,4 +1,4 @@
-import { Barcode, ImageIcon, Search } from 'lucide-react'
+﻿import { Barcode, ImageIcon, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
@@ -41,7 +41,7 @@ function ScanBarcode({ onLogout }: PageProps) {
             <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                 <Card className="p-5">
                     <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                        <div className="flex size-11 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+                        <div className="flex size-11 items-center justify-center rounded-md bg-teal-50 text-teal-700">
                             <Barcode className="size-5" />
                         </div>
                         <div>
@@ -51,7 +51,7 @@ function ScanBarcode({ onLogout }: PageProps) {
                     </div>
                     <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
                         <BarcodeInput ref={inputRef} placeholder="Scan barcode" value={barcode} onChange={setBarcode} onScan={(code) => void handleBarcodeScan(code)} />
-                        <button type="button" onClick={() => void handleBarcodeScan(barcode)} className="inline-flex h-11 items-center justify-center gap-2 self-end rounded-md bg-blue-700 px-5 text-sm font-semibold text-white hover:bg-blue-800">
+                        <button type="button" onClick={() => void handleBarcodeScan(barcode)} className="inline-flex h-11 items-center justify-center gap-2 self-end rounded-md bg-teal-700 px-5 text-sm font-semibold text-white hover:bg-teal-800">
                             <Search className="size-4" />Search
                         </button>
                     </div>

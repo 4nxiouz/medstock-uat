@@ -1,4 +1,4 @@
-import { ImagePlus, PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
+﻿import { ImagePlus, PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
@@ -150,7 +150,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
             <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
                 {(['restock', 'new'] as Tab[]).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}
-                        className={`rounded-md px-5 py-2 text-sm font-semibold transition ${tab === t ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        className={`rounded-md px-5 py-2 text-sm font-semibold transition ${tab === t ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
                         {t === 'restock' ? 'Restock' : 'New Medicine'}
                     </button>
                 ))}
@@ -235,10 +235,10 @@ function ReceiveDrug({ onLogout }: PageProps) {
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">Barcode Code</label>
                             <div className="flex gap-2">
-                                <input className="h-11 flex-1 rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                <input className="h-11 flex-1 rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                                     placeholder="Enter or auto-generate" value={newBarcode} onChange={(e) => setNewBarcode(e.target.value)} />
                                 <button type="button" onClick={() => setNewBarcode(generateBarcode())}
-                                    className="inline-flex h-11 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+                                    className="inline-flex h-11 items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-4 text-sm font-semibold text-teal-700 hover:bg-teal-100">
                                     <Wand2 className="size-4" />Generate
                                 </button>
                             </div>
@@ -250,7 +250,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
                             <FormInput label="Unit / Scan" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />
                             <FormInput label="Initial Scan Count" type="number" value={newInitQty} onChange={(e) => setNewInitQty(e.target.value)} />
                         </div>
-                        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-600 hover:border-blue-400 hover:bg-blue-50">
+                        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-600 hover:border-blue-400 hover:bg-teal-50">
                             <ImagePlus className="size-5 text-slate-400" />
                             <span>{newImage ? newImage.name : 'Attach medicine image (optional)'}</span>
                             <input type="file" className="hidden" accept="image/*" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
@@ -261,10 +261,10 @@ function ReceiveDrug({ onLogout }: PageProps) {
                     <div className="space-y-4">
                         <Card className="p-5">
                             <div className="text-sm font-medium text-slate-500">Initial Stock</div>
-                            <div className="mt-2 text-4xl font-bold text-blue-600">{totalNew}</div>
+                            <div className="mt-2 text-4xl font-bold text-teal-700">{totalNew}</div>
                             <div className="mt-1 text-xs text-slate-400">{newInitQty} scans × {newUnitPerScan} unit/scan</div>
                             <button type="button" onClick={() => void handleRegister()}
-                                className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800">
+                                className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-teal-700 text-sm font-semibold text-white hover:bg-teal-800">
                                 <PackagePlus className="size-4" />Register Medicine
                             </button>
                         </Card>
@@ -277,7 +277,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
                                     <Barcode value={registeredBarcode} format="CODE128" height={56} displayValue />
                                 </div>
                                 <button type="button" onClick={() => window.print()}
-                                    className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-blue-200 text-sm font-semibold text-blue-700 hover:bg-blue-50">
+                                    className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-teal-200 text-sm font-semibold text-teal-700 hover:bg-teal-50">
                                     <Printer className="size-4" />Print Label
                                 </button>
                             </Card>

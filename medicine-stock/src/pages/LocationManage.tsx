@@ -1,4 +1,4 @@
-import { Building2, MapPin, Pencil, Plus, Trash2, UserCheck, X } from 'lucide-react'
+﻿import { Building2, MapPin, Pencil, Plus, Trash2, UserCheck, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
@@ -109,14 +109,14 @@ function LocationManage({ onLogout }: PageProps) {
                 <div className="space-y-5">
                     <Card className="p-5">
                         <div className="mb-4 flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-md bg-blue-50 text-blue-700"><Plus className="size-5" /></div>
+                            <div className="flex size-10 items-center justify-center rounded-md bg-teal-50 text-teal-700"><Plus className="size-5" /></div>
                             <h2 className="font-semibold text-slate-900">Add Location</h2>
                         </div>
                         <div className="space-y-3">
                             <FormInput label="Code (e.g. OPC)" placeholder="OPC" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
                             <FormInput label="Name" placeholder="Outpatient Clinic" value={newName} onChange={(e) => setNewName(e.target.value)} />
                             <button type="button" onClick={() => void handleAddLocation()}
-                                className="h-11 w-full rounded-lg bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800">
+                                className="h-11 w-full rounded-lg bg-teal-700 text-sm font-semibold text-white hover:bg-teal-800">
                                 Add Location
                             </button>
                         </div>
@@ -128,7 +128,7 @@ function LocationManage({ onLogout }: PageProps) {
                             <div className="space-y-2">
                                 {locations.map((loc) => (
                                     <div key={loc.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
-                                        <MapPin className="size-4 shrink-0 text-blue-500" />
+                                        <MapPin className="size-4 shrink-0 text-teal-600" />
                                         <div className="flex-1 min-w-0">
                                             <div className="font-semibold text-slate-900">{loc.code}</div>
                                             <div className="truncate text-xs text-slate-500">{loc.name}</div>
@@ -151,7 +151,7 @@ function LocationManage({ onLogout }: PageProps) {
                 {/* User location assignments */}
                 <Card className="p-5">
                     <div className="mb-4 flex items-center gap-3">
-                        <Building2 className="size-5 text-blue-600" />
+                        <Building2 className="size-5 text-teal-700" />
                         <h2 className="font-semibold text-slate-900">User Location Assignments</h2>
                     </div>
                     {users.length === 0 ? <EmptyState title="No users found" /> : (
@@ -180,7 +180,7 @@ function LocationManage({ onLogout }: PageProps) {
                                                 ) : (
                                                     <div className="flex flex-wrap gap-1">
                                                         {userLocs.map((l) => (
-                                                            <span key={l.id} className="rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{l.code}</span>
+                                                            <span key={l.id} className="rounded bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">{l.code}</span>
                                                         ))}
                                                     </div>
                                                 )}
@@ -214,7 +214,7 @@ function LocationManage({ onLogout }: PageProps) {
                         </div>
                         <div className="mt-4 flex gap-2">
                             <button type="button" onClick={() => setEditingLoc(null)} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
-                            <button type="button" onClick={() => void handleSaveEdit()} className="flex-1 rounded-lg bg-blue-700 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Save</button>
+                            <button type="button" onClick={() => void handleSaveEdit()} className="flex-1 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Save</button>
                         </div>
                     </div>
                 </div>
@@ -231,11 +231,11 @@ function LocationManage({ onLogout }: PageProps) {
                             </div>
                             <button type="button" onClick={() => setAssignUser(null)} className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500"><X className="size-4" /></button>
                         </div>
-                        <div className="space-y-2.5 rounded-xl border-2 border-blue-100 bg-blue-50 p-4">
+                        <div className="space-y-2.5 rounded-xl border-2 border-blue-100 bg-teal-50 p-4">
                             {locations.map((loc) => (
                                 <label key={loc.id} className="flex cursor-pointer items-center gap-3">
                                     <input type="checkbox" checked={assignLocIds.includes(loc.id)} onChange={() => toggleAssign(loc.id)}
-                                        className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                                        className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500" />
                                     <span className="text-sm font-medium text-slate-700">{loc.code}</span>
                                     <span className="text-sm text-slate-500">{loc.name}</span>
                                 </label>
@@ -244,7 +244,7 @@ function LocationManage({ onLogout }: PageProps) {
                         </div>
                         <div className="mt-4 flex gap-2">
                             <button type="button" onClick={() => setAssignUser(null)} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
-                            <button type="button" onClick={() => void handleSaveAssign()} className="flex-1 rounded-lg bg-blue-700 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Save</button>
+                            <button type="button" onClick={() => void handleSaveAssign()} className="flex-1 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Save</button>
                         </div>
                     </div>
                 </div>

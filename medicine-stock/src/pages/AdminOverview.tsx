@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Boxes, Package } from 'lucide-react'
+﻿import { AlertTriangle, ArrowRight, Boxes, Package } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/Card'
@@ -147,7 +147,7 @@ function AdminOverview({ onLogout }: PageProps) {
                                 <button
                                     type="button"
                                     onClick={() => handleGoTo(location)}
-                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
                                 >
                                     Go to {location.code} <ArrowRight className="size-4" />
                                 </button>

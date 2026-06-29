@@ -1,4 +1,4 @@
-import { AlertTriangle, Boxes, Camera, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
+﻿import { AlertTriangle, Boxes, Camera, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import CameraScanner from '../components/CameraScanner'
 import DrugIcon from '../components/DrugIcon'
@@ -245,7 +245,7 @@ function Inventory({ onLogout }: PageProps) {
                                                 <SlidersHorizontal className="size-3" />Adjust
                                             </button>
                                             <button type="button" onClick={() => handlePrint(drug)}
-                                                className="inline-flex items-center justify-center gap-1 rounded-md border border-blue-200 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                                                className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
                                                 <Printer className="size-3" />Print
                                             </button>
                                         </div>
@@ -279,7 +279,7 @@ function Inventory({ onLogout }: PageProps) {
                                 <FormInput label="Min" type="number" value={editForm.min_stock} onChange={(e) => setEditForm((c) => ({ ...c, min_stock: e.target.value }))} />
                                 <FormInput label="Unit" type="number" value={editForm.unit_per_scan} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan: e.target.value }))} />
                             </div>
-                            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-600 hover:border-blue-400 hover:bg-blue-50">
+                            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-600 hover:border-blue-400 hover:bg-teal-50">
                                 <ImagePlus className="size-4 text-slate-400 shrink-0" />
                                 <span className="truncate">{editImage ? editImage.name : (editingDrug.image_url ? 'Replace image…' : 'Add image (optional)')}</span>
                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => setEditImage(e.target.files?.[0] || null)} />
@@ -287,7 +287,7 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                         <div className="mt-5 flex gap-2">
                             <button type="button" onClick={() => setEditingDrug(null)} className="flex-1 rounded-md border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
-                            <button type="button" onClick={() => void handleSaveEdit()} className="flex-1 rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Save</button>
+                            <button type="button" onClick={() => void handleSaveEdit()} className="flex-1 rounded-md bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Save</button>
                         </div>
                     </div>
                 </div>

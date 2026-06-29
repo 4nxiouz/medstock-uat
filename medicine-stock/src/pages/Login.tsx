@@ -49,31 +49,31 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
     return (
         <main className="flex min-h-screen bg-slate-50">
             {/* Left panel */}
-            <div className="relative hidden w-[480px] shrink-0 overflow-hidden bg-blue-950 lg:flex lg:flex-col">
+            <div className="relative hidden w-[480px] shrink-0 overflow-hidden lg:flex lg:flex-col" style={{background: 'linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%)'}}>
                 {/* Decorative circles */}
-                <div className="pointer-events-none absolute -left-20 -top-20 size-80 rounded-full bg-blue-800/40" />
-                <div className="pointer-events-none absolute -bottom-16 -right-16 size-64 rounded-full bg-blue-900/60" />
-                <div className="pointer-events-none absolute right-8 top-32 size-40 rounded-full bg-blue-700/20" />
+                <div className="pointer-events-none absolute -left-20 -top-20 size-80 rounded-full bg-teal-400/20" />
+                <div className="pointer-events-none absolute -bottom-16 -right-16 size-64 rounded-full bg-slate-900/40" />
+                <div className="pointer-events-none absolute right-8 top-32 size-40 rounded-full bg-teal-300/10" />
 
                 <div className="relative flex flex-1 flex-col justify-between p-12">
                     {/* Logo block */}
                     <div>
                         <div className="flex items-center gap-3">
-                            <div className="flex size-11 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-900/50">
+                            <div className="flex size-11 items-center justify-center rounded-xl bg-teal-500/30 shadow-lg shadow-teal-900/30">
                                 <PillBottle className="size-5 text-white" />
                             </div>
                             <div>
                                 <div className="text-lg font-extrabold tracking-tight text-white">MedStock HIS</div>
-                                <div className="text-xs font-medium text-blue-400">IS-C · Information Systems</div>
+                                <div className="text-xs font-medium text-teal-200/70">IS-C · Information Systems</div>
                             </div>
                         </div>
 
                         <div className="mt-14">
                             <h1 className="text-4xl font-extrabold leading-tight text-white">
                                 Pharmacy<br />Inventory<br />
-                                <span className="text-blue-400">Made Simple.</span>
+                                <span className="text-teal-300">Made Simple.</span>
                             </h1>
-                            <p className="mt-5 text-sm leading-7 text-blue-300">
+                            <p className="mt-5 text-sm leading-7 text-white/60">
                                 Real-time stock control, barcode scanning, and multi-location visibility — built for employee medical services.
                             </p>
                         </div>
@@ -87,11 +87,11 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                             { icon: Lock, text: 'Secure · Lightweight · Fast' },
                         ].map(({ icon: Icon, text }) => (
                             <div key={text} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                                <Icon className="size-4 shrink-0 text-blue-400" />
-                                <span className="text-sm text-blue-200">{text}</span>
+                                <Icon className="size-4 shrink-0 text-teal-300" />
+                                <span className="text-sm text-white/75">{text}</span>
                             </div>
                         ))}
-                        <div className="pt-4 text-xs text-blue-500">
+                        <div className="pt-4 text-xs text-white/30">
                             © IS-C Department · Hospital Information System
                         </div>
                     </div>
@@ -103,7 +103,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                 <div className="w-full max-w-sm">
                     {/* Mobile logo */}
                     <div className="mb-8 flex items-center gap-3 lg:hidden">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-blue-700">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-teal-700">
                             <PillBottle className="size-5 text-white" />
                         </div>
                         <div>
@@ -113,7 +113,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                     </div>
 
                     <div className="mb-8">
-                        <p className="text-xs font-bold uppercase tracking-widest text-blue-600">IS-C Department</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-teal-700">IS-C Department</p>
                         <h2 className="mt-2 text-3xl font-extrabold text-slate-900">Welcome back</h2>
                         <p className="mt-2 text-sm text-slate-500">Sign in to your medical inventory account.</p>
                     </div>
@@ -124,7 +124,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                             <div className="relative">
                                 <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                                 <input
-                                    className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                                     placeholder="Enter your username"
                                     value={username}
                                     autoComplete="username"
@@ -140,7 +140,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                                 <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type="password"
-                                    className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                                     placeholder="Enter your password"
                                     value={password}
                                     autoComplete="current-password"
@@ -152,7 +152,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
 
                         <label className="flex items-center gap-2.5 text-sm text-slate-600 select-none cursor-pointer">
                             <input type="checkbox" checked={rememberSession} onChange={(e) => setRememberSession(e.target.checked)}
-                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                                className="size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
                             Remember me on this device
                         </label>
 
@@ -164,7 +164,7 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
                         )}
 
                         <button type="button" onClick={() => void handleLogin()} disabled={isSubmitting}
-                            className="h-12 w-full rounded-xl bg-blue-700 text-sm font-bold text-white shadow-md shadow-blue-200 transition hover:bg-blue-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-400">
+                            className="h-12 w-full rounded-xl bg-teal-700 text-sm font-bold text-white shadow-md shadow-teal-200 transition hover:bg-teal-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-400">
                             {isSubmitting ? 'Signing in…' : 'Sign In'}
                         </button>
                     </div>

@@ -1,4 +1,4 @@
-import { AlertTriangle, KeyRound, Pencil, Shield, ShieldOff, Trash2, UserPlus, X } from 'lucide-react'
+﻿import { AlertTriangle, KeyRound, Pencil, Shield, ShieldOff, Trash2, UserPlus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
@@ -194,7 +194,7 @@ function UserManage({ onLogout }: PageProps) {
                 {/* Add User Form */}
                 <Card className="p-5">
                     <div className="mb-5 flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+                        <div className="flex size-10 items-center justify-center rounded-md bg-teal-50 text-teal-700">
                             <UserPlus className="size-5" />
                         </div>
                         <h2 className="font-semibold text-slate-900">Add New User</h2>
@@ -214,7 +214,7 @@ function UserManage({ onLogout }: PageProps) {
                                     onClick={() => { setNewUserRole('user'); setNewUserPages([...ALL_PATHS]) }}
                                     className={`rounded-lg border-2 px-4 py-2.5 text-sm font-semibold transition ${
                                         newUserRole === 'user'
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                            ? 'border-teal-500 bg-teal-50 text-teal-700'
                                             : 'border-slate-200 text-slate-500 hover:border-slate-300'
                                     }`}
                                 >
@@ -240,9 +240,9 @@ function UserManage({ onLogout }: PageProps) {
                         </div>
 
                         {/* Page Permissions — only for regular users */}
-                        {newUserRole === 'user' && <div className={`rounded-xl border-2 p-4 ${columnMissing ? 'border-amber-200 bg-amber-50' : 'border-blue-100 bg-blue-50'}`}>
+                        {newUserRole === 'user' && <div className={`rounded-xl border-2 p-4 ${columnMissing ? 'border-amber-200 bg-amber-50' : 'border-blue-100 bg-teal-50'}`}>
                             <div className="mb-3 flex items-center gap-2">
-                                <Shield className={`size-4 ${columnMissing ? 'text-amber-500' : 'text-blue-600'}`} />
+                                <Shield className={`size-4 ${columnMissing ? 'text-amber-500' : 'text-teal-700'}`} />
                                 <span className="text-sm font-bold text-slate-800">Page Access Permissions</span>
                                 {columnMissing && (
                                     <span className="ml-auto rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
@@ -259,7 +259,7 @@ function UserManage({ onLogout }: PageProps) {
                                             checked={newUserPages.includes(page.path)}
                                             onChange={() => togglePage(page.path, newUserPages, setNewUserPages)}
                                             disabled={columnMissing}
-                                            className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
                                         />
                                         <span className="text-sm text-slate-700">{page.label}</span>
                                     </label>
@@ -275,7 +275,7 @@ function UserManage({ onLogout }: PageProps) {
                         <button
                             type="button"
                             onClick={() => void handleAddUser()}
-                            className="h-11 w-full rounded-lg bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800"
+                            className="h-11 w-full rounded-lg bg-teal-700 text-sm font-semibold text-white hover:bg-teal-800"
                         >
                             Add User
                         </button>
@@ -336,7 +336,7 @@ function UserManage({ onLogout }: PageProps) {
                                                 ) : (
                                                     <div className="flex flex-wrap gap-1">
                                                         {labels.map((label) => (
-                                                            <span key={label} className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-700">
+                                                            <span key={label} className="rounded bg-teal-50 px-1.5 py-0.5 text-[11px] font-medium text-teal-700">
                                                                 {label}
                                                             </span>
                                                         ))}
@@ -410,14 +410,14 @@ function UserManage({ onLogout }: PageProps) {
                             </button>
                         </div>
 
-                        <div className="space-y-2.5 rounded-xl border-2 border-blue-100 bg-blue-50 p-4">
+                        <div className="space-y-2.5 rounded-xl border-2 border-blue-100 bg-teal-50 p-4">
                             {PAGE_PERMISSIONS.map((page) => (
                                 <label key={page.path} className="flex cursor-pointer items-center gap-3">
                                     <input
                                         type="checkbox"
                                         checked={editPages.includes(page.path)}
                                         onChange={() => togglePage(page.path, editPages, setEditPages)}
-                                        className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
                                     />
                                     <span className="text-sm text-slate-700">{page.label}</span>
                                 </label>
@@ -439,7 +439,7 @@ function UserManage({ onLogout }: PageProps) {
                             <button
                                 type="button"
                                 onClick={() => void handleSaveEdit()}
-                                className="flex-1 rounded-lg bg-blue-700 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+                                className="flex-1 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
                             >
                                 Save
                             </button>

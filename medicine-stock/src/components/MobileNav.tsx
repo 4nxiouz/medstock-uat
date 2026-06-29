@@ -1,4 +1,4 @@
-import {
+﻿import {
     Barcode,
     Building2,
     History,
@@ -48,7 +48,7 @@ function MobileNav() {
                                 end={item.path === '/'}
                                 className={({ isActive }) =>
                                     `flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium ${
-                                        isActive ? 'text-blue-700' : 'text-slate-500'
+                                        isActive ? 'text-teal-700' : 'text-slate-500'
                                     }`
                                 }
                             >
@@ -100,7 +100,7 @@ function MobileNav() {
                                         className={({ isActive }) =>
                                             `flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium ${
                                                 isActive
-                                                    ? 'bg-blue-50 text-blue-800'
+                                                    ? 'bg-teal-50 text-teal-800'
                                                     : 'text-slate-700 hover:bg-slate-50'
                                             }`
                                         }

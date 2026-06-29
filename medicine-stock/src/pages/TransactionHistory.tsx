@@ -1,4 +1,4 @@
-import { Download, Filter } from 'lucide-react'
+﻿import { Download, Filter } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
 import Card from '../components/Card'
@@ -90,7 +90,7 @@ function TransactionHistory({ onLogout }: PageProps) {
                     <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
                         {(['ALL', 'IN', 'OUT'] as const).map((a) => (
                             <button key={a} type="button" onClick={() => { setActionFilter(a); setPage(0) }}
-                                className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${actionFilter === a ? 'bg-blue-700 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                                className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${actionFilter === a ? 'bg-teal-700 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
                                 {a}
                             </button>
                         ))}
@@ -98,10 +98,10 @@ function TransactionHistory({ onLogout }: PageProps) {
                     <div className="flex items-center gap-2">
                         <Filter className="size-4 text-slate-400" />
                         <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0) }}
-                            className="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500" />
+                            className="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500" />
                         <span className="text-slate-400">—</span>
                         <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0) }}
-                            className="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500" />
+                            className="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500" />
                     </div>
                     <button type="button" onClick={() => exportXlsx(filtered, location?.code)}
                         className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">

@@ -1,4 +1,4 @@
-import { Printer } from 'lucide-react'
+﻿import { Printer } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Barcode from 'react-barcode'
 import EmptyState from '../components/EmptyState'
@@ -79,7 +79,7 @@ function PrintBarcode({ onLogout }: PageProps) {
                     type="button"
                     onClick={() => window.print()}
                     disabled={toPrint.length === 0}
-                    className="inline-flex h-10 items-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="inline-flex h-10 items-center gap-2 rounded-md bg-teal-700 px-5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                     <Printer className="size-4" />
                     Print {toPrint.length > 0 ? `(${toPrint.length})` : ''}
@@ -103,7 +103,7 @@ function PrintBarcode({ onLogout }: PageProps) {
                                     onClick={() => toggleSelect(drug.id)}
                                     className={`rounded-xl border-2 p-4 text-center transition ${
                                         isSelected
-                                            ? 'border-blue-500 bg-blue-50'
+                                            ? 'border-teal-500 bg-teal-50'
                                             : 'border-slate-200 bg-white hover:border-slate-300'
                                     }`}
                                 >

@@ -1,4 +1,4 @@
-import {
+﻿import {
     ClipboardList,
     History,
     Home,
@@ -63,7 +63,7 @@ function Sidebar({ onLogout }: SidebarProps) {
             <aside className="fixed inset-y-0 left-0 z-20 hidden w-[17rem] flex-col lg:flex" style={{background: 'linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%)'}}>
                 <div className="border-b border-white/10 px-6 py-5">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-md bg-blue-600">
+                        <div className="flex size-10 items-center justify-center rounded-md bg-teal-600">
                             <ClipboardList className="size-5 text-white" />
                         </div>
                         <div>
@@ -125,7 +125,7 @@ function Sidebar({ onLogout }: SidebarProps) {
                             <button type="button" onClick={() => setChangePwOpen(false)}
                                 className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
                             <button type="button" onClick={() => void handleChangePw()}
-                                className="flex-1 rounded-lg bg-blue-700 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Save</button>
+                                className="flex-1 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Save</button>
                         </div>
                     </div>
                 </div>
