@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Background -->
-  <rect width="32" height="32" rx="7" fill="#1E3A8A"/>
-  <!-- Pill shape rotated 45deg -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#1e3a5f"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
   <g transform="translate(16,16) rotate(-45)">
-    <!-- Left half (white) -->
     <path d="M-9,0 A5,5 0 0 1 -9,-5 L0,-5 L0,5 L-9,5 A5,5 0 0 1 -9,0 Z" fill="white"/>
-    <!-- Right half (light blue) -->
-    <path d="M9,0 A5,5 0 0 1 9,5 L0,5 L0,-5 L9,-5 A5,5 0 0 1 9,0 Z" fill="#93C5FD"/>
-    <!-- Divider line -->
-    <line x1="0" y1="-5" x2="0" y2="5" stroke="#1D4ED8" stroke-width="0.8"/>
+    <path d="M9,0 A5,5 0 0 1 9,5 L0,5 L0,-5 L9,-5 A5,5 0 0 1 9,0 Z" fill="#5eead4"/>
+    <line x1="0" y1="-5" x2="0" y2="5" stroke="#0d9488" stroke-width="0.8"/>
   </g>
 </svg>
