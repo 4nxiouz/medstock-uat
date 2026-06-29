@@ -185,17 +185,17 @@ function Inventory({ onLogout }: PageProps) {
 
             <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 {/* Toolbar — gray bg ให้เห็นชัดว่าเป็น filter section */}
-                <div className="flex flex-wrap items-center gap-3 bg-slate-100 px-5 py-3 border-b border-slate-200">
-                    <div className="flex flex-1 min-w-[200px] gap-2">
+                <div className="flex items-center gap-3 bg-slate-100 px-5 py-3 border-b border-slate-200">
+                    <div className="flex-1">
                         <SearchInput value={search} onChange={setSearch} placeholder="พิมพ์ชื่อยา หรือ scan barcode" />
-                        <button type="button" onClick={() => setCameraOpen(true)} title="สแกนด้วยกล้อง"
-                            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border border-cyan-200 bg-cyan-50 px-3 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
-                            <Camera className="size-4" /><span className="hidden sm:inline">กล้อง</span>
-                        </button>
                     </div>
+                    <button type="button" onClick={() => setCameraOpen(true)} title="สแกนด้วยกล้อง"
+                        className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border border-cyan-200 bg-cyan-50 px-3 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
+                        <Camera className="size-4" /><span className="hidden sm:inline">กล้อง</span>
+                    </button>
                     <CameraScanner open={cameraOpen} onClose={() => setCameraOpen(false)} onScan={(code) => { setSearch(code); setCameraOpen(false) }} />
                     <button type="button" onClick={() => downloadCSV(filteredDrugs, location?.code ?? 'export')}
-                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+                        className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
                         <Download className="size-4" />CSV
                     </button>
                     {message && <div className="rounded-md bg-white px-3 py-2 text-sm text-slate-700">{message}</div>}
