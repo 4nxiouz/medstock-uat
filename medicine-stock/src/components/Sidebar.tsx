@@ -60,15 +60,15 @@ function Sidebar({ onLogout }: SidebarProps) {
 
     return (
         <>
-            <aside className="fixed inset-y-0 left-0 z-20 hidden w-[17rem] flex-col bg-emerald-50 border-r border-emerald-100 lg:flex">
-                <div className="border-b border-emerald-100 px-6 py-5">
+            <aside className="fixed inset-y-0 left-0 z-20 hidden w-[17rem] flex-col lg:flex" style={{background: 'linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%)'}}>
+                <div className="border-b border-white/10 px-6 py-5">
                     <div className="flex items-center gap-3">
                         <div className="flex size-10 items-center justify-center rounded-md bg-blue-600">
                             <ClipboardList className="size-5 text-white" />
                         </div>
                         <div>
-                            <div className="text-base font-bold tracking-wide text-slate-900">MedStock HIS</div>
-                            <div className="text-xs text-slate-400">IS-C · Information Systems</div>
+                            <div className="text-base font-bold tracking-wide text-white">MedStock HIS</div>
+                            <div className="text-xs text-white/50">IS-C · Information Systems</div>
                         </div>
                     </div>
                 </div>
@@ -79,7 +79,7 @@ function Sidebar({ onLogout }: SidebarProps) {
                         return (
                             <NavLink key={item.path} to={item.path} end={item.path === '/'}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-900/70 hover:bg-emerald-100 hover:text-emerald-900'}`
+                                    `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-white/16 text-white' : 'text-white/65 hover:bg-white/10 hover:text-white'}`
                                 }>
                                 <Icon className="size-4" />{item.label}
                             </NavLink>
@@ -87,17 +87,17 @@ function Sidebar({ onLogout }: SidebarProps) {
                     })}
                 </nav>
 
-                <div className="border-t border-emerald-100 p-3">
+                <div className="border-t border-white/10 p-3">
                     <div className="mb-1 px-3 py-1.5">
-                        <div className="text-xs text-emerald-700/60">Signed in as <span className="font-semibold text-emerald-800">{getCurrentUser()?.username}</span></div>
-                        <div className="text-[10px] capitalize text-emerald-600/60">{getCurrentUser()?.role ?? 'user'}</div>
+                        <div className="text-xs text-white/50">Signed in as <span className="font-semibold text-white/80">{getCurrentUser()?.username}</span></div>
+                        <div className="text-[10px] capitalize text-white/40">{getCurrentUser()?.role ?? 'user'}</div>
                     </div>
                     <button type="button" onClick={() => { setChangePwOpen(true); setPwMsg(''); setOldPw(''); setNewPw('') }}
-                        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-emerald-900/70 transition hover:bg-emerald-100 hover:text-emerald-900">
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-white/65 transition hover:bg-white/10 hover:text-white">
                         <KeyRound className="size-4" />Change Password
                     </button>
                     <button type="button" onClick={onLogout}
-                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-emerald-900/70 transition hover:bg-red-50 hover:text-red-600">
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-white/65 transition hover:bg-red-500/20 hover:text-red-300">
                         <LogOut className="size-4" />Logout
                     </button>
                 </div>
