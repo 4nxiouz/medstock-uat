@@ -1,4 +1,4 @@
-import { ImagePlus, PackagePlus, Printer, Search, Wand2 } from 'lucide-react'
+import { ImagePlus, PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
@@ -12,6 +12,7 @@ import type { Drug } from '../types'
 
 type PageProps = { onLogout: () => void }
 type Tab = 'restock' | 'new'
+type CartItem = { drug: Drug; qty: number }
 
 function generateBarcode() {
     return 'MED' + String(Date.now()).slice(-8)
@@ -21,10 +22,12 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const { location } = useLocation()
     const [tab, setTab] = useState<Tab>('restock')
 
+    // Restock cart
     const [rsBarcode, setRsBarcode] = useState('')
-    const [rsMedicine, setRsMedicine] = useState<Drug | null>(null)
-    const [rsQty, setRsQty] = useState('1')
-    const [rsMessage, setRsMessage] = useState('')
+    const [rsCart, setRsCart] = useState<CartItem[]>([])
+    const [rsScanMsg, setRsScanMsg] = useState('')
+    const [rsConfirmMsg, setRsConfirmMsg] = useState('')
+    const [rsConfirming, setRsConfirming] = useState(false)
     const rsInputRef = useRef<HTMLInputElement>(null)
 
     const [newBarcode, setNewBarcode] = useState('')
@@ -38,45 +41,56 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [registeredName, setRegisteredName] = useState('')
 
     async function handleRsScan(code: string) {
-        setRsMessage('')
-        setRsMedicine(null)
-        setRsBarcode(code)
-        if (!code.trim() || !location) return
+        setRsScanMsg('')
+        setRsConfirmMsg('')
+        const trimmed = code.trim()
+        if (!trimmed || !location) return
 
         const { data } = await supabase
             .from('drug_master')
             .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url')
-            .eq('barcode', code.trim())
+            .eq('barcode', trimmed)
             .eq('location_id', location.id)
             .maybeSingle()
 
         if (!data) {
-            setRsMessage('Barcode not found at this location. Use "New Medicine" tab to register it.')
+            setRsScanMsg(`ไม่พบยา: ${trimmed} — ใช้แท็บ "New Medicine" เพื่อลงทะเบียน`)
             return
         }
-        setRsMedicine(data as Drug)
-        setRsQty('1')
+        const drug = data as Drug
+        setRsCart((prev) => {
+            const existing = prev.find((c) => c.drug.barcode === drug.barcode)
+            if (existing) return prev.map((c) => c.drug.barcode === drug.barcode ? { ...c, qty: c.qty + 1 } : c)
+            return [...prev, { drug, qty: 1 }]
+        })
+        setRsBarcode('')
+        setRsScanMsg(`✓ ${drug.drug_name} เพิ่มลง cart`)
+        setTimeout(() => setRsScanMsg(''), 2000)
+        rsInputRef.current?.focus()
     }
 
-    async function handleRestock() {
-        setRsMessage('')
-        if (!rsMedicine || !location) { setRsMessage('Scan a barcode first.'); return }
+    function updateRsQty(barcode: string, val: string) {
+        const n = parseInt(val)
+        if (!Number.isFinite(n) || n < 1) return
+        setRsCart((prev) => prev.map((c) => c.drug.barcode === barcode ? { ...c, qty: n } : c))
+    }
 
-        const totalAdd = Number(rsQty) * Number(rsMedicine.unit_per_scan)
-        if (!Number.isFinite(totalAdd) || totalAdd <= 0) { setRsMessage('Quantity must be greater than zero.'); return }
-
-        const newStock = Number(rsMedicine.current_stock) + totalAdd
-        const { error } = await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', rsMedicine.id)
-        if (error) { setRsMessage('Update failed.'); return }
-
-        await supabase.from('stock_transaction').insert([{
-            barcode: rsMedicine.barcode, qty: totalAdd, action: 'IN',
-            created_by: getCreatedBy(), location_id: location.id,
-        }])
-
-        setRsMedicine({ ...rsMedicine, current_stock: newStock })
-        setRsMessage(`Done. Added ${totalAdd} units → stock now ${newStock}.`)
-        setRsQty('1')
+    async function handleConfirmRestock() {
+        if (rsCart.length === 0) return
+        setRsConfirming(true)
+        setRsConfirmMsg('')
+        for (const item of rsCart) {
+            const totalAdd = item.qty * Number(item.drug.unit_per_scan || 1)
+            const newStock = Number(item.drug.current_stock) + totalAdd
+            await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', item.drug.id)
+            await supabase.from('stock_transaction').insert([{
+                barcode: item.drug.barcode, qty: totalAdd, action: 'IN',
+                created_by: getCreatedBy(), location_id: location?.id,
+            }])
+        }
+        setRsConfirmMsg(`✓ รับยาสำเร็จ ${rsCart.length} รายการ`)
+        setRsCart([])
+        setRsConfirming(false)
         rsInputRef.current?.focus()
     }
 
@@ -128,11 +142,11 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setNewImage(null)
     }
 
-    const totalRestock = Number(rsQty || 0) * Number(rsMedicine?.unit_per_scan || 1)
     const totalNew = Number(newInitQty || 0) * Number(newUnitPerScan || 1)
+    const rsTotalUnits = rsCart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan || 1), 0)
 
     return (
-        <PageLayout title="Receive Medicine" subtitle="Restock or register new medicine" onLogout={onLogout}>
+        <PageLayout title="Receive Medicine" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
             <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
                 {(['restock', 'new'] as Tab[]).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}
@@ -143,39 +157,74 @@ function ReceiveDrug({ onLogout }: PageProps) {
             </div>
 
             {tab === 'restock' && (
-                <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-                    <Card className="p-5 space-y-4">
-                        <div className="space-y-2">
-                            <BarcodeInput ref={rsInputRef} label="Scan barcode on cabinet" placeholder="Scan or enter barcode" value={rsBarcode} onChange={setRsBarcode} onScan={(code) => void handleRsScan(code)} />
-                            <button type="button" onClick={() => void handleRsScan(rsBarcode)}
-                                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800">
-                                <Search className="size-4" />Look Up
-                            </button>
-                        </div>
-                        {rsMedicine && (
-                            <>
-                                <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-                                    <div className="text-xs font-semibold uppercase tracking-wide text-blue-600">Found</div>
-                                    <div className="mt-1 text-lg font-bold text-slate-900">{rsMedicine.drug_name}</div>
-                                    <div className="mt-1 text-sm text-slate-500">{rsMedicine.barcode}</div>
-                                    <div className="mt-3 grid grid-cols-2 gap-3">
-                                        <div className="rounded-md bg-white p-3 text-center"><div className="text-xs text-slate-500">Current Stock</div><div className="text-2xl font-bold">{rsMedicine.current_stock}</div></div>
-                                        <div className="rounded-md bg-white p-3 text-center"><div className="text-xs text-slate-500">Unit / Scan</div><div className="text-2xl font-bold">{rsMedicine.unit_per_scan}</div></div>
-                                    </div>
+                <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+                    <div className="space-y-4">
+                        <Card className="p-5">
+                            <BarcodeInput ref={rsInputRef} label="Scan Barcode" placeholder="สแกนหรือพิมพ์ barcode แล้วกด Enter" value={rsBarcode} onChange={setRsBarcode} onScan={(code) => void handleRsScan(code)} />
+                            {rsScanMsg && (
+                                <div className={`mt-3 rounded-md px-3 py-2 text-sm ${rsScanMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                    {rsScanMsg}
                                 </div>
-                                <FormInput label="Scan count" type="number" value={rsQty} onChange={(e) => setRsQty(e.target.value)} />
-                            </>
+                            )}
+                        </Card>
+                        {rsCart.length > 0 && (
+                            <Card className="overflow-hidden p-0">
+                                <div className="border-b border-slate-100 px-5 py-3 text-sm font-semibold text-slate-700">
+                                    รายการที่จะรับเข้า ({rsCart.length} รายการ)
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                    {rsCart.map((item) => {
+                                        const total = item.qty * Number(item.drug.unit_per_scan || 1)
+                                        return (
+                                            <div key={item.drug.barcode} className="flex items-center gap-3 px-5 py-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="truncate font-medium text-slate-900">{item.drug.drug_name}</div>
+                                                    <div className="text-xs text-slate-400">{item.drug.barcode} · สต็อกปัจจุบัน {item.drug.current_stock}</div>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-xs text-slate-500">จำนวนสแกน</span>
+                                                    <input type="number" min="1" value={item.qty}
+                                                        onChange={(e) => updateRsQty(item.drug.barcode, e.target.value)}
+                                                        className="h-8 w-16 rounded-md border border-slate-300 px-2 text-center text-sm" />
+                                                    <span className="w-20 text-right text-sm font-semibold text-slate-700">= {total} หน่วย</span>
+                                                    <button type="button" onClick={() => setRsCart((p) => p.filter((c) => c.drug.barcode !== item.drug.barcode))}
+                                                        className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600">
+                                                        <Trash2 className="size-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </Card>
                         )}
-                        {rsMessage && <div className={`rounded-md px-4 py-3 text-sm ${rsMessage.startsWith('Done') ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>{rsMessage}</div>}
-                    </Card>
-                    <Card className="p-5">
-                        <div className="text-sm font-medium text-slate-500">Total to Add</div>
-                        <div className="mt-2 text-4xl font-bold text-emerald-600">{rsMedicine ? totalRestock : '—'}</div>
-                        {rsMedicine && <div className="mt-2 text-sm text-slate-500">After: <span className="font-semibold text-slate-900">{Number(rsMedicine.current_stock) + totalRestock}</span></div>}
-                        <button type="button" onClick={() => void handleRestock()} disabled={!rsMedicine}
-                            className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-                            <PackagePlus className="size-4" />Confirm Restock
+                    </div>
+                    <Card className="p-5 h-fit">
+                        <div className="text-sm font-medium text-slate-500">สรุปการรับยา</div>
+                        <div className="mt-4 rounded-md bg-slate-50 p-3 text-center">
+                            <div className="text-xs text-slate-500">จำนวนรายการ</div>
+                            <div className="text-3xl font-bold text-slate-900">{rsCart.length}</div>
+                        </div>
+                        <div className="mt-3 rounded-md bg-emerald-50 p-3 text-center">
+                            <div className="text-xs font-medium text-emerald-600">หน่วยที่รับทั้งหมด</div>
+                            <div className="text-3xl font-bold text-emerald-700">{rsTotalUnits}</div>
+                        </div>
+                        {rsConfirmMsg && (
+                            <div className={`mt-3 rounded-md px-3 py-2 text-sm ${rsConfirmMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                {rsConfirmMsg}
+                            </div>
+                        )}
+                        <button type="button" onClick={() => void handleConfirmRestock()}
+                            disabled={rsCart.length === 0 || rsConfirming}
+                            className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                            <PackagePlus className="size-4" />Confirm Restock All
                         </button>
+                        {rsCart.length > 0 && (
+                            <button type="button" onClick={() => { setRsCart([]); setRsConfirmMsg('') }}
+                                className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                                ล้าง Cart
+                            </button>
+                        )}
                     </Card>
                 </div>
             )}
