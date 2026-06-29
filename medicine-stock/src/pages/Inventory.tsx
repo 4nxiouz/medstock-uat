@@ -1,6 +1,7 @@
-import { AlertTriangle, Boxes, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Boxes, Camera, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/Card'
+import CameraScanner from '../components/CameraScanner'
 import DrugIcon from '../components/DrugIcon'
 import EmptyState from '../components/EmptyState'
 import FormInput from '../components/FormInput'
@@ -37,6 +38,7 @@ function Inventory({ onLogout }: PageProps) {
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
+    const [cameraOpen, setCameraOpen] = useState(false)
 
     async function loadDrugs() {
         if (!location) return
@@ -184,7 +186,14 @@ function Inventory({ onLogout }: PageProps) {
 
             <Card className="mt-6 p-5">
                 <div className="mb-5 flex flex-wrap items-center gap-3">
-                    <div className="flex-1 min-w-[200px]"><SearchInput value={search} onChange={setSearch} placeholder="Search item or barcode" /></div>
+                    <div className="flex flex-1 min-w-[200px] gap-2">
+                        <SearchInput value={search} onChange={setSearch} placeholder="พิมพ์ชื่อยา หรือ scan barcode" />
+                        <button type="button" onClick={() => setCameraOpen(true)} title="สแกนด้วยกล้อง"
+                            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border border-cyan-200 bg-cyan-50 px-3 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
+                            <Camera className="size-4" /><span className="hidden sm:inline">กล้อง</span>
+                        </button>
+                    </div>
+                    <CameraScanner open={cameraOpen} onClose={() => setCameraOpen(false)} onScan={(code) => { setSearch(code); setCameraOpen(false) }} />
                     <button type="button" onClick={() => downloadCSV(filteredDrugs, location?.code ?? 'export')}
                         className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
                         <Download className="size-4" />CSV
