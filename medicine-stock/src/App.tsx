@@ -11,7 +11,6 @@ import TransactionHistory from './pages/TransactionHistory'
 import Inventory from './pages/Inventory'
 import IssueDrug from './pages/IssueDrug'
 import LocationManage from './pages/LocationManage'
-import LocationSelect from './pages/LocationSelect'
 import Login from './pages/Login'
 import PrintBarcode from './pages/PrintBarcode'
 import ReceiveDrug from './pages/ReceiveDrug'
@@ -59,7 +58,7 @@ function AppRoutes({ onLogout, onSwitchLocation }: { onLogout: () => void; onSwi
 
 function AppInner() {
     const navigate = useNavigate()
-    const { setLocation, setAvailableLocations, availableLocations, clearLocation } = useLocation()
+    const { setLocation, setAvailableLocations, clearLocation } = useLocation()
 
     const [status, setStatus] = useState<AppStatus>(() => {
         // Check session storage (tab-scoped, no expiry needed)
