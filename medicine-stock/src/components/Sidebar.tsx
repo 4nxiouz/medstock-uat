@@ -1,11 +1,9 @@
 import {
     Barcode,
-    Building2,
     ClipboardList,
     History,
     Home,
     KeyRound,
-    LayoutDashboard,
     LogOut,
     PackageMinus,
     PackagePlus,
@@ -33,8 +31,6 @@ const baseItems = [
     { label: 'Stock Lookup', path: '/scan', icon: Barcode, adminOnly: false },
     { label: 'Print Barcode', path: '/print', icon: Printer, adminOnly: false },
     { label: 'Transaction History', path: '/history', icon: History, adminOnly: false },
-    { label: 'Overview', path: '/overview', icon: LayoutDashboard, adminOnly: true },
-    { label: 'Manage Locations', path: '/locations', icon: Building2, adminOnly: true },
     { label: 'User Management', path: '/user', icon: Users, adminOnly: true },
 ]
 

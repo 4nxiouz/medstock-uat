@@ -5,12 +5,10 @@ import { clearCurrentUser, getCurrentUser } from './lib/auth'
 import { LocationProvider, useLocation } from './lib/LocationContext'
 import { supabase } from './lib/supabase'
 
-import AdminOverview from './pages/AdminOverview'
 import Home from './pages/Home'
 import TransactionHistory from './pages/TransactionHistory'
 import Inventory from './pages/Inventory'
 import IssueDrug from './pages/IssueDrug'
-import LocationManage from './pages/LocationManage'
 import Login from './pages/Login'
 import PrintBarcode from './pages/PrintBarcode'
 import ReceiveDrug from './pages/ReceiveDrug'
@@ -48,9 +46,7 @@ function AppRoutes({ onLogout }: { onLogout: () => void }) {
             <Route path="/scan" element={<Guarded path="/scan" element={<ScanBarcode onLogout={onLogout} />} />} />
             <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
             <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} />} />} />
-            <Route path="/locations" element={<AdminOnly element={<LocationManage onLogout={onLogout} />} />} />
             <Route path="/history" element={<TransactionHistory onLogout={onLogout} />} />
-            <Route path="/overview" element={<AdminOnly element={<AdminOverview onLogout={onLogout} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )
