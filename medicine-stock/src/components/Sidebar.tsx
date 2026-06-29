@@ -60,11 +60,7 @@ function Sidebar({ onLogout }: SidebarProps) {
 
     return (
         <>
-            <aside className="fixed inset-y-0 left-0 z-20 hidden w-[17rem] flex-col bg-blue-950 text-white lg:flex overflow-hidden relative">
-                {/* Decorative orbs — subtle, like login page */}
-                <div className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-blue-700/20 blur-2xl" />
-                <div className="pointer-events-none absolute top-40 -left-20 size-48 rounded-full bg-indigo-600/15 blur-2xl" />
-                <div className="pointer-events-none absolute bottom-20 -right-10 size-40 rounded-full bg-blue-500/10 blur-2xl" />
+            <aside className="fixed inset-y-0 left-0 z-20 hidden w-[17rem] flex-col text-white lg:flex" style={{background: 'linear-gradient(160deg, #1e3a5f 0%, #0f172a 50%, #1a1040 100%)'}}>
                 <div className="border-b border-white/10 px-6 py-5">
                     <div className="flex items-center gap-3">
                         <div className="flex size-10 items-center justify-center rounded-md bg-blue-500">
