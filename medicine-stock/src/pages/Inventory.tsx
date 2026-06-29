@@ -211,7 +211,7 @@ function Inventory({ onLogout }: PageProps) {
                             const isLow = Number(drug.current_stock) <= Number(drug.min_stock)
                             return (
                                 <article key={drug.id} className={`overflow-hidden rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
-                                    <div className="aspect-[4/3] bg-slate-50">
+                                    <div className="h-28 bg-slate-50">
                                         {drug.image_url ? (
                                             <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
                                         ) : (
