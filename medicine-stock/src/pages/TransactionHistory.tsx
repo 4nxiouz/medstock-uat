@@ -11,7 +11,7 @@ import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { StockTransaction } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 
 type TxRow = StockTransaction & { location_name?: string }
 
@@ -40,7 +40,7 @@ function exportXlsx(rows: TxRow[], isAdminMode: boolean, locationCode?: string) 
     XLSX.writeFile(wb, `transactions_${isAdminMode ? 'all' : (locationCode ?? 'export')}_${new Date().toISOString().slice(0, 10)}.xlsx`)
 }
 
-function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
+function TransactionHistory({ onLogout }: PageProps) {
     const { location } = useLocation()
     const adminMode = getCurrentUser()?.role === 'admin'
 
@@ -112,9 +112,8 @@ function TransactionHistory({ onLogout, onSwitchLocation }: PageProps) {
     return (
         <PageLayout
             title="Transaction History"
-            subtitle={adminMode ? 'All locations — admin view' : `All stock movements at ${location?.name ?? '—'}`}
+            subtitle="All stock movements"
             onLogout={onLogout}
-            onSwitchLocation={onSwitchLocation}
         >
             <Card className="p-5">
                 {/* Filters */}

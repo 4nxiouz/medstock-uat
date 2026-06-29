@@ -9,9 +9,9 @@ import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 
-function IssueDrug({ onLogout, onSwitchLocation }: PageProps) {
+function IssueDrug({ onLogout }: PageProps) {
     const { location } = useLocation()
     const [barcode, setBarcode] = useState('')
     const [qty, setQty] = useState('1')
@@ -75,7 +75,7 @@ function IssueDrug({ onLogout, onSwitchLocation }: PageProps) {
     }
 
     return (
-        <PageLayout title="Dispense Medicine" subtitle={`Scan barcode to dispense — ${location?.name ?? '—'}`} onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout title="Dispense Medicine" subtitle="Scan barcode to dispense" onLogout={onLogout}>
             <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
                 <Card className="p-5 space-y-4">
                     <BarcodeInput ref={barcodeRef} label="Barcode" placeholder="Scan barcode" value={barcode} onChange={setBarcode} onScan={(code) => void handleBarcodeScan(code)} />

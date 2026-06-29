@@ -8,10 +8,10 @@ import Table from '../components/Table'
 import { supabase } from '../lib/supabase'
 import type { Location, UserProfile } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 type UserWithLocations = UserProfile & { locationIds: number[] }
 
-function LocationManage({ onLogout, onSwitchLocation }: PageProps) {
+function LocationManage({ onLogout }: PageProps) {
     const [locations, setLocations] = useState<Location[]>([])
     const [users, setUsers] = useState<UserWithLocations[]>([])
     const [newCode, setNewCode] = useState('')
@@ -99,7 +99,7 @@ function LocationManage({ onLogout, onSwitchLocation }: PageProps) {
     }
 
     return (
-        <PageLayout title="Location Management" subtitle="Manage clinic locations and user assignments." onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout title="Location Management" subtitle="Manage clinic locations and user assignments." onLogout={onLogout}>
             {message && (
                 <div className={`mb-4 rounded-md px-4 py-3 text-sm ${msgType === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>{message}</div>
             )}

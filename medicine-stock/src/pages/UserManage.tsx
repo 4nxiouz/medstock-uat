@@ -9,14 +9,11 @@ import { hashPassword } from '../lib/crypto'
 import { supabase } from '../lib/supabase'
 import { PAGE_PERMISSIONS, type UserProfile } from '../types'
 
-type PageProps = {
-    onLogout: () => void
-    onSwitchLocation: () => void
-}
+type PageProps = { onLogout: () => void }
 
 const ALL_PATHS = PAGE_PERMISSIONS.map((p) => p.path)
 
-function UserManage({ onLogout, onSwitchLocation }: PageProps) {
+function UserManage({ onLogout }: PageProps) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [fullname, setFullname] = useState('')
@@ -176,7 +173,6 @@ function UserManage({ onLogout, onSwitchLocation }: PageProps) {
             title="User Management"
             subtitle="Create accounts and set page-level access permissions."
             onLogout={onLogout}
-            onSwitchLocation={onSwitchLocation}
         >
             {/* ⚠️ Migration warning */}
             {columnMissing && (

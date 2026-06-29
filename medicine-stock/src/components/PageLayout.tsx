@@ -8,13 +8,12 @@ type Props = {
     subtitle?: string
     children: ReactNode
     onLogout: () => void
-    onSwitchLocation: () => void
 }
 
-function PageLayout({ title, subtitle, children, onLogout, onSwitchLocation }: Props) {
+function PageLayout({ title, subtitle, children, onLogout }: Props) {
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
-            <Sidebar onLogout={onLogout} onSwitchLocation={onSwitchLocation} />
+            <Sidebar onLogout={onLogout} />
             <div className="lg:pl-[17rem]">
                 <Header title={title} subtitle={subtitle} onLogout={onLogout} />
                 <main className="mx-auto max-w-7xl px-5 py-6 pb-24 lg:px-8 lg:pb-6">

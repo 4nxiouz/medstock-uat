@@ -10,14 +10,14 @@ import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 type Tab = 'restock' | 'new'
 
 function generateBarcode() {
     return 'MED' + String(Date.now()).slice(-8)
 }
 
-function ReceiveDrug({ onLogout, onSwitchLocation }: PageProps) {
+function ReceiveDrug({ onLogout }: PageProps) {
     const { location } = useLocation()
     const [tab, setTab] = useState<Tab>('restock')
 
@@ -132,7 +132,7 @@ function ReceiveDrug({ onLogout, onSwitchLocation }: PageProps) {
     const totalNew = Number(newInitQty || 0) * Number(newUnitPerScan || 1)
 
     return (
-        <PageLayout title="Receive Medicine" subtitle={`Restock or register new medicine — ${location?.name ?? '—'}`} onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout title="Receive Medicine" subtitle="Restock or register new medicine" onLogout={onLogout}>
             <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
                 {(['restock', 'new'] as Tab[]).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}

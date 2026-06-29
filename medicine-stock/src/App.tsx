@@ -38,19 +38,19 @@ function AdminOnly({ element }: { element: ReactElement }) {
 
 type AppStatus = 'login' | 'ready'
 
-function AppRoutes({ onLogout, onSwitchLocation }: { onLogout: () => void; onSwitchLocation: () => void }) {
+function AppRoutes({ onLogout }: { onLogout: () => void }) {
     return (
         <Routes>
-            <Route path="/" element={<Home onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />
-            <Route path="/inventory" element={<Guarded path="/inventory" element={<Inventory onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/receive" element={<Guarded path="/receive" element={<ReceiveDrug onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/issue" element={<Guarded path="/issue" element={<IssueDrug onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/scan" element={<Guarded path="/scan" element={<ScanBarcode onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/locations" element={<AdminOnly element={<LocationManage onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
-            <Route path="/history" element={<TransactionHistory onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />
-            <Route path="/overview" element={<AdminOnly element={<AdminOverview onLogout={onLogout} onSwitchLocation={onSwitchLocation} />} />} />
+            <Route path="/" element={<Home onLogout={onLogout} />} />
+            <Route path="/inventory" element={<Guarded path="/inventory" element={<Inventory onLogout={onLogout} />} />} />
+            <Route path="/receive" element={<Guarded path="/receive" element={<ReceiveDrug onLogout={onLogout} />} />} />
+            <Route path="/issue" element={<Guarded path="/issue" element={<IssueDrug onLogout={onLogout} />} />} />
+            <Route path="/scan" element={<Guarded path="/scan" element={<ScanBarcode onLogout={onLogout} />} />} />
+            <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
+            <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} />} />} />
+            <Route path="/locations" element={<AdminOnly element={<LocationManage onLogout={onLogout} />} />} />
+            <Route path="/history" element={<TransactionHistory onLogout={onLogout} />} />
+            <Route path="/overview" element={<AdminOnly element={<AdminOverview onLogout={onLogout} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )
@@ -142,10 +142,6 @@ function AppInner() {
         navigate('/')
     }
 
-    function handleSwitchLocation() {
-        // No-op: location switching removed
-    }
-
     function handleLogout() {
         localStorage.removeItem('isLogin')
         localStorage.removeItem('isLoginExpiry')
@@ -160,7 +156,7 @@ function AppInner() {
         return <Login onLoginSuccess={handleLoginSuccess} errorMessage={locationError} />
     }
 
-    return <AppRoutes onLogout={handleLogout} onSwitchLocation={handleSwitchLocation} />
+    return <AppRoutes onLogout={handleLogout} />
 }
 
 function App() {

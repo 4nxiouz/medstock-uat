@@ -23,7 +23,6 @@ import FormInput from './FormInput'
 
 type SidebarProps = {
     onLogout: () => void
-    onSwitchLocation: () => void
 }
 
 const baseItems = [

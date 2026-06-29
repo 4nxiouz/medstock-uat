@@ -12,7 +12,7 @@ import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string }
 
 function downloadCSV(drugs: Drug[], locationCode: string) {
@@ -25,7 +25,7 @@ function downloadCSV(drugs: Drug[], locationCode: string) {
     URL.revokeObjectURL(url)
 }
 
-function Inventory({ onLogout, onSwitchLocation }: PageProps) {
+function Inventory({ onLogout }: PageProps) {
     const { location } = useLocation()
     const [drugs, setDrugs] = useState<Drug[]>([])
     const [search, setSearch] = useState('')
@@ -175,7 +175,7 @@ function Inventory({ onLogout, onSwitchLocation }: PageProps) {
     }
 
     return (
-        <PageLayout title="Inventory" subtitle={`All items at ${location?.name ?? '—'}`} onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout title="Inventory" subtitle="All items" onLogout={onLogout}>
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard title="Total Items" value={drugs.length} tone="blue" icon={Package} />
                 <StatCard title="Total Stock" value={totalStock} tone="green" icon={Boxes} />

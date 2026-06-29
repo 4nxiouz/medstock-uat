@@ -10,7 +10,7 @@ import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug, StockTransaction } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 type DayBar = { label: string; inn: number; out: number }
 
 function getLast7Days(): string[] {
@@ -20,7 +20,7 @@ function getLast7Days(): string[] {
     })
 }
 
-function Home({ onLogout, onSwitchLocation }: PageProps) {
+function Home({ onLogout }: PageProps) {
     const { location } = useLocation()
     const [totalDrug, setTotalDrug] = useState(0)
     const [totalStock, setTotalStock] = useState(0)
@@ -66,7 +66,7 @@ function Home({ onLogout, onSwitchLocation }: PageProps) {
     const chartMax = Math.max(1, ...chart.map((d) => Math.max(d.inn, d.out)))
 
     return (
-        <PageLayout title="Dashboard" subtitle={`Stock overview — ${location?.name ?? '—'}`} onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout title="Dashboard" subtitle="Stock overview" onLogout={onLogout}>
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard title="Total Items" value={totalDrug} tone="blue" icon={Package} />
                 <StatCard title="Total Stock" value={totalStock} tone="green" icon={Boxes} />

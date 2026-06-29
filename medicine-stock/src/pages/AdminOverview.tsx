@@ -7,7 +7,7 @@ import { useLocation as useLocationCtx } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Location } from '../types'
 
-type PageProps = { onLogout: () => void; onSwitchLocation: () => void }
+type PageProps = { onLogout: () => void }
 
 type DrugRow = { id: number; drug_name: string; current_stock: number; min_stock: number }
 
@@ -19,7 +19,7 @@ type LocationStat = {
     lastActivity: string | null
 }
 
-function AdminOverview({ onLogout, onSwitchLocation }: PageProps) {
+function AdminOverview({ onLogout }: PageProps) {
     const navigate = useNavigate()
     const { availableLocations, setLocation } = useLocationCtx()
     const [stats, setStats] = useState<LocationStat[]>([])
@@ -70,7 +70,7 @@ function AdminOverview({ onLogout, onSwitchLocation }: PageProps) {
     const totalLow = stats.reduce((s, st) => s + st.lowItems.length, 0)
 
     return (
-        <PageLayout title="Overview" subtitle="Summary of all locations" onLogout={onLogout} onSwitchLocation={onSwitchLocation}>
+        <PageLayout title="Overview" subtitle="Summary of all locations" onLogout={onLogout}>
             {loading ? (
                 <div className="py-20 text-center text-sm text-slate-500">Loading...</div>
             ) : (

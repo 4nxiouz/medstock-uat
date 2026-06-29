@@ -9,12 +9,9 @@ import Table from '../components/Table'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
-type PageProps = {
-    onLogout: () => void
-    onSwitchLocation: () => void
-}
+type PageProps = { onLogout: () => void }
 
-function Dashboard({ onLogout, onSwitchLocation }: PageProps) {
+function Dashboard({ onLogout }: PageProps) {
     const [drugs, setDrugs] = useState<Drug[]>([])
     const [search, setSearch] = useState('')
     const [message, setMessage] = useState('')
@@ -97,7 +94,6 @@ function Dashboard({ onLogout, onSwitchLocation }: PageProps) {
             title="Inventory"
             subtitle="Edit stock records and review low-stock medicines."
             onLogout={onLogout}
-            onSwitchLocation={onSwitchLocation}
         >
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard title="Total Drugs" value={drugs.length} tone="blue" icon={Package} />

@@ -8,12 +8,9 @@ import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
-type PageProps = {
-    onLogout: () => void
-    onSwitchLocation: () => void
-}
+type PageProps = { onLogout: () => void }
 
-function PrintBarcode({ onLogout, onSwitchLocation }: PageProps) {
+function PrintBarcode({ onLogout }: PageProps) {
     const { location } = useLocation()
     const [drugs, setDrugs] = useState<Drug[]>([])
     const [search, setSearch] = useState('')
@@ -66,12 +63,7 @@ function PrintBarcode({ onLogout, onSwitchLocation }: PageProps) {
     }
 
     return (
-        <PageLayout
-            title="Print Barcode"
-            subtitle={`Select medicines and print barcode labels — ${location?.name ?? '—'}`}
-            onLogout={onLogout}
-            onSwitchLocation={onSwitchLocation}
-        >
+        <PageLayout title="Print Barcode" subtitle="Select medicines and print barcode labels" onLogout={onLogout}>
             {/* Toolbar — hidden when printing */}
             <div className="no-print mb-5 flex flex-wrap items-center gap-3">
                 <div className="flex-1">
