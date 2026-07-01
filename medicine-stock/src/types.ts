@@ -7,6 +7,7 @@ export type Drug = {
     unit_per_scan: number
     image_url?: string | null
     location_id?: number | null
+    category?: string | null
 }
 
 export type StockTransaction = {

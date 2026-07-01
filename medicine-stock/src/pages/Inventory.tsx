@@ -38,13 +38,14 @@ function Inventory({ onLogout }: PageProps) {
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
     const [cameraOpen, setCameraOpen] = useState(false)
+    const [activeCategory, setActiveCategory] = useState<string>('ทั้งหมด')
 
     async function loadDrugs() {
         if (!location) return
         setLoading(true)
         const { data, error } = await supabase
             .from('drug_master')
-            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url')
+            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url, category')
             .eq('location_id', location.id)
             .order('drug_name')
         setLoading(false)
@@ -53,10 +54,19 @@ function Inventory({ onLogout }: PageProps) {
 
     useEffect(() => { void loadDrugs() }, [location])
 
+    const categories = useMemo(() => {
+        const cats = Array.from(new Set(drugs.map((d) => d.category || 'อื่นๆ'))).sort()
+        return ['ทั้งหมด', ...cats]
+    }, [drugs])
+
     const filteredDrugs = useMemo(() => {
         const kw = search.toLowerCase()
-        return drugs.filter((d) => d.drug_name.toLowerCase().includes(kw) || d.barcode.includes(search))
-    }, [drugs, search])
+        return drugs.filter((d) => {
+            const matchSearch = d.drug_name.toLowerCase().includes(kw) || d.barcode.includes(search)
+            const matchCat = activeCategory === 'ทั้งหมด' || (d.category || 'อื่นๆ') === activeCategory
+            return matchSearch && matchCat
+        })
+    }, [drugs, search, activeCategory])
 
     const lowStock = drugs.filter((d) => Number(d.current_stock) <= Number(d.min_stock))
     const totalStock = drugs.reduce((sum, d) => sum + Number(d.current_stock || 0), 0)
@@ -201,6 +211,29 @@ function Inventory({ onLogout }: PageProps) {
                     {message && <div className="rounded-md bg-white px-3 py-2 text-sm text-slate-700">{message}</div>}
                 </div>
 
+                {/* Category tabs */}
+                <div className="flex gap-2 overflow-x-auto border-b border-slate-200 px-5 py-2.5 scrollbar-none">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setActiveCategory(cat)}
+                            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                                activeCategory === cat
+                                    ? 'bg-teal-700 text-white'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                        >
+                            {cat}
+                            {cat !== 'ทั้งหมด' && (
+                                <span className={`ml-1.5 ${activeCategory === cat ? 'text-white/70' : 'text-slate-400'}`}>
+                                    {drugs.filter((d) => (d.category || 'อื่นๆ') === cat).length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Drug cards */}
                 <div className="p-5">
                 {loading ? (
@@ -225,6 +258,11 @@ function Inventory({ onLogout }: PageProps) {
                                             <div>
                                                 <h3 className="font-semibold text-slate-950">{drug.drug_name}</h3>
                                                 <p className="mt-1 break-all text-xs text-slate-500">{drug.barcode}</p>
+                                                {drug.category && (
+                                                    <span className="mt-1.5 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
+                                                        {drug.category}
+                                                    </span>
+                                                )}
                                             </div>
                                             {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase text-red-700">Low</span>}
                                         </div>
