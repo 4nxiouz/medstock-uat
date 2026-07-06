@@ -38,11 +38,8 @@ function CameraScanner({ open, onClose, onScan }: Props) {
                 const track = stream.getVideoTracks()[0]
                 try {
                     const caps = track.getCapabilities() as Record<string, unknown>
-                    const patch: Record<string, unknown> = {}
-                    if ('zoom' in caps) patch['zoom'] = 2
-                    if ('focusMode' in caps) patch['focusMode'] = 'continuous'
-                    if (Object.keys(patch).length) {
-                        await track.applyConstraints({ advanced: [patch as MediaTrackConstraintSet] })
+                    if ('focusMode' in caps) {
+                        await track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] })
                     }
                 } catch { /* device may not support — ignore */ }
 
@@ -107,12 +104,12 @@ function CameraScanner({ open, onClose, onScan }: Props) {
                     </button>
                 </div>
 
-                {/* Viewfinder — fills width naturally, no cropping */}
-                <div className="relative w-full bg-black">
+                {/* Viewfinder — CSS zoom works on all devices (iOS + Android) */}
+                <div className="relative w-full overflow-hidden bg-black" style={{ maxHeight: '60vh' }}>
                     <video
                         ref={videoRef}
                         className="w-full"
-                        style={{ display: 'block', maxHeight: '60vh', objectFit: 'contain' }}
+                        style={{ display: 'block', transform: 'scale(2)', transformOrigin: 'center center' }}
                         playsInline muted autoPlay
                     />
                     <canvas ref={canvasRef} className="hidden" />
