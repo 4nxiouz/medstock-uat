@@ -39,7 +39,7 @@ function CameraScanner({ open, onClose, onScan }: Props) {
                 try {
                     const caps = track.getCapabilities() as Record<string, unknown>
                     const patch: Record<string, unknown> = {}
-                    if ('zoom' in caps) patch['zoom'] = 1
+                    if ('zoom' in caps) patch['zoom'] = 2
                     if ('focusMode' in caps) patch['focusMode'] = 'continuous'
                     if (Object.keys(patch).length) {
                         await track.applyConstraints({ advanced: [patch as MediaTrackConstraintSet] })
