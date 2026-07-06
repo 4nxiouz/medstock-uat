@@ -26,22 +26,18 @@ function CameraScanner({ open, onClose, onScan }: Props) {
             try {
                 // Request without width/height — let browser pick native resolution
                 // so it won't select a telephoto / cropped sensor
+                // High resolution forces main camera (autofocus lens), not ultra-wide (fixed focus)
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: 'environment' } },
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                    },
                     audio: false,
                 })
 
                 if (!activeRef.current) { stream.getTracks().forEach(t => t.stop()); return }
                 streamRef.current = stream
-
-                // Reset zoom + enable autofocus on the raw track
-                const track = stream.getVideoTracks()[0]
-                try {
-                    const caps = track.getCapabilities() as Record<string, unknown>
-                    if ('focusMode' in caps) {
-                        await track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] })
-                    }
-                } catch { /* device may not support — ignore */ }
 
                 const video = videoRef.current!
                 video.srcObject = stream
