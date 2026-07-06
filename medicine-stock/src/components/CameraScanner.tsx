@@ -1,3 +1,4 @@
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library'
 import { Camera, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -9,96 +10,41 @@ type CameraScannerProps = {
 
 function CameraScanner({ open, onClose, onScan }: CameraScannerProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
+    const readerRef = useRef<BrowserMultiFormatReader | null>(null)
     const [error, setError] = useState('')
 
     useEffect(() => {
-        if (!open) {
-            return
-        }
+        if (!open) return
 
-        let stream: MediaStream | null = null
-        let frameId = 0
-        let active = true
+        setError('')
+        const reader = new BrowserMultiFormatReader()
+        readerRef.current = reader
 
-        async function startScanner() {
-            setError('')
-
-            if (!('BarcodeDetector' in window)) {
-                setError('Camera scan needs Chrome on Android or Safari 17+. Use Bluetooth scanner or type manually.')
-                return
-            }
-
-            try {
-                const detector = new BarcodeDetector({
-                    formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'qr_code'],
-                })
-
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: 'environment' } },
-                    audio: false,
-                })
-
-                const video = videoRef.current
-                if (!video || !active) {
-                    return
-                }
-
-                video.srcObject = stream
-                await video.play()
-
-                const scanFrame = async () => {
-                    if (!active || !videoRef.current) {
-                        return
+        reader.decodeFromConstraints(
+            { video: { facingMode: { ideal: 'environment' } }, audio: false },
+            videoRef.current!,
+            (result, err) => {
+                if (result) {
+                    const value = result.getText().trim()
+                    if (value) {
+                        onScan(value)
+                        onClose()
                     }
-
-                    try {
-                        const barcodes = await detector.detect(videoRef.current)
-                        const value = barcodes[0]?.rawValue?.trim()
-
-                        if (value) {
-                            onScan(value)
-                            stopScanner()
-                            onClose()
-                            return
-                        }
-                    } catch {
-                        // keep scanning
-                    }
-
-                    frameId = window.requestAnimationFrame(() => {
-                        void scanFrame()
-                    })
-                }
-
-                void scanFrame()
-            } catch {
-                if (active) {
-                    setError('Cannot open camera. Allow camera permission or use manual input.')
+                } else if (err && !(err instanceof NotFoundException)) {
+                    setError('ไม่สามารถเปิดกล้องได้ — กรุณาอนุญาต Camera permission ในการตั้งค่าเบราว์เซอร์')
                 }
             }
-        }
-
-        function stopScanner() {
-            window.cancelAnimationFrame(frameId)
-            stream?.getTracks().forEach((track) => track.stop())
-            stream = null
-
-            if (videoRef.current) {
-                videoRef.current.srcObject = null
-            }
-        }
-
-        void startScanner()
+        ).catch(() => {
+            setError('ไม่สามารถเปิดกล้องได้ — กรุณาอนุญาต Camera permission ในการตั้งค่าเบราว์เซอร์')
+        })
 
         return () => {
-            active = false
-            stopScanner()
+            readerRef.current?.reset()
+            readerRef.current = null
         }
     }, [open, onClose, onScan])
 
-    if (!open) {
-        return null
-    }
+    if (!open) return null
 
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
@@ -106,7 +52,7 @@ function CameraScanner({ open, onClose, onScan }: CameraScannerProps) {
                 <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                     <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                         <Camera className="size-4" />
-                        Scan with camera
+                        สแกน Barcode
                     </div>
                     <button
                         type="button"
@@ -117,24 +63,29 @@ function CameraScanner({ open, onClose, onScan }: CameraScannerProps) {
                     </button>
                 </div>
 
-                <div className="bg-slate-950 p-3">
+                <div className="relative bg-slate-950 p-3">
                     <video
                         ref={videoRef}
                         className="aspect-[4/3] w-full rounded-lg object-cover"
                         playsInline
                         muted
+                        autoPlay
                     />
+                    {/* crosshair guide */}
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-3">
+                        <div className="h-24 w-64 rounded border-2 border-teal-400 opacity-70" />
+                    </div>
                 </div>
 
-                {error && (
-                    <div className="border-t border-slate-200 px-4 py-3 text-sm text-red-700">
+                {error ? (
+                    <div className="border-t border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error}
                     </div>
+                ) : (
+                    <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
+                        จ่อกล้องไปที่ barcode — ระบบจะสแกนอัตโนมัติ
+                    </div>
                 )}
-
-                <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
-                    Point the camera at a barcode. HTTPS required on mobile browsers.
-                </div>
             </div>
         </div>
     )
