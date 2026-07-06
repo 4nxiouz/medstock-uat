@@ -100,12 +100,18 @@ function CameraScanner({ open, onClose, onScan }: Props) {
                     </button>
                 </div>
 
-                {/* Viewfinder — CSS zoom works on all devices (iOS + Android) */}
-                <div className="relative w-full overflow-hidden bg-black" style={{ maxHeight: '60vh' }}>
+                {/* Viewfinder: oversized video clipped by container = sharp zoom, no upscale blur */}
+                <div className="relative overflow-hidden bg-black" style={{ height: '55vw', maxHeight: '360px' }}>
                     <video
                         ref={videoRef}
-                        className="w-full"
-                        style={{ display: 'block', transform: 'scale(2)', transformOrigin: 'center center' }}
+                        style={{
+                            position: 'absolute',
+                            width: '180%',
+                            height: '180%',
+                            top: '-40%',
+                            left: '-40%',
+                            objectFit: 'cover',
+                        }}
                         playsInline muted autoPlay
                     />
                     <canvas ref={canvasRef} className="hidden" />
