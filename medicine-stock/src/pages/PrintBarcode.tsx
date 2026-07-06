@@ -125,16 +125,16 @@ function PrintBarcode({ onLogout }: PageProps) {
                     <div className="print-label-grid hidden print:block">
                         {toPrint.map((drug) => (
                             <div key={drug.id} className="print-label">
-                                <div style={{ fontSize: '10pt', fontWeight: 700, marginBottom: '2mm' }}>
+                                <div style={{ fontSize: '11pt', fontWeight: 700, marginBottom: '3mm', lineHeight: 1.3 }}>
                                     {drug.drug_name}
                                 </div>
                                 <Barcode
                                     value={drug.barcode}
                                     format="CODE128"
-                                    height={48}
-                                    width={1.4}
+                                    height={72}
+                                    width={2}
                                     displayValue
-                                    fontSize={10}
+                                    fontSize={11}
                                 />
                             </div>
                         ))}

@@ -115,7 +115,7 @@ function CameraScanner({ open, onClose, onScan }: CameraScannerProps) {
                 <div className="relative bg-slate-950">
                     <video
                         ref={videoRef}
-                        className="aspect-[4/3] w-full object-cover"
+                        className="aspect-[4/3] w-full object-contain bg-black"
                         playsInline muted autoPlay
                     />
                     {/* hidden canvas for ZBar processing */}
