@@ -1,4 +1,5 @@
 ﻿import {
+    Backpack,
     ClipboardList,
     History,
     Home,
@@ -29,6 +30,7 @@ const baseItems = [
     { label: 'Out Stock', path: '/issue', icon: PackageMinus, adminOnly: false },
     { label: 'Print Barcode', path: '/print', icon: Printer, adminOnly: false },
     { label: 'Transaction History', path: '/history', icon: History, adminOnly: false },
+    { label: 'Bag Log', path: '/baglog', icon: Backpack, adminOnly: false },
     { label: 'User Management', path: '/user', icon: Users, adminOnly: true },
 ]
 

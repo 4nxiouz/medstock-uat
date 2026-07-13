@@ -17,7 +17,7 @@ function UserManage({ onLogout }: PageProps) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [fullname, setFullname] = useState('')
-    const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user')
+    const [newUserRole, setNewUserRole] = useState<'user' | 'supervisor' | 'admin'>('user')
     const [newUserPages, setNewUserPages] = useState<string[]>([...ALL_PATHS])
     const [message, setMessage] = useState('')
     const [messageType, setMessageType] = useState<'ok' | 'error'>('ok')
@@ -208,11 +208,11 @@ function UserManage({ onLogout }: PageProps) {
                         {/* Role */}
                         <div>
                             <div className="mb-2 text-sm font-medium text-slate-700">Role</div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <button
                                     type="button"
                                     onClick={() => { setNewUserRole('user'); setNewUserPages([...ALL_PATHS]) }}
-                                    className={`rounded-lg border-2 px-4 py-2.5 text-sm font-semibold transition ${
+                                    className={`rounded-lg border-2 px-3 py-2.5 text-sm font-semibold transition ${
                                         newUserRole === 'user'
                                             ? 'border-teal-500 bg-teal-50 text-teal-700'
                                             : 'border-slate-200 text-slate-500 hover:border-slate-300'
@@ -222,8 +222,19 @@ function UserManage({ onLogout }: PageProps) {
                                 </button>
                                 <button
                                     type="button"
+                                    onClick={() => { setNewUserRole('supervisor'); setNewUserPages([...ALL_PATHS]) }}
+                                    className={`rounded-lg border-2 px-3 py-2.5 text-sm font-semibold transition ${
+                                        newUserRole === 'supervisor'
+                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                            : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                    }`}
+                                >
+                                    Supervisor
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => { setNewUserRole('admin'); setNewUserPages([...ALL_PATHS]) }}
-                                    className={`rounded-lg border-2 px-4 py-2.5 text-sm font-semibold transition ${
+                                    className={`rounded-lg border-2 px-3 py-2.5 text-sm font-semibold transition ${
                                         newUserRole === 'admin'
                                             ? 'border-amber-500 bg-amber-50 text-amber-700'
                                             : 'border-slate-200 text-slate-500 hover:border-slate-300'
@@ -232,6 +243,11 @@ function UserManage({ onLogout }: PageProps) {
                                     Admin
                                 </button>
                             </div>
+                            {newUserRole === 'supervisor' && (
+                                <p className="mt-1.5 text-xs text-blue-600">
+                                    Supervisor can edit bag details and add usage logs in Bag Log.
+                                </p>
+                            )}
                             {newUserRole === 'admin' && (
                                 <p className="mt-1.5 text-xs text-amber-600">
                                     Admin has full access to all pages including User Management.

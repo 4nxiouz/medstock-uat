@@ -1,4 +1,4 @@
-import { PackageMinus, Trash2 } from 'lucide-react'
+import { Backpack, ChevronLeft, PackageMinus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
@@ -10,15 +10,65 @@ import type { Drug } from '../types'
 
 type PageProps = { onLogout: () => void }
 type CartItem = { drug: Drug; qty: number }
+type Step = 'bag' | 'form' | 'scan'
+type BagType = 'FAK' | 'EMK'
+
+type DispatchForm = {
+    order_no: string
+    serial_no: string
+    equipment_no: string
+    seal_number: string
+    type: string
+    status: 'OPEN' | 'CLOSE'
+    cause_1: 'Use' | 'Expire' | ''
+    cause_2: string
+    date_in: string
+    date_out: string
+}
+
+const emptyForm: DispatchForm = {
+    order_no: '',
+    serial_no: '',
+    equipment_no: '',
+    seal_number: '',
+    type: '',
+    status: 'OPEN',
+    cause_1: '',
+    cause_2: '',
+    date_in: '',
+    date_out: '',
+}
 
 function IssueDrug({ onLogout }: PageProps) {
     const { location } = useLocation()
+    const [step, setStep] = useState<Step>('bag')
+    const [bagType, setBagType] = useState<BagType | null>(null)
+    const [form, setForm] = useState<DispatchForm>(emptyForm)
+    const [formError, setFormError] = useState('')
+
     const [barcode, setBarcode] = useState('')
     const [cart, setCart] = useState<CartItem[]>([])
     const [scanMsg, setScanMsg] = useState('')
     const [confirmMsg, setConfirmMsg] = useState('')
     const [confirming, setConfirming] = useState(false)
     const barcodeRef = useRef<HTMLInputElement>(null)
+
+    function handleBagSelect(type: BagType) {
+        setBagType(type)
+        setStep('form')
+    }
+
+    function handleFormNext() {
+        setFormError('')
+        if (!form.serial_no.trim()) { setFormError('S/N is required'); return }
+        if (!form.equipment_no.trim()) { setFormError('EQ is required'); return }
+        if (!form.date_out) { setFormError('Out date is required'); return }
+        setStep('scan')
+    }
+
+    function setField<K extends keyof DispatchForm>(key: K, value: DispatchForm[K]) {
+        setForm((prev) => ({ ...prev, [key]: value }))
+    }
 
     async function handleBarcodeScan(code: string) {
         setScanMsg('')
@@ -58,7 +108,7 @@ function IssueDrug({ onLogout }: PageProps) {
     }
 
     async function handleConfirm() {
-        if (cart.length === 0 || !location) return
+        if (cart.length === 0 || !location || !bagType) return
         setConfirming(true)
         setConfirmMsg('')
 
@@ -71,8 +121,44 @@ function IssueDrug({ onLogout }: PageProps) {
             }
         }
 
+        // Insert bag_dispatch record
+        const { data: dispatchData, error: dispatchError } = await supabase
+            .from('bag_dispatch')
+            .insert([{
+                bag_type: bagType,
+                order_no: form.order_no.trim() || null,
+                serial_no: form.serial_no.trim(),
+                equipment_no: form.equipment_no.trim(),
+                seal_number: form.seal_number.trim() || null,
+                type: form.type.trim() || null,
+                status: form.status,
+                cause_1: form.cause_1 || null,
+                cause_2: form.cause_2.trim() || null,
+                date_in: form.date_in || null,
+                date_out: form.date_out,
+                location_id: location.id,
+                created_by: getCreatedBy(),
+            }])
+            .select('id')
+            .single()
+
+        if (dispatchError || !dispatchData) {
+            setConfirmMsg('บันทึก Dispatch ล้มเหลว: ' + (dispatchError?.message ?? 'unknown'))
+            setConfirming(false)
+            return
+        }
+
+        const dispatchId = (dispatchData as { id: number }).id
+
+        // Insert bag_dispatch_drug rows + deduct stock
         for (const item of cart) {
             const totalQty = item.qty * Number(item.drug.unit_per_scan || 1)
+            await supabase.from('bag_dispatch_drug').insert([{
+                dispatch_id: dispatchId,
+                barcode: item.drug.barcode,
+                drug_name: item.drug.drug_name,
+                qty: totalQty,
+            }])
             const newStock = Number(item.drug.current_stock) - totalQty
             await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', item.drug.id)
             await supabase.from('stock_transaction').insert([{
@@ -81,21 +167,123 @@ function IssueDrug({ onLogout }: PageProps) {
             }])
         }
 
-        setConfirmMsg(`✓ จ่ายยาสำเร็จ ${cart.length} รายการ`)
+        setConfirmMsg(`✓ บันทึก Bag Log สำเร็จ — ${bagType} S/N ${form.serial_no}`)
         setCart([])
         setConfirming(false)
-        barcodeRef.current?.focus()
+        // Reset to bag select
+        setTimeout(() => {
+            setStep('bag')
+            setBagType(null)
+            setForm(emptyForm)
+            setConfirmMsg('')
+        }, 2500)
     }
 
     const totalItems = cart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan || 1), 0)
     const hasCart = cart.length > 0
 
-    return (
-        <PageLayout title="Out Stock" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
-            {/* extra bottom padding on mobile so sticky bar doesn't cover content */}
-            <div className={`space-y-4 ${hasCart ? 'pb-28 lg:pb-0' : ''}`}>
+    // Step: Bag select
+    if (step === 'bag') {
+        return (
+            <PageLayout title="Out Stock" subtitle="เลือกประเภทกระเป๋าก่อนจ่ายยา" onLogout={onLogout}>
+                <div className="flex flex-col items-center gap-6 pt-4">
+                    <p className="text-sm font-medium text-slate-500">ยาจะถูกจ่ายไปที่กระเป๋าใด?</p>
+                    <div className="grid w-full max-w-md grid-cols-2 gap-4">
+                        {(['FAK', 'EMK'] as BagType[]).map((type) => (
+                            <button key={type} type="button" onClick={() => handleBagSelect(type)}
+                                className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white py-10 text-slate-700 shadow-sm transition hover:border-teal-400 hover:bg-teal-50 active:scale-95">
+                                <Backpack className="size-10 text-teal-600" />
+                                <span className="text-xl font-bold">{type}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </PageLayout>
+        )
+    }
 
-                {/* Scan input */}
+    // Step: Dispatch form
+    if (step === 'form') {
+        return (
+            <PageLayout title="Out Stock" subtitle={`กระเป๋า ${bagType} — กรอกข้อมูล`} onLogout={onLogout}>
+                <button type="button" onClick={() => setStep('bag')}
+                    className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
+                    <ChevronLeft className="size-4" /> เลือกกระเป๋าใหม่
+                </button>
+                <Card className="p-5 max-w-lg">
+                    <div className="mb-4 flex items-center gap-2">
+                        <Backpack className="size-5 text-teal-600" />
+                        <span className="font-semibold text-slate-800">กระเป๋า {bagType}</span>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="Order No" value={form.order_no} onChange={(v) => setField('order_no', v)} placeholder="เลขที่ใบสั่ง" />
+                            <Field label="S/N *" value={form.serial_no} onChange={(v) => setField('serial_no', v)} placeholder="Serial Number" required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="EQ *" value={form.equipment_no} onChange={(v) => setField('equipment_no', v)} placeholder="Equipment No" required />
+                            <Field label="Seal Number" value={form.seal_number} onChange={(v) => setField('seal_number', v)} placeholder="Seal No" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">Type</label>
+                                <select value={form.type} onChange={(e) => setField('type', e.target.value)}
+                                    className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
+                                    <option value="">-- เลือก --</option>
+                                    <option value="FAK">FAK</option>
+                                    <option value="EMK">EMK</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
+                                <select value={form.status} onChange={(e) => setField('status', e.target.value as 'OPEN' | 'CLOSE')}
+                                    className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
+                                    <option value="OPEN">OPEN</option>
+                                    <option value="CLOSE">CLOSE</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">1 Cause</label>
+                                <select value={form.cause_1} onChange={(e) => setField('cause_1', e.target.value as 'Use' | 'Expire' | '')}
+                                    className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
+                                    <option value="">-- เลือก --</option>
+                                    <option value="Use">Use</option>
+                                    <option value="Expire">Expire</option>
+                                </select>
+                            </div>
+                            <Field label="2 Cause" value={form.cause_2} onChange={(v) => setField('cause_2', v)} placeholder="หมายเหตุ" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="In Date" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} />
+                            <Field label="Out Date *" type="date" value={form.date_out} onChange={(v) => setField('date_out', v)} required />
+                        </div>
+
+                        {formError && (
+                            <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>
+                        )}
+
+                        <button type="button" onClick={handleFormNext}
+                            className="h-11 w-full rounded-xl text-sm font-semibold text-white"
+                            style={{ background: 'linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%)' }}>
+                            ถัดไป — สแกนยา
+                        </button>
+                    </div>
+                </Card>
+            </PageLayout>
+        )
+    }
+
+    // Step: Scan + cart
+    return (
+        <PageLayout title="Out Stock" subtitle={`กระเป๋า ${bagType} · S/N ${form.serial_no}`} onLogout={onLogout}>
+            <button type="button" onClick={() => setStep('form')}
+                className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
+                <ChevronLeft className="size-4" /> แก้ไขข้อมูล
+            </button>
+
+            <div className={`space-y-4 ${hasCart ? 'pb-28 lg:pb-0' : ''}`}>
                 <Card className="p-4">
                     <BarcodeInput
                         ref={barcodeRef}
@@ -112,10 +300,7 @@ function IssueDrug({ onLogout }: PageProps) {
                     )}
                 </Card>
 
-                {/* Desktop two-column layout */}
                 <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-
-                    {/* Cart list */}
                     {hasCart ? (
                         <Card className="overflow-hidden p-0">
                             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
@@ -127,7 +312,6 @@ function IssueDrug({ onLogout }: PageProps) {
                                     const total = item.qty * Number(item.drug.unit_per_scan || 1)
                                     return (
                                         <div key={item.drug.barcode} className="px-4 py-3">
-                                            {/* Drug name row */}
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="font-medium text-slate-900 leading-snug">{item.drug.drug_name}</div>
@@ -138,7 +322,6 @@ function IssueDrug({ onLogout }: PageProps) {
                                                     <Trash2 className="size-3.5" />
                                                 </button>
                                             </div>
-                                            {/* Qty controls row */}
                                             <div className="mt-2.5 flex items-center gap-2">
                                                 <span className="text-xs text-slate-500">จำนวนสแกน</span>
                                                 <input
@@ -162,7 +345,6 @@ function IssueDrug({ onLogout }: PageProps) {
                         </Card>
                     )}
 
-                    {/* Desktop summary sidebar */}
                     <div className="hidden lg:block">
                         <SummaryPanel
                             cart={cart}
@@ -176,7 +358,6 @@ function IssueDrug({ onLogout }: PageProps) {
                 </div>
             </div>
 
-            {/* Mobile sticky confirm bar */}
             {hasCart && (
                 <div className="fixed inset-x-0 bottom-16 z-30 px-4 pb-2 lg:hidden">
                     <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
@@ -207,6 +388,31 @@ function IssueDrug({ onLogout }: PageProps) {
                 </div>
             )}
         </PageLayout>
+    )
+}
+
+type FieldProps = {
+    label: string
+    value: string
+    onChange: (v: string) => void
+    placeholder?: string
+    type?: string
+    required?: boolean
+}
+
+function Field({ label, value, onChange, placeholder, type = 'text', required }: FieldProps) {
+    return (
+        <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+            <input
+                type={type}
+                value={value}
+                placeholder={placeholder}
+                onChange={(e) => onChange(e.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                required={required}
+            />
+        </div>
     )
 }
 

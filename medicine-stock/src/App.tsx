@@ -9,6 +9,7 @@ import Home from './pages/Home'
 import TransactionHistory from './pages/TransactionHistory'
 import Inventory from './pages/Inventory'
 import IssueDrug from './pages/IssueDrug'
+import BagLog from './pages/BagLog'
 import Login from './pages/Login'
 import PrintBarcode from './pages/PrintBarcode'
 import ReceiveDrug from './pages/ReceiveDrug'
@@ -45,6 +46,7 @@ function AppRoutes({ onLogout }: { onLogout: () => void }) {
 <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
             <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} />} />} />
             <Route path="/history" element={<TransactionHistory onLogout={onLogout} />} />
+            <Route path="/baglog" element={<Guarded path="/baglog" element={<BagLog onLogout={onLogout} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )

@@ -1,4 +1,5 @@
 import {
+    Backpack,
     History,
     Home,
     Menu,
@@ -27,6 +28,7 @@ function MobileNav() {
     const moreItems = [
         { label: 'Print Barcode', path: '/print', icon: Printer },
         { label: 'Transaction History', path: '/history', icon: History },
+        { label: 'Bag Log', path: '/baglog', icon: Backpack },
         ...(isAdmin ? [{ label: 'User Management', path: '/user', icon: Users }] : []),
     ]
 
