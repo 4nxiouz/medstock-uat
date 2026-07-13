@@ -127,9 +127,10 @@ function BagLog({ onLogout }: PageProps) {
                 row[name] = found ? found.qty : ''
             }
 
-            // Supervisor log columns — numbered if multiple
-            for (let i = 0; i < maxLogs; i++) {
-                const prefix = maxLogs > 1 ? `Supervisor ${i + 1} - ` : 'Supervisor - '
+            // Supervisor log columns — at least 1 set of headers even if no logs
+            const loopCount = Math.max(maxLogs, 1)
+            for (let i = 0; i < loopCount; i++) {
+                const prefix = loopCount > 1 ? `Supervisor ${i + 1} - ` : 'Supervisor - '
                 const log = bagLogs[i]
                 row[prefix + 'ชื่อยา'] = log?.drug_name ?? ''
                 row[prefix + 'จำนวน'] = log?.qty_used ?? ''
