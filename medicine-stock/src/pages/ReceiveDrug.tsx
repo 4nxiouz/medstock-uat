@@ -1,4 +1,4 @@
-﻿import { ImagePlus, PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
+﻿import { PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
@@ -35,7 +35,6 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [newMinStock, setNewMinStock] = useState('5')
     const [newUnitPerScan, setNewUnitPerScan] = useState('1')
     const [newInitQty, setNewInitQty] = useState('1')
-    const [newImage, setNewImage] = useState<File | null>(null)
     const [newMessage, setNewMessage] = useState('')
     const [registeredBarcode, setRegisteredBarcode] = useState('')
     const [registeredName, setRegisteredName] = useState('')
@@ -105,23 +104,12 @@ function ReceiveDrug({ onLogout }: PageProps) {
         const { data: existing } = await supabase.from('drug_master').select('id').eq('barcode', code).eq('location_id', location.id).maybeSingle()
         if (existing) { setNewMessage('This barcode already exists at this location.'); return }
 
-        let imageUrl = ''
-        if (newImage) {
-            const fileName = `${Date.now()}-${newImage.name}`
-            const { error: upErr } = await supabase.storage.from('drug-image').upload(fileName, newImage)
-            if (!upErr) {
-                const { data: urlData } = supabase.storage.from('drug-image').getPublicUrl(fileName)
-                imageUrl = urlData.publicUrl
-            }
-        }
-
         const { error } = await supabase.from('drug_master').insert([{
             barcode: code,
             drug_name: newName.trim(),
             current_stock: Number(newInitQty) * Number(newUnitPerScan),
             min_stock: Number(newMinStock || 0),
             unit_per_scan: Number(newUnitPerScan || 1),
-            image_url: imageUrl,
             location_id: location.id,
         }])
 
@@ -139,7 +127,6 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setNewMinStock('5')
         setNewUnitPerScan('1')
         setNewInitQty('1')
-        setNewImage(null)
     }
 
     const totalNew = Number(newInitQty || 0) * Number(newUnitPerScan || 1)
@@ -250,11 +237,6 @@ function ReceiveDrug({ onLogout }: PageProps) {
                             <FormInput label="Unit / Scan" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />
                             <FormInput label="Initial Scan Count" type="number" value={newInitQty} onChange={(e) => setNewInitQty(e.target.value)} />
                         </div>
-                        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-600 hover:border-blue-400 hover:bg-teal-50">
-                            <ImagePlus className="size-5 text-slate-400" />
-                            <span>{newImage ? newImage.name : 'Attach medicine image (optional)'}</span>
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
-                        </label>
                         {newMessage && <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{newMessage}</div>}
                     </Card>
 
