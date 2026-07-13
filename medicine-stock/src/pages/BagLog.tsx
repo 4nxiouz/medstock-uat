@@ -378,8 +378,9 @@ function BagDetailModal({
     ]
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col" style={{ height: 'min(600px, 90vh)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40">
+            <div className="flex min-h-full items-center justify-center p-4">
+            <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col" style={{ height: 'min(580px, 85vh)' }}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -545,6 +546,7 @@ function BagDetailModal({
                         <ChevronLeft className="size-4" /> ปิด
                     </button>
                 </div>
+            </div>
             </div>
         </div>
     )
