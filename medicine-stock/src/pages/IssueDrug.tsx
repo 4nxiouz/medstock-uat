@@ -91,7 +91,7 @@ function IssueDrug({ onLogout }: PageProps) {
     const hasCart = cart.length > 0
 
     return (
-        <PageLayout title="Dispense Medicine" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
+        <PageLayout title="Out Stock" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
             {/* extra bottom padding on mobile so sticky bar doesn't cover content */}
             <div className={`space-y-4 ${hasCart ? 'pb-28 lg:pb-0' : ''}`}>
 

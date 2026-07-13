@@ -186,7 +186,7 @@ function Inventory({ onLogout }: PageProps) {
     }
 
     return (
-        <PageLayout title="Inventory" subtitle="All items" onLogout={onLogout}>
+        <PageLayout title="Stock" subtitle="All items" onLogout={onLogout}>
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard title="Total Items" value={drugs.length} tone="blue" icon={Package} />
                 <StatCard title="Total Stock" value={totalStock} tone="green" icon={Boxes} />

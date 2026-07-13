@@ -146,7 +146,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const rsTotalUnits = rsCart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan || 1), 0)
 
     return (
-        <PageLayout title="Receive Medicine" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
+        <PageLayout title="In Stock" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
             <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
                 {(['restock', 'new'] as Tab[]).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}

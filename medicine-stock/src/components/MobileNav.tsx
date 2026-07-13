@@ -15,9 +15,9 @@ import { getCurrentUser } from '../lib/auth'
 
 const mainItems = [
     { label: 'Home', path: '/', icon: Home },
-    { label: 'Inventory', path: '/inventory', icon: Pill },
-    { label: 'Dispense', path: '/issue', icon: PackageMinus },
-    { label: 'Receive', path: '/receive', icon: PackagePlus },
+    { label: 'In Stock', path: '/receive', icon: PackagePlus },
+    { label: 'Stock', path: '/inventory', icon: Pill },
+    { label: 'Out Stock', path: '/issue', icon: PackageMinus },
 ]
 
 function MobileNav() {

@@ -38,9 +38,9 @@ export type Location = {
 }
 
 export const PAGE_PERMISSIONS: { path: string; label: string }[] = [
-    { path: '/inventory', label: 'Inventory' },
-    { path: '/issue', label: 'Dispense Medicine' },
-    { path: '/receive', label: 'Receive Medicine' },
-    { path: '/scan', label: 'Stock Lookup' },
+    { path: '/receive', label: 'In Stock' },
+    { path: '/inventory', label: 'Stock' },
+    { path: '/issue', label: 'Out Stock' },
     { path: '/print', label: 'Print Barcode' },
+    { path: '/history', label: 'Transaction History' },
 ]
