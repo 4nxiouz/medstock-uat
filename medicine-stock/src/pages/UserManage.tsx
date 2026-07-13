@@ -261,9 +261,25 @@ function UserManage({ onLogout }: PageProps) {
                                 </button>
                             </div>
                             {newUserRole === 'supervisor' && (
-                                <p className="mt-1.5 text-xs text-blue-600">
-                                    Supervisor เข้าได้แค่ Bag Log เท่านั้น
-                                </p>
+                                <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                    <p className="mb-2 text-xs font-semibold text-blue-700">Bag Log — เลือกสิทธิ์ที่ให้เข้าถึง</p>
+                                    <div className="space-y-1.5">
+                                        {[
+                                            { path: '/baglog/edit', label: 'แก้ไขข้อมูล' },
+                                            { path: '/baglog/log', label: 'Usage Log' },
+                                        ].map((sub) => (
+                                            <label key={sub.path} className="flex cursor-pointer items-center gap-2.5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newUserPages.includes(sub.path)}
+                                                    onChange={() => togglePage(sub.path, newUserPages, setNewUserPages)}
+                                                    className="size-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-xs text-slate-700">{sub.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                             {newUserRole === 'admin' && (
                                 <p className="mt-1.5 text-xs text-amber-600">
@@ -287,16 +303,37 @@ function UserManage({ onLogout }: PageProps) {
 
                             <div className="space-y-2.5">
                                 {PAGE_PERMISSIONS.map((page) => (
-                                    <label key={page.path} className="flex cursor-pointer items-center gap-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={newUserPages.includes(page.path)}
-                                            onChange={() => togglePage(page.path, newUserPages, setNewUserPages)}
-                                            disabled={columnMissing}
-                                            className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
-                                        />
-                                        <span className="text-sm text-slate-700">{page.label}</span>
-                                    </label>
+                                    <div key={page.path}>
+                                        <label className="flex cursor-pointer items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={newUserPages.includes(page.path)}
+                                                onChange={() => togglePage(page.path, newUserPages, setNewUserPages)}
+                                                disabled={columnMissing}
+                                                className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
+                                            />
+                                            <span className="text-sm text-slate-700">{page.label}</span>
+                                        </label>
+                                        {/* Bag Log sub-permissions */}
+                                        {page.path === '/baglog' && newUserPages.includes('/baglog') && (
+                                            <div className="ml-7 mt-2 space-y-1.5 border-l-2 border-teal-200 pl-3">
+                                                {[
+                                                    { path: '/baglog/edit', label: 'แก้ไขข้อมูล' },
+                                                    { path: '/baglog/log', label: 'Usage Log' },
+                                                ].map((sub) => (
+                                                    <label key={sub.path} className="flex cursor-pointer items-center gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={newUserPages.includes(sub.path)}
+                                                            onChange={() => togglePage(sub.path, newUserPages, setNewUserPages)}
+                                                            className="size-3.5 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
+                                                        />
+                                                        <span className="text-xs text-slate-600">{sub.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
 

@@ -37,3 +37,15 @@ export function isPrivileged(): boolean {
     const role = getCurrentUser()?.role
     return role === 'admin' || role === 'supervisor'
 }
+
+export function canAccessBagLogEdit(): boolean {
+    const user = getCurrentUser()
+    if (user?.role === 'admin') return true
+    return user?.allowed_pages?.includes('/baglog/edit') ?? false
+}
+
+export function canAccessBagLogLog(): boolean {
+    const user = getCurrentUser()
+    if (user?.role === 'admin') return true
+    return user?.allowed_pages?.includes('/baglog/log') ?? false
+}

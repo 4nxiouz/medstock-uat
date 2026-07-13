@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
-import { getCreatedBy, isPrivileged } from '../lib/auth'
+import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import type { BagDispatch, BagDispatchDrug, BagUsageLog } from '../types'
 
@@ -32,7 +32,8 @@ function BagLog({ onLogout }: PageProps) {
     const [exportTo, setExportTo] = useState('')
     const [exporting, setExporting] = useState(false)
 
-    const privileged = isPrivileged()
+    const canEdit = canAccessBagLogEdit()
+    const canLog = canAccessBagLogLog()
 
     useEffect(() => {
         void loadBags()
@@ -260,7 +261,8 @@ function BagLog({ onLogout }: PageProps) {
                     bag={selectedBag}
                     tab={modalTab}
                     setTab={setModalTab}
-                    privileged={privileged}
+                    canEdit={canEdit}
+                    canLog={canLog}
                     onClose={closeModal}
                     onBagUpdated={(updated) => setSelectedBag(updated)}
                 />
@@ -273,14 +275,16 @@ function BagDetailModal({
     bag,
     tab,
     setTab,
-    privileged,
+    canEdit,
+    canLog,
     onClose,
     onBagUpdated,
 }: {
     bag: BagDispatch
     tab: ModalTab
     setTab: (t: ModalTab) => void
-    privileged: boolean
+    canEdit: boolean
+    canLog: boolean
     onClose: (dirty?: boolean) => void
     onBagUpdated: (b: BagDispatch) => void
 }) {
@@ -369,8 +373,8 @@ function BagDetailModal({
 
     const tabs: { key: ModalTab; label: string }[] = [
         { key: 'drugs', label: 'รายการยา' },
-        ...(privileged ? [{ key: 'edit' as ModalTab, label: 'แก้ไขข้อมูล' }] : []),
-        ...(privileged ? [{ key: 'log' as ModalTab, label: 'Usage Log' }] : []),
+        ...(canEdit ? [{ key: 'edit' as ModalTab, label: 'แก้ไขข้อมูล' }] : []),
+        ...(canLog ? [{ key: 'log' as ModalTab, label: 'Usage Log' }] : []),
     ]
 
     return (
@@ -425,7 +429,7 @@ function BagDetailModal({
                     )}
 
                     {/* Edit tab */}
-                    {tab === 'edit' && privileged && (
+                    {tab === 'edit' && canEdit && (
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <MiniField label="Order No" value={editForm.order_no} onChange={(v) => setEditForm((p) => ({ ...p, order_no: v }))} />
@@ -485,7 +489,7 @@ function BagDetailModal({
                     )}
 
                     {/* Usage log tab */}
-                    {tab === 'log' && privileged && (
+                    {tab === 'log' && canLog && (
                         <div className="space-y-5">
                             <div className="rounded-xl border-2 border-teal-100 bg-teal-50/40 p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-teal-800">
