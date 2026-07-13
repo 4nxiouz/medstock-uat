@@ -245,7 +245,7 @@ function UserManage({ onLogout }: PageProps) {
                             </div>
                             {newUserRole === 'supervisor' && (
                                 <p className="mt-1.5 text-xs text-blue-600">
-                                    Supervisor เข้าได้แค่ Dashboard และ Bag Log เท่านั้น
+                                    Supervisor เข้าได้แค่ Bag Log เท่านั้น
                                 </p>
                             )}
                             {newUserRole === 'admin' && (
