@@ -95,9 +95,20 @@ function UserManage({ onLogout }: PageProps) {
         }
 
         // Auto-assign to the first available location
-        const { data: locs } = await supabase.from('location').select('id').eq('s_active', true).limit(1)
-        if (locs && locs.length > 0) {
-            await supabase.from('user_location').insert([{ user_id: (data as UserProfile).id, location_id: locs[0].id }])
+        const newUserId = (data as UserProfile).id
+        const { data: locs, error: locErr } = await supabase.from('location').select('id').eq('s_active', true).limit(1)
+        if (locErr) {
+            showMsg('User created but location fetch failed: ' + locErr.message, 'error')
+            return
+        }
+        if (!locs || locs.length === 0) {
+            showMsg('User created but no active location found — assign manually.', 'error')
+            return
+        }
+        const { error: assignErr } = await supabase.from('user_location').insert([{ user_id: newUserId, location_id: locs[0].id }])
+        if (assignErr) {
+            showMsg('User created but location assign failed: ' + assignErr.message, 'error')
+            return
         }
 
         setUsers((current) => [...current, data as UserProfile])
