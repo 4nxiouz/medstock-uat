@@ -84,71 +84,68 @@ function BagLog({ onLogout }: PageProps) {
         const [bagsRes, drugsRes, logsRes] = await Promise.all([
             supabase.from('bag_dispatch').select('*').gte('created_at', from).lte('created_at', to).order('created_at'),
             supabase.from('bag_dispatch_drug').select('*'),
-            supabase.from('bag_usage_log').select('*').order('created_at'),
+            supabase.from('bag_usage_log').select('*').order('dispatch_id').order('created_at'),
         ])
 
         const allBags = (bagsRes.data || []) as BagDispatch[]
         const allDrugs = (drugsRes.data || []) as BagDispatchDrug[]
         const allLogs = (logsRes.data || []) as BagUsageLog[]
 
-        // Sheet 1: Dispatch + Drugs
-        const dispatchRows: Record<string, unknown>[] = []
-        for (const bag of allBags) {
-            const drugs = allDrugs.filter((d) => d.dispatch_id === bag.id)
-            if (drugs.length === 0) {
-                dispatchRows.push(bagRow(bag, null))
-            } else {
-                for (const drug of drugs) {
-                    dispatchRows.push(bagRow(bag, drug))
-                }
-            }
-        }
+        // Collect unique drug names across all bags (for column headers)
+        const bagIds = new Set(allBags.map((b) => b.id))
+        const relevantDrugs = allDrugs.filter((d) => bagIds.has(d.dispatch_id))
+        const drugNames = Array.from(new Set(relevantDrugs.map((d) => d.drug_name)))
 
-        // Sheet 2: Usage Logs
-        const logRows: Record<string, unknown>[] = []
-        for (const log of allLogs) {
-            const bag = allBags.find((b) => b.id === log.dispatch_id)
-            logRows.push({
-                'Bag Type': bag?.bag_type ?? '',
-                'S/N': bag?.serial_no ?? '',
-                'EQ': bag?.equipment_no ?? '',
-                'Out Date': bag?.date_out ? formatDate(bag.date_out) : '',
-                'ชื่อยา': log.drug_name ?? '',
-                'จำนวนที่ใช้': log.qty_used ?? '',
-                'อาการผู้ป่วย': log.patient_condition ?? '',
-                'เหตุผล': log.reason ?? '',
-                'หมายเหตุ': log.notes ?? '',
-                'บันทึกโดย': log.created_by ?? '',
-                'วันที่บันทึก': log.created_at ? new Date(log.created_at).toLocaleString('th-TH') : '',
-            })
+        // Collect supervisor log columns — max entries per bag
+        const maxLogs = allBags.reduce((max, bag) => {
+            const count = allLogs.filter((l) => l.dispatch_id === bag.id).length
+            return Math.max(max, count)
+        }, 0)
+
+        const rows: Record<string, unknown>[] = []
+
+        for (const bag of allBags) {
+            const bagDrugs = allDrugs.filter((d) => d.dispatch_id === bag.id)
+            const bagLogs = allLogs.filter((l) => l.dispatch_id === bag.id)
+
+            const row: Record<string, unknown> = {
+                'Order No': bag.order_no ?? '',
+                'S/N': bag.serial_no,
+                'EQ': bag.equipment_no,
+                'Seal Number': bag.seal_number ?? '',
+                'Type': bag.type ?? '',
+                'In Date': bag.date_in ? formatDate(bag.date_in) : '',
+                'Out Date': bag.date_out ? formatDate(bag.date_out) : '',
+                'Status': bag.status,
+                '1 Cause': bag.cause_1 ?? '',
+                '2 Cause': bag.cause_2 ?? '',
+            }
+
+            // Drug columns — one column per unique drug name, value = qty
+            for (const name of drugNames) {
+                const found = bagDrugs.find((d) => d.drug_name === name)
+                row[name] = found ? found.qty : ''
+            }
+
+            // Supervisor log columns — numbered if multiple
+            for (let i = 0; i < maxLogs; i++) {
+                const prefix = maxLogs > 1 ? `Supervisor ${i + 1} - ` : 'Supervisor - '
+                const log = bagLogs[i]
+                row[prefix + 'ชื่อยา'] = log?.drug_name ?? ''
+                row[prefix + 'จำนวน'] = log?.qty_used ?? ''
+                row[prefix + 'อาการผู้ป่วย'] = log?.patient_condition ?? ''
+                row[prefix + 'เหตุผล'] = log?.reason ?? ''
+                row[prefix + 'หมายเหตุ'] = log?.notes ?? ''
+                row[prefix + 'บันทึกโดย'] = log?.created_by ?? ''
+            }
+
+            rows.push(row)
         }
 
         const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dispatchRows), 'Dispatch')
-        if (logRows.length > 0) {
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(logRows), 'Usage Log')
-        }
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Bag Log')
         XLSX.writeFile(wb, `BagLog_${exportFrom}_${exportTo}.xlsx`)
         setExporting(false)
-    }
-
-    function bagRow(bag: BagDispatch, drug: BagDispatchDrug | null) {
-        return {
-            'Bag Type': bag.bag_type,
-            'Order No': bag.order_no ?? '',
-            'S/N': bag.serial_no,
-            'EQ': bag.equipment_no,
-            'Seal Number': bag.seal_number ?? '',
-            'Type': bag.type ?? '',
-            'Status': bag.status,
-            'Cause 1': bag.cause_1 ?? '',
-            'Cause 2': bag.cause_2 ?? '',
-            'In Date': bag.date_in ? formatDate(bag.date_in) : '',
-            'Out Date': bag.date_out ? formatDate(bag.date_out) : '',
-            'ชื่อยา': drug?.drug_name ?? '',
-            'Barcode': drug?.barcode ?? '',
-            'จำนวน (หน่วย)': drug?.qty ?? '',
-        }
     }
 
     return (
