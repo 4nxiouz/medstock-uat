@@ -353,7 +353,6 @@ function BagDetailModal({
 
     async function handleAddLog() {
         setLogMsg('')
-        if (!logForm.drug_name.trim()) { setLogMsg('กรุณาระบุชื่อยา'); return }
         const { error } = await supabase.from('bag_usage_log').insert([{
             dispatch_id: bag.id,
             drug_name: logForm.drug_name.trim(),
@@ -493,7 +492,7 @@ function BagDetailModal({
                                 <div className="flex items-center gap-2 text-sm font-semibold text-teal-800">
                                     <PlusCircle className="size-4" /> เพิ่มบันทึกการใช้ยา
                                 </div>
-                                <MiniField label="ชื่อยา *" value={logForm.drug_name} onChange={(v) => setLogForm((p) => ({ ...p, drug_name: v }))} />
+                                <MiniField label="ชื่อยา" value={logForm.drug_name} onChange={(v) => setLogForm((p) => ({ ...p, drug_name: v }))} />
                                 <div className="grid grid-cols-2 gap-3">
                                     <MiniField label="จำนวนที่ใช้" type="number" value={logForm.qty_used} onChange={(v) => setLogForm((p) => ({ ...p, qty_used: v }))} />
                                     <MiniField label="อาการผู้ป่วย" value={logForm.patient_condition} onChange={(v) => setLogForm((p) => ({ ...p, patient_condition: v }))} />
