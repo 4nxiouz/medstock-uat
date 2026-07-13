@@ -215,7 +215,7 @@ function IssueDrug({ onLogout }: PageProps) {
                             <span className="size-1.5 rounded-full bg-teal-500 animate-pulse inline-block" />
                             Step 1 of 3 — Choose Bag Type
                         </div>
-                        <h2 className="mt-4 text-2xl font-bold text-slate-900">Which bag are you dispatching?</h2>
+                        <h2 className="mt-4 text-2xl font-bold text-slate-900">Which bag are you packing?</h2>
                         <p className="mt-1.5 text-sm text-slate-400">Select the kit type to fill in dispatch details and scan drugs.</p>
                     </div>
 
