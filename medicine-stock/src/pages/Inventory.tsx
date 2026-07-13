@@ -38,6 +38,7 @@ function Inventory({ onLogout }: PageProps) {
     const [adjustRemark, setAdjustRemark] = useState('')
     const [cameraOpen, setCameraOpen] = useState(false)
     const [activeCategory, setActiveCategory] = useState<string>('ทั้งหมด')
+    const [showLowOnly, setShowLowOnly] = useState(false)
 
     async function loadDrugs() {
         if (!location) return
@@ -63,9 +64,10 @@ function Inventory({ onLogout }: PageProps) {
         return drugs.filter((d) => {
             const matchSearch = d.drug_name.toLowerCase().includes(kw) || d.barcode.includes(search)
             const matchCat = activeCategory === 'ทั้งหมด' || (d.category || 'อื่นๆ') === activeCategory
-            return matchSearch && matchCat
+            const matchLow = !showLowOnly || Number(d.current_stock) <= Number(d.min_stock)
+            return matchSearch && matchCat && matchLow
         })
-    }, [drugs, search, activeCategory])
+    }, [drugs, search, activeCategory, showLowOnly])
 
     const lowStock = drugs.filter((d) => Number(d.current_stock) <= Number(d.min_stock))
     const totalStock = drugs.reduce((sum, d) => sum + Number(d.current_stock || 0), 0)
@@ -220,6 +222,20 @@ function Inventory({ onLogout }: PageProps) {
                             )}
                         </button>
                     ))}
+                    <button
+                        type="button"
+                        onClick={() => setShowLowOnly((v) => !v)}
+                        className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                            showLowOnly
+                                ? 'bg-red-500 text-white'
+                                : 'bg-red-50 text-red-500 hover:bg-red-100'
+                        }`}
+                    >
+                        ⚠ Low
+                        <span className={`ml-1.5 ${showLowOnly ? 'text-white/70' : 'text-red-400'}`}>
+                            {lowStock.length}
+                        </span>
+                    </button>
                 </div>
 
                 {/* Drug cards */}
