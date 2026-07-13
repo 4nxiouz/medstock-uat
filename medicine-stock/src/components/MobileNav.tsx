@@ -23,12 +23,23 @@ const mainItems = [
 
 function MobileNav() {
     const [menuOpen, setMenuOpen] = useState(false)
-    const isAdmin = getCurrentUser()?.role === 'admin'
+    const user = getCurrentUser()
+    const isAdmin = user?.role === 'admin'
+    const allowedPages = user?.allowed_pages
+
+    function canSee(path: string) {
+        if (!allowedPages) return true
+        return allowedPages.includes(path)
+    }
+
+    const filteredMainItems = mainItems.filter((item) =>
+        item.path === '/' || canSee(item.path)
+    )
 
     const moreItems = [
-        { label: 'Print Barcode', path: '/print', icon: Printer },
-        { label: 'Transaction History', path: '/history', icon: History },
-        { label: 'Bag Log', path: '/baglog', icon: Backpack },
+        ...(canSee('/print') ? [{ label: 'Print Barcode', path: '/print', icon: Printer }] : []),
+        ...(canSee('/history') ? [{ label: 'Transaction History', path: '/history', icon: History }] : []),
+        ...(canSee('/baglog') ? [{ label: 'Bag Log', path: '/baglog', icon: Backpack }] : []),
         ...(isAdmin ? [{ label: 'User Management', path: '/user', icon: Users }] : []),
     ]
 
@@ -37,7 +48,7 @@ function MobileNav() {
             {/* Bottom nav bar */}
             <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white lg:hidden">
                 <div className="grid grid-cols-5">
-                    {mainItems.map((item) => {
+                    {filteredMainItems.map((item) => {
                         const Icon = item.icon
                         return (
                             <NavLink key={item.path} to={item.path} end={item.path === '/'}

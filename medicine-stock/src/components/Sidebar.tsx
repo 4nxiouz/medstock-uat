@@ -35,8 +35,15 @@ const baseItems = [
 ]
 
 function Sidebar({ onLogout }: SidebarProps) {
-    const isAdmin = getCurrentUser()?.role === 'admin'
-    const menuItems = baseItems.filter((item) => !item.adminOnly || isAdmin)
+    const user = getCurrentUser()
+    const isAdmin = user?.role === 'admin'
+    const allowedPages = user?.allowed_pages
+    const menuItems = baseItems.filter((item) => {
+        if (item.adminOnly) return isAdmin
+        if (item.path === '/') return true
+        if (!allowedPages) return true
+        return allowedPages.includes(item.path)
+    })
     const [changePwOpen, setChangePwOpen] = useState(false)
     const [oldPw, setOldPw] = useState('')
     const [newPw, setNewPw] = useState('')
