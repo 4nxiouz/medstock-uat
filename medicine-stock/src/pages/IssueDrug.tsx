@@ -54,8 +54,7 @@ function IssueDrug({ onLogout }: PageProps) {
     const barcodeRef = useRef<HTMLInputElement>(null)
 
     function handleBagSelect(type: BagType) {
-        setBagType(type)
-        setStep('form')
+        handleBagSelectAndSetType(type)
     }
 
     function handleFormNext() {
@@ -64,6 +63,12 @@ function IssueDrug({ onLogout }: PageProps) {
         if (!form.equipment_no.trim()) { setFormError('EQ is required'); return }
         if (!form.date_out) { setFormError('Out date is required'); return }
         setStep('scan')
+    }
+
+    function handleBagSelectAndSetType(type: BagType) {
+        setBagType(type)
+        setForm((prev) => ({ ...prev, type }))
+        setStep('form')
     }
 
     function setField<K extends keyof DispatchForm>(key: K, value: DispatchForm[K]) {
@@ -186,14 +191,14 @@ function IssueDrug({ onLogout }: PageProps) {
     if (step === 'bag') {
         return (
             <PageLayout title="Out Stock" subtitle="เลือกประเภทกระเป๋าก่อนจ่ายยา" onLogout={onLogout}>
-                <div className="flex flex-col items-center gap-6 pt-4">
+                <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
                     <p className="text-sm font-medium text-slate-500">ยาจะถูกจ่ายไปที่กระเป๋าใด?</p>
-                    <div className="grid w-full max-w-md grid-cols-2 gap-4">
+                    <div className="grid w-full max-w-sm grid-cols-2 gap-5">
                         {(['FAK', 'EMK'] as BagType[]).map((type) => (
                             <button key={type} type="button" onClick={() => handleBagSelect(type)}
-                                className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white py-10 text-slate-700 shadow-sm transition hover:border-teal-400 hover:bg-teal-50 active:scale-95">
-                                <Backpack className="size-10 text-teal-600" />
-                                <span className="text-xl font-bold">{type}</span>
+                                className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white py-12 text-slate-700 shadow-sm transition hover:border-teal-400 hover:bg-teal-50 active:scale-95">
+                                <Backpack className="size-12 text-teal-600" />
+                                <span className="text-2xl font-bold">{type}</span>
                             </button>
                         ))}
                     </div>
@@ -224,24 +229,13 @@ function IssueDrug({ onLogout }: PageProps) {
                             <Field label="EQ *" value={form.equipment_no} onChange={(v) => setField('equipment_no', v)} placeholder="Equipment No" required />
                             <Field label="Seal Number" value={form.seal_number} onChange={(v) => setField('seal_number', v)} placeholder="Seal No" />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Type</label>
-                                <select value={form.type} onChange={(e) => setField('type', e.target.value)}
-                                    className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
-                                    <option value="">-- เลือก --</option>
-                                    <option value="FAK">FAK</option>
-                                    <option value="EMK">EMK</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
-                                <select value={form.status} onChange={(e) => setField('status', e.target.value as 'OPEN' | 'CLOSE')}
-                                    className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
-                                    <option value="OPEN">OPEN</option>
-                                    <option value="CLOSE">CLOSE</option>
-                                </select>
-                            </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
+                            <select value={form.status} onChange={(e) => setField('status', e.target.value as 'OPEN' | 'CLOSE')}
+                                className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
+                                <option value="OPEN">OPEN</option>
+                                <option value="CLOSE">CLOSE</option>
+                            </select>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
