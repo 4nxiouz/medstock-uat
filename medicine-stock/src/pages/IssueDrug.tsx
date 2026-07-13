@@ -196,23 +196,20 @@ function IssueDrug({ onLogout }: PageProps) {
                         <p className="text-base font-semibold text-slate-700">เลือกกระเป๋าที่จะจ่ายยา</p>
                         <p className="mt-1 text-sm text-slate-400">First Aid Kit หรือ Emergency Medical Kit</p>
                     </div>
-                    <div className="grid w-full max-w-md grid-cols-2 gap-6">
+                    <div className="grid w-full max-w-xs grid-cols-2 gap-4 sm:max-w-md sm:gap-6">
                         {([
-                            { type: 'FAK', label: 'First Aid Kit', color: 'from-teal-500 to-teal-700' },
-                            { type: 'EMK', label: 'Emergency Medical Kit', color: 'from-blue-500 to-blue-700' },
-                        ] as { type: BagType; label: string; color: string }[]).map(({ type, label, color }) => (
+                            { type: 'FAK', label: 'First Aid Kit', bg: 'linear-gradient(160deg, #0f766e 0%, #0d5c57 100%)' },
+                            { type: 'EMK', label: 'Emergency Medical Kit', bg: 'linear-gradient(160deg, #2563eb 0%, #1e3a8a 100%)' },
+                        ] as { type: BagType; label: string; bg: string }[]).map(({ type, label, bg }) => (
                             <button key={type} type="button" onClick={() => handleBagSelect(type)}
-                                className="group relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl py-14 text-white shadow-lg transition active:scale-95 hover:shadow-xl hover:-translate-y-0.5"
-                                style={{ background: `linear-gradient(160deg, var(--tw-gradient-stops))` }}>
-                                <div className={`absolute inset-0 bg-gradient-to-br ${color}`} />
-                                <div className="relative flex flex-col items-center gap-3">
-                                    <div className="flex size-16 items-center justify-center rounded-2xl bg-white/20">
-                                        <Backpack className="size-8" />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold tracking-wide">{type}</div>
-                                        <div className="mt-0.5 text-xs font-medium text-white/70">{label}</div>
-                                    </div>
+                                className="flex flex-col items-center justify-center gap-3 rounded-2xl px-4 py-10 text-white shadow-lg transition active:scale-95 sm:py-14"
+                                style={{ background: bg }}>
+                                <div className="flex size-14 items-center justify-center rounded-2xl bg-white/20 sm:size-16">
+                                    <Backpack className="size-7 sm:size-8" />
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-xl font-bold tracking-wide sm:text-2xl">{type}</div>
+                                    <div className="mt-0.5 text-[11px] font-medium leading-tight text-white/70 sm:text-xs">{label}</div>
                                 </div>
                             </button>
                         ))}
