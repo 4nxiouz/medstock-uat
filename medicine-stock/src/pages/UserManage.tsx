@@ -222,7 +222,7 @@ function UserManage({ onLogout }: PageProps) {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setNewUserRole('supervisor'); setNewUserPages([...ALL_PATHS]) }}
+                                    onClick={() => { setNewUserRole('supervisor'); setNewUserPages(['/baglog']) }}
                                     className={`rounded-lg border-2 px-3 py-2.5 text-sm font-semibold transition ${
                                         newUserRole === 'supervisor'
                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -245,7 +245,7 @@ function UserManage({ onLogout }: PageProps) {
                             </div>
                             {newUserRole === 'supervisor' && (
                                 <p className="mt-1.5 text-xs text-blue-600">
-                                    Supervisor can edit bag details and add usage logs in Bag Log.
+                                    Supervisor เข้าได้แค่ Dashboard และ Bag Log เท่านั้น
                                 </p>
                             )}
                             {newUserRole === 'admin' && (
@@ -257,6 +257,7 @@ function UserManage({ onLogout }: PageProps) {
 
                         {/* Page Permissions — only for regular users */}
                         {newUserRole === 'user' && <div className={`rounded-xl border-2 p-4 ${columnMissing ? 'border-amber-200 bg-amber-50' : 'border-blue-100 bg-teal-50'}`}>
+
                             <div className="mb-3 flex items-center gap-2">
                                 <Shield className={`size-4 ${columnMissing ? 'text-amber-500' : 'text-teal-700'}`} />
                                 <span className="text-sm font-bold text-slate-800">Page Access Permissions</span>
