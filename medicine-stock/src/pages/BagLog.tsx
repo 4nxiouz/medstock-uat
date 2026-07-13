@@ -379,7 +379,7 @@ function BagDetailModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col h-[90vh] max-h-[640px]">
+            <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col max-h-[85vh]">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -407,7 +407,7 @@ function BagDetailModal({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-5 min-h-[260px]">
+                <div className="overflow-y-auto p-5 min-h-[200px]">
 
                     {/* Drugs tab */}
                     {tab === 'drugs' && (
