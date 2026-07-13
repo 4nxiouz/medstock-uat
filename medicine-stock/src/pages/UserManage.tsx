@@ -94,6 +94,12 @@ function UserManage({ onLogout }: PageProps) {
             return
         }
 
+        // Auto-assign to the first available location
+        const { data: locs } = await supabase.from('location').select('id').eq('s_active', true).limit(1)
+        if (locs && locs.length > 0) {
+            await supabase.from('user_location').insert([{ user_id: (data as UserProfile).id, location_id: locs[0].id }])
+        }
+
         setUsers((current) => [...current, data as UserProfile])
         showMsg('User added successfully.')
         setUsername('')
