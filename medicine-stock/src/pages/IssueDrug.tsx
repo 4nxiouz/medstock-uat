@@ -140,7 +140,7 @@ function IssueDrug({ onLogout }: PageProps) {
                 cause_1: form.cause_1 || null,
                 cause_2: form.cause_2.trim() || null,
                 date_in: form.date_in || null,
-                date_out: form.date_out,
+                date_out: form.date_out || null,
                 location_id: location.id,
                 created_by: getCreatedBy(),
             }])
