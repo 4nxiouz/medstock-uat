@@ -28,9 +28,9 @@ const baseItems = [
     { label: 'In Stock', path: '/receive', icon: PackagePlus, adminOnly: false },
     { label: 'Stock', path: '/inventory', icon: Pill, adminOnly: false },
     { label: 'Out Stock', path: '/issue', icon: PackageMinus, adminOnly: false },
+    { label: 'Bag Log', path: '/baglog', icon: Backpack, adminOnly: false },
     { label: 'Print Barcode', path: '/print', icon: Printer, adminOnly: false },
     { label: 'Transaction History', path: '/history', icon: History, adminOnly: false },
-    { label: 'Bag Log', path: '/baglog', icon: Backpack, adminOnly: false },
     { label: 'User Management', path: '/user', icon: Users, adminOnly: true },
 ]
 

@@ -39,9 +39,9 @@ function MobileNav() {
     )
 
     const moreItems = [
+        ...(canSee('/baglog') ? [{ label: 'Bag Log', path: '/baglog', icon: Backpack }] : []),
         ...(canSee('/print') ? [{ label: 'Print Barcode', path: '/print', icon: Printer }] : []),
         ...(canSee('/history') ? [{ label: 'Transaction History', path: '/history', icon: History }] : []),
-        ...(canSee('/baglog') ? [{ label: 'Bag Log', path: '/baglog', icon: Backpack }] : []),
         ...(isAdmin ? [{ label: 'User Management', path: '/user', icon: Users }] : []),
     ]
 
