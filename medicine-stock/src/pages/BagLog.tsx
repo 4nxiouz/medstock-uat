@@ -4,6 +4,7 @@ import {
     Download, Edit2, Package, PlusCircle, X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
 import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy } from '../lib/auth'
@@ -444,7 +445,7 @@ function BagDetailModal({
         ? 'bg-blue-100 text-blue-700'
         : 'bg-violet-100 text-violet-700'
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6">
             <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
                 style={{ maxHeight: 'calc(100vh - 3rem)' }}>
@@ -649,7 +650,8 @@ function BagDetailModal({
                     <span className="text-[10px] text-slate-300 tabular-nums">ID #{bag.id}</span>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 
