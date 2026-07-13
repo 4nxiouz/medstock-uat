@@ -407,7 +407,7 @@ function BagDetailModal({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-5">
+                <div className="flex-1 overflow-y-auto p-5 min-h-[260px]">
 
                     {/* Drugs tab */}
                     {tab === 'drugs' && (
