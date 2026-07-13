@@ -379,7 +379,7 @@ function BagDetailModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col h-[90vh] max-h-[640px]">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3 flex-wrap">
