@@ -208,7 +208,7 @@ function IssueDrug({ onLogout }: PageProps) {
             },
         ]
         return (
-            <PageLayout title="Out Stock" subtitle="Select a bag type to begin drug dispatch" onLogout={onLogout}>
+            <PageLayout title="Out Stock" subtitle="Select a bag type to start packing" onLogout={onLogout}>
                 <div className="flex min-h-[70vh] flex-col items-center justify-center">
                     <div className="mb-8 text-center">
                         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-500 shadow-sm">
@@ -216,7 +216,7 @@ function IssueDrug({ onLogout }: PageProps) {
                             Step 1 of 3 — Choose Bag Type
                         </div>
                         <h2 className="mt-4 text-2xl font-bold text-slate-900">Which bag are you packing?</h2>
-                        <p className="mt-1.5 text-sm text-slate-400">Select the kit type to fill in dispatch details and scan drugs.</p>
+                        <p className="mt-1.5 text-sm text-slate-400">Choose a bag, fill in the bag info, then scan drugs to pack.</p>
                     </div>
 
                     <div className="grid w-full max-w-2xl gap-4 sm:grid-cols-2">
@@ -256,7 +256,7 @@ function IssueDrug({ onLogout }: PageProps) {
     // Step: Dispatch form
     if (step === 'form') {
         return (
-            <PageLayout title="Out Stock" subtitle={`${bagType} — Fill in dispatch details`} onLogout={onLogout}>
+            <PageLayout title="Out Stock" subtitle={`${bagType} — Fill in bag information`} onLogout={onLogout}>
                 <button type="button" onClick={() => setStep('bag')}
                     className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
                     <ChevronLeft className="size-4" /> Change bag type
@@ -265,7 +265,7 @@ function IssueDrug({ onLogout }: PageProps) {
                 <Card className="p-5 w-full max-w-lg">
                     <div className="mb-4 flex items-center gap-2">
                         <Backpack className="size-5 text-teal-600" />
-                        <span className="font-semibold text-slate-800">{bagType} Dispatch Form</span>
+                        <span className="font-semibold text-slate-800">{bagType} Bag Info</span>
                     </div>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
