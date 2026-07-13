@@ -10,17 +10,21 @@ type Props = {
 }
 
 function useCountUp(target: number, duration = 800) {
-    const [display, setDisplay] = useState(0)
+    const [display, setDisplay] = useState(target)
+    const prev = useRef(target)
     const raf = useRef<number>(0)
     useEffect(() => {
+        const from = prev.current
+        prev.current = target
+        if (from === target) return
         const start = performance.now()
-        const from = 0
         function step(now: number) {
             const progress = Math.min((now - start) / duration, 1)
             const ease = 1 - Math.pow(1 - progress, 3)
             setDisplay(Math.round(from + (target - from) * ease))
             if (progress < 1) raf.current = requestAnimationFrame(step)
         }
+        cancelAnimationFrame(raf.current)
         raf.current = requestAnimationFrame(step)
         return () => cancelAnimationFrame(raf.current)
     }, [target, duration])

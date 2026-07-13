@@ -69,9 +69,9 @@ function BagLog({ onLogout }: PageProps) {
         setModalTab('drugs')
     }
 
-    function closeModal() {
+    function closeModal(dirty = false) {
         setSelectedBag(null)
-        void loadBags()
+        if (dirty) void loadBags()
     }
 
     async function handleExport() {
@@ -281,7 +281,7 @@ function BagDetailModal({
     tab: ModalTab
     setTab: (t: ModalTab) => void
     privileged: boolean
-    onClose: () => void
+    onClose: (dirty?: boolean) => void
     onBagUpdated: (b: BagDispatch) => void
 }) {
     const [drugs, setDrugs] = useState<BagDispatchDrug[]>([])
@@ -347,6 +347,7 @@ function BagDetailModal({
         if (error) { setEditMsg('บันทึกล้มเหลว: ' + error.message); return }
         onBagUpdated(data as BagDispatch)
         setEditMsg('✓ บันทึกสำเร็จ')
+        onClose(true)
     }
 
     async function handleAddLog() {
@@ -385,7 +386,7 @@ function BagDetailModal({
                         </div>
                         <span className="text-xs font-medium text-slate-600 bg-slate-100 rounded-full px-2.5 py-0.5">{bag.status}</span>
                     </div>
-                    <button type="button" onClick={onClose}
+                    <button type="button" onClick={() => onClose()}
                         className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 shrink-0">
                         <X className="size-4" />
                     </button>
@@ -535,7 +536,7 @@ function BagDetailModal({
                 </div>
 
                 <div className="border-t border-slate-100 px-5 py-3">
-                    <button type="button" onClick={onClose}
+                    <button type="button" onClick={() => onClose()}
                         className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
                         <ChevronLeft className="size-4" /> ปิด
                     </button>

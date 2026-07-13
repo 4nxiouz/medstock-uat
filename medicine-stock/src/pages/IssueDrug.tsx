@@ -113,14 +113,28 @@ function IssueDrug({ onLogout }: PageProps) {
     }
 
     async function handleConfirm() {
-        if (cart.length === 0 || !location || !bagType) return
+        if (cart.length === 0 || !location || !bagType || confirming) return
         setConfirming(true)
         setConfirmMsg('')
 
+        // Fetch live stock for all items before deducting
+        const barcodes = cart.map((c) => c.drug.barcode)
+        const { data: liveData } = await supabase
+            .from('drug_master')
+            .select('id, barcode, current_stock, unit_per_scan')
+            .eq('location_id', location.id)
+            .in('barcode', barcodes)
+
+        const liveMap = Object.fromEntries(
+            ((liveData || []) as { id: number; barcode: string; current_stock: number; unit_per_scan: number }[])
+                .map((d) => [d.barcode, d])
+        )
+
         for (const item of cart) {
-            const totalQty = item.qty * Number(item.drug.unit_per_scan || 1)
-            if (Number(item.drug.current_stock) < totalQty) {
-                setConfirmMsg(`สต็อกไม่พอ: ${item.drug.drug_name} (มี ${item.drug.current_stock}, ต้องการ ${totalQty})`)
+            const live = liveMap[item.drug.barcode]
+            const totalQty = item.qty * Number(live?.unit_per_scan ?? item.drug.unit_per_scan ?? 1)
+            if (!live || Number(live.current_stock) < totalQty) {
+                setConfirmMsg(`สต็อกไม่พอ: ${item.drug.drug_name} (มี ${live?.current_stock ?? 0}, ต้องการ ${totalQty})`)
                 setConfirming(false)
                 return
             }
@@ -155,17 +169,19 @@ function IssueDrug({ onLogout }: PageProps) {
 
         const dispatchId = (dispatchData as { id: number }).id
 
-        // Insert bag_dispatch_drug rows + deduct stock
+        // Insert bag_dispatch_drug rows + deduct stock using live values
         for (const item of cart) {
-            const totalQty = item.qty * Number(item.drug.unit_per_scan || 1)
+            const live = liveMap[item.drug.barcode]
+            const totalQty = item.qty * Number(live?.unit_per_scan ?? item.drug.unit_per_scan ?? 1)
             await supabase.from('bag_dispatch_drug').insert([{
                 dispatch_id: dispatchId,
                 barcode: item.drug.barcode,
                 drug_name: item.drug.drug_name,
                 qty: totalQty,
             }])
-            const newStock = Number(item.drug.current_stock) - totalQty
-            await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', item.drug.id)
+            await supabase.from('drug_master')
+                .update({ current_stock: Number(live.current_stock) - totalQty })
+                .eq('id', live.id)
             await supabase.from('stock_transaction').insert([{
                 barcode: item.drug.barcode, qty: totalQty, action: 'OUT',
                 created_by: getCreatedBy(), location_id: location.id,
@@ -175,7 +191,6 @@ function IssueDrug({ onLogout }: PageProps) {
         setConfirmMsg(`✓ บันทึก Bag Log สำเร็จ — ${bagType} S/N ${form.serial_no}`)
         setCart([])
         setConfirming(false)
-        // Reset to bag select
         setTimeout(() => {
             setStep('bag')
             setBagType(null)
