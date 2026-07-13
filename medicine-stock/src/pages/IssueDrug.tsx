@@ -189,27 +189,61 @@ function IssueDrug({ onLogout }: PageProps) {
 
     // Step: Bag select
     if (step === 'bag') {
+        const bags = [
+            {
+                type: 'FAK' as BagType,
+                label: 'First Aid Kit',
+                desc: 'General first aid supplies and basic medications for minor injuries and illnesses.',
+                bg: 'linear-gradient(160deg, #0f766e 0%, #0d5c57 100%)',
+                accent: 'bg-teal-500/20 border-teal-400/30',
+                tag: 'bg-teal-500/30 text-teal-100',
+            },
+            {
+                type: 'EMK' as BagType,
+                label: 'Emergency Medical Kit',
+                desc: 'Advanced medications and equipment for emergency response and critical care situations.',
+                bg: 'linear-gradient(160deg, #2563eb 0%, #1e3a8a 100%)',
+                accent: 'bg-blue-500/20 border-blue-400/30',
+                tag: 'bg-blue-500/30 text-blue-100',
+            },
+        ]
         return (
-            <PageLayout title="Out Stock" subtitle="เลือกประเภทกระเป๋าก่อนจ่ายยา" onLogout={onLogout}>
-                <div className="flex min-h-[65vh] flex-col items-center justify-center gap-8">
-                    <div className="text-center">
-                        <p className="text-base font-semibold text-slate-700">เลือกกระเป๋าที่จะจ่ายยา</p>
-                        <p className="mt-1 text-sm text-slate-400">First Aid Kit หรือ Emergency Medical Kit</p>
+            <PageLayout title="Out Stock" subtitle="Select a bag type to begin drug dispatch" onLogout={onLogout}>
+                <div className="flex min-h-[70vh] flex-col items-center justify-center">
+                    <div className="mb-8 text-center">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-500 shadow-sm">
+                            <span className="size-1.5 rounded-full bg-teal-500 animate-pulse inline-block" />
+                            Step 1 of 3 — Choose Bag Type
+                        </div>
+                        <h2 className="mt-4 text-2xl font-bold text-slate-900">Which bag are you dispatching?</h2>
+                        <p className="mt-1.5 text-sm text-slate-400">Select the kit type to fill in dispatch details and scan drugs.</p>
                     </div>
-                    <div className="grid w-full max-w-xs grid-cols-2 gap-4 sm:max-w-md sm:gap-6">
-                        {([
-                            { type: 'FAK', label: 'First Aid Kit', bg: 'linear-gradient(160deg, #0f766e 0%, #0d5c57 100%)' },
-                            { type: 'EMK', label: 'Emergency Medical Kit', bg: 'linear-gradient(160deg, #2563eb 0%, #1e3a8a 100%)' },
-                        ] as { type: BagType; label: string; bg: string }[]).map(({ type, label, bg }) => (
+
+                    <div className="grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+                        {bags.map(({ type, label, desc, bg, tag }) => (
                             <button key={type} type="button" onClick={() => handleBagSelect(type)}
-                                className="flex flex-col items-center justify-center gap-3 rounded-2xl px-4 py-10 text-white shadow-lg transition active:scale-95 sm:py-14"
+                                className="group relative overflow-hidden rounded-3xl p-6 text-left text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98]"
                                 style={{ background: bg }}>
-                                <div className="flex size-14 items-center justify-center rounded-2xl bg-white/20 sm:size-16">
-                                    <Backpack className="size-7 sm:size-8" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-xl font-bold tracking-wide sm:text-2xl">{type}</div>
-                                    <div className="mt-0.5 text-[11px] font-medium leading-tight text-white/70 sm:text-xs">{label}</div>
+                                {/* decorative circle */}
+                                <div className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-white/5" />
+                                <div className="pointer-events-none absolute -bottom-10 -left-6 size-28 rounded-full bg-white/5" />
+
+                                <div className="relative">
+                                    <div className="mb-4 inline-flex size-14 items-center justify-center rounded-2xl bg-white/20">
+                                        <Backpack className="size-7 transition-transform duration-300 group-hover:scale-110" />
+                                    </div>
+
+                                    <div className="mb-1 flex items-center gap-2">
+                                        <span className="text-2xl font-black tracking-wide">{type}</span>
+                                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${tag}`}>{type === 'FAK' ? 'First Aid' : 'Emergency'}</span>
+                                    </div>
+                                    <p className="mb-4 text-sm font-semibold text-white/80">{label}</p>
+                                    <p className="text-xs leading-relaxed text-white/55">{desc}</p>
+
+                                    <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-white/70 transition-all duration-300 group-hover:gap-2.5 group-hover:text-white">
+                                        Select &amp; Continue
+                                        <svg className="size-3.5" fill="none" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                    </div>
                                 </div>
                             </button>
                         ))}
@@ -222,16 +256,16 @@ function IssueDrug({ onLogout }: PageProps) {
     // Step: Dispatch form
     if (step === 'form') {
         return (
-            <PageLayout title="Out Stock" subtitle={`กระเป๋า ${bagType} — กรอกข้อมูล`} onLogout={onLogout}>
+            <PageLayout title="Out Stock" subtitle={`${bagType} — Fill in dispatch details`} onLogout={onLogout}>
                 <button type="button" onClick={() => setStep('bag')}
                     className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
-                    <ChevronLeft className="size-4" /> เลือกกระเป๋าใหม่
+                    <ChevronLeft className="size-4" /> Change bag type
                 </button>
                 <div className="flex justify-center">
                 <Card className="p-5 w-full max-w-lg">
                     <div className="mb-4 flex items-center gap-2">
                         <Backpack className="size-5 text-teal-600" />
-                        <span className="font-semibold text-slate-800">กระเป๋า {bagType}</span>
+                        <span className="font-semibold text-slate-800">{bagType} Dispatch Form</span>
                     </div>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
