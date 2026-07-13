@@ -29,11 +29,13 @@ function MobileNav() {
 
     function canSee(path: string) {
         if (!allowedPages) return true
-        return allowedPages.includes(path)
+        if (allowedPages.includes(path)) return true
+        // Dashboard visible to all when no restriction (null), but not if explicit list excludes it
+        return false
     }
 
     const filteredMainItems = mainItems.filter((item) =>
-        item.path === '/' || canSee(item.path)
+        canSee(item.path)
     )
 
     const moreItems = [

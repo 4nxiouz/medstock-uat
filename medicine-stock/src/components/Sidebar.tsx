@@ -40,7 +40,6 @@ function Sidebar({ onLogout }: SidebarProps) {
     const allowedPages = user?.allowed_pages
     const menuItems = baseItems.filter((item) => {
         if (item.adminOnly) return isAdmin
-        if (item.path === '/') return true
         if (!allowedPages) return true
         return allowedPages.includes(item.path)
     })

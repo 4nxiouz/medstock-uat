@@ -11,7 +11,7 @@ import { PAGE_PERMISSIONS, type UserProfile } from '../types'
 
 type PageProps = { onLogout: () => void }
 
-const ALL_PATHS = PAGE_PERMISSIONS.map((p) => p.path)
+const ALL_PATHS = ['/', ...PAGE_PERMISSIONS.map((p) => p.path)]
 
 function UserManage({ onLogout }: PageProps) {
     const [username, setUsername] = useState('')
