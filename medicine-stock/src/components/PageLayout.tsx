@@ -16,7 +16,7 @@ function PageLayout({ title, subtitle, children, onLogout }: Props) {
             <Sidebar onLogout={onLogout} />
             <div className="lg:pl-[17rem]">
                 <Header title={title} subtitle={subtitle} onLogout={onLogout} />
-                <main className="mx-auto max-w-7xl px-5 py-6 pb-24 lg:px-8 lg:pb-6">
+                <main className="mx-auto max-w-7xl px-5 py-6 pb-24 lg:px-8 lg:pb-6 animate-fade-in-up">
                     {children}
                 </main>
             </div>

@@ -168,7 +168,7 @@ function Home({ onLogout }: PageProps) {
                                 <th className="px-5 py-3 text-right font-semibold">Min</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 animate-rows">
                             {lowStock.map((drug) => (
                                 <tr key={drug.id} className="hover:bg-red-50/40 transition-colors">
                                     <td className="px-5 py-3 font-medium text-slate-900">{drug.drug_name}</td>

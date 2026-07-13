@@ -14,6 +14,7 @@ import Login from './pages/Login'
 import PrintBarcode from './pages/PrintBarcode'
 import ReceiveDrug from './pages/ReceiveDrug'
 import UserManage from './pages/UserManage'
+import InstallPrompt from './components/InstallPrompt'
 import type { Location } from './types'
 
 function isAdmin(): boolean {
@@ -152,7 +153,12 @@ function AppInner() {
         return <Login onLoginSuccess={handleLoginSuccess} errorMessage={locationError} />
     }
 
-    return <AppRoutes onLogout={handleLogout} />
+    return (
+        <>
+            <AppRoutes onLogout={handleLogout} />
+            <InstallPrompt />
+        </>
+    )
 }
 
 function App() {

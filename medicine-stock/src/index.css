@@ -1,5 +1,66 @@
 @import "tailwindcss";
 
+/* ── Micro-animations ─────────────────────────────────────── */
+
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes slide-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+    from { background-position: -200% 0; }
+    to   { background-position: 200% 0; }
+}
+@keyframes pulse-ring-green {
+    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+}
+@keyframes pulse-ring-red {
+    0%   { box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(248,113,113,0); }
+    100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); }
+}
+
+.animate-fade-in-up  { animation: fade-in-up 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-in     { animation: fade-in 0.25s ease both; }
+.animate-slide-up    { animation: slide-up 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Staggered table rows */
+.animate-rows tr { animation: fade-in-up 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-rows tr:nth-child(1)  { animation-delay: 0.03s; }
+.animate-rows tr:nth-child(2)  { animation-delay: 0.06s; }
+.animate-rows tr:nth-child(3)  { animation-delay: 0.09s; }
+.animate-rows tr:nth-child(4)  { animation-delay: 0.12s; }
+.animate-rows tr:nth-child(5)  { animation-delay: 0.15s; }
+.animate-rows tr:nth-child(6)  { animation-delay: 0.18s; }
+.animate-rows tr:nth-child(7)  { animation-delay: 0.21s; }
+.animate-rows tr:nth-child(8)  { animation-delay: 0.24s; }
+.animate-rows tr:nth-child(9)  { animation-delay: 0.27s; }
+.animate-rows tr:nth-child(n+10) { animation-delay: 0.3s; }
+
+/* Scan feedback pulse */
+.pulse-success { animation: pulse-ring-green 0.6s ease-out; }
+.pulse-error   { animation: pulse-ring-red   0.6s ease-out; }
+
+/* Skeleton shimmer */
+.skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 6px;
+}
+
+/* Button press */
+button:active:not(:disabled) { transform: scale(0.97); }
+
 @media print {
     /* Hide all UI chrome */
     aside,

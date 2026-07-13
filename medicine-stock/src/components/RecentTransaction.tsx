@@ -69,7 +69,7 @@ function RecentTransaction({ locationId }: Props) {
                             <th className="px-4 py-3 text-left font-semibold">Time</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 animate-rows">
                         {transactions.map((tx) => {
                             const drugName = drugNameMap[tx.barcode]
                             return (
