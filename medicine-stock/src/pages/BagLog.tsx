@@ -1,4 +1,5 @@
-import { Backpack, ChevronLeft, Edit2, PlusCircle, X } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import { Backpack, ChevronLeft, Download, Edit2, PlusCircle, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Card from '../components/Card'
 import EmptyState from '../components/EmptyState'
@@ -8,7 +9,8 @@ import { supabase } from '../lib/supabase'
 import type { BagDispatch, BagDispatchDrug, BagUsageLog } from '../types'
 
 type PageProps = { onLogout: () => void }
-type Filter = 'ALL' | 'FAK' | 'EMK'
+type BagFilter = 'ALL' | 'FAK' | 'EMK'
+type LogFilter = 'ALL' | 'done' | 'pending'
 type ModalTab = 'drugs' | 'edit' | 'log'
 
 function formatDate(d: string | null | undefined) {
@@ -17,11 +19,18 @@ function formatDate(d: string | null | undefined) {
 }
 
 function BagLog({ onLogout }: PageProps) {
-    const [filter, setFilter] = useState<Filter>('ALL')
+    const [bagFilter, setBagFilter] = useState<BagFilter>('ALL')
+    const [logFilter, setLogFilter] = useState<LogFilter>('ALL')
     const [bags, setBags] = useState<BagDispatch[]>([])
+    const [logCounts, setLogCounts] = useState<Record<number, number>>({})
     const [loading, setLoading] = useState(true)
     const [selectedBag, setSelectedBag] = useState<BagDispatch | null>(null)
     const [modalTab, setModalTab] = useState<ModalTab>('drugs')
+
+    // Export state
+    const [exportFrom, setExportFrom] = useState('')
+    const [exportTo, setExportTo] = useState('')
+    const [exporting, setExporting] = useState(false)
 
     const privileged = isPrivileged()
 
@@ -31,15 +40,29 @@ function BagLog({ onLogout }: PageProps) {
 
     async function loadBags() {
         setLoading(true)
-        const { data } = await supabase
-            .from('bag_dispatch')
-            .select('*')
-            .order('created_at', { ascending: false })
-        setBags((data || []) as BagDispatch[])
+        const [bagsRes, logsRes] = await Promise.all([
+            supabase.from('bag_dispatch').select('*').order('created_at', { ascending: false }),
+            supabase.from('bag_usage_log').select('dispatch_id'),
+        ])
+        setBags((bagsRes.data || []) as BagDispatch[])
+
+        const counts: Record<number, number> = {}
+        for (const row of (logsRes.data || []) as { dispatch_id: number }[]) {
+            counts[row.dispatch_id] = (counts[row.dispatch_id] ?? 0) + 1
+        }
+        setLogCounts(counts)
         setLoading(false)
     }
 
-    const filtered = filter === 'ALL' ? bags : bags.filter((b) => b.bag_type === filter)
+    const filtered = bags
+        .filter((b) => bagFilter === 'ALL' || b.bag_type === bagFilter)
+        .filter((b) => {
+            if (logFilter === 'ALL') return true
+            const hasDone = (logCounts[b.id] ?? 0) > 0
+            return logFilter === 'done' ? hasDone : !hasDone
+        })
+
+    const pendingCount = bags.filter((b) => (logCounts[b.id] ?? 0) === 0).length
 
     function openBag(bag: BagDispatch) {
         setSelectedBag(bag)
@@ -51,16 +74,133 @@ function BagLog({ onLogout }: PageProps) {
         void loadBags()
     }
 
+    async function handleExport() {
+        if (!exportFrom || !exportTo) return
+        setExporting(true)
+
+        const from = exportFrom + 'T00:00:00'
+        const to = exportTo + 'T23:59:59'
+
+        const [bagsRes, drugsRes, logsRes] = await Promise.all([
+            supabase.from('bag_dispatch').select('*').gte('created_at', from).lte('created_at', to).order('created_at'),
+            supabase.from('bag_dispatch_drug').select('*'),
+            supabase.from('bag_usage_log').select('*').order('created_at'),
+        ])
+
+        const allBags = (bagsRes.data || []) as BagDispatch[]
+        const allDrugs = (drugsRes.data || []) as BagDispatchDrug[]
+        const allLogs = (logsRes.data || []) as BagUsageLog[]
+
+        // Sheet 1: Dispatch + Drugs
+        const dispatchRows: Record<string, unknown>[] = []
+        for (const bag of allBags) {
+            const drugs = allDrugs.filter((d) => d.dispatch_id === bag.id)
+            if (drugs.length === 0) {
+                dispatchRows.push(bagRow(bag, null))
+            } else {
+                for (const drug of drugs) {
+                    dispatchRows.push(bagRow(bag, drug))
+                }
+            }
+        }
+
+        // Sheet 2: Usage Logs
+        const logRows: Record<string, unknown>[] = []
+        for (const log of allLogs) {
+            const bag = allBags.find((b) => b.id === log.dispatch_id)
+            logRows.push({
+                'Bag Type': bag?.bag_type ?? '',
+                'S/N': bag?.serial_no ?? '',
+                'EQ': bag?.equipment_no ?? '',
+                'Out Date': bag?.date_out ? formatDate(bag.date_out) : '',
+                'ชื่อยา': log.drug_name ?? '',
+                'จำนวนที่ใช้': log.qty_used ?? '',
+                'อาการผู้ป่วย': log.patient_condition ?? '',
+                'เหตุผล': log.reason ?? '',
+                'หมายเหตุ': log.notes ?? '',
+                'บันทึกโดย': log.created_by ?? '',
+                'วันที่บันทึก': log.created_at ? new Date(log.created_at).toLocaleString('th-TH') : '',
+            })
+        }
+
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dispatchRows), 'Dispatch')
+        if (logRows.length > 0) {
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(logRows), 'Usage Log')
+        }
+        XLSX.writeFile(wb, `BagLog_${exportFrom}_${exportTo}.xlsx`)
+        setExporting(false)
+    }
+
+    function bagRow(bag: BagDispatch, drug: BagDispatchDrug | null) {
+        return {
+            'Bag Type': bag.bag_type,
+            'Order No': bag.order_no ?? '',
+            'S/N': bag.serial_no,
+            'EQ': bag.equipment_no,
+            'Seal Number': bag.seal_number ?? '',
+            'Type': bag.type ?? '',
+            'Status': bag.status,
+            'Cause 1': bag.cause_1 ?? '',
+            'Cause 2': bag.cause_2 ?? '',
+            'In Date': bag.date_in ? formatDate(bag.date_in) : '',
+            'Out Date': bag.date_out ? formatDate(bag.date_out) : '',
+            'ชื่อยา': drug?.drug_name ?? '',
+            'Barcode': drug?.barcode ?? '',
+            'จำนวน (หน่วย)': drug?.qty ?? '',
+        }
+    }
+
     return (
         <PageLayout title="Bag Log" subtitle="บันทึกการจ่ายยาเข้ากระเป๋า FAK / EMK" onLogout={onLogout}>
-            {/* Filter tabs */}
-            <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
-                {(['ALL', 'FAK', 'EMK'] as Filter[]).map((f) => (
-                    <button key={f} type="button" onClick={() => setFilter(f)}
-                        className={`rounded-md px-5 py-2 text-sm font-semibold transition ${filter === f ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
-                        {f === 'ALL' ? 'ทั้งหมด' : f}
+            {/* Filter row */}
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+                {/* Bag type filter */}
+                <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+                    {(['ALL', 'FAK', 'EMK'] as BagFilter[]).map((f) => (
+                        <button key={f} type="button" onClick={() => setBagFilter(f)}
+                            className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${bagFilter === f ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
+                            {f === 'ALL' ? 'ทั้งหมด' : f}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Log status filter */}
+                <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+                    <button type="button" onClick={() => setLogFilter('ALL')}
+                        className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${logFilter === 'ALL' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        ทุกสถานะ
                     </button>
-                ))}
+                    <button type="button" onClick={() => setLogFilter('done')}
+                        className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${logFilter === 'done' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        มีบันทึกแล้ว
+                    </button>
+                    <button type="button" onClick={() => setLogFilter('pending')}
+                        className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-semibold transition ${logFilter === 'pending' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        ยังไม่มีบันทึก
+                        {pendingCount > 0 && (
+                            <span className={`rounded-full px-1.5 text-[10px] font-bold ${logFilter === 'pending' ? 'bg-white/30 text-white' : 'bg-amber-100 text-amber-700'}`}>
+                                {pendingCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Export row */}
+            <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <span className="text-sm font-medium text-slate-600">Export Excel:</span>
+                <input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)}
+                    className="h-8 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-teal-500" />
+                <span className="text-sm text-slate-400">ถึง</span>
+                <input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)}
+                    className="h-8 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-teal-500" />
+                <button type="button" onClick={() => void handleExport()}
+                    disabled={!exportFrom || !exportTo || exporting}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                    <Download className="size-3.5" />
+                    {exporting ? 'กำลัง Export...' : 'Export'}
+                </button>
             </div>
 
             {loading ? (
@@ -69,39 +209,50 @@ function BagLog({ onLogout }: PageProps) {
                 <EmptyState title="ยังไม่มีบันทึก" />
             ) : (
                 <Card className="overflow-hidden p-0">
-                    <div className="hidden md:grid md:grid-cols-[80px_1fr_120px_100px_100px_100px_60px] bg-slate-50 border-b border-slate-100 px-4 py-3 text-xs font-semibold uppercase text-slate-500">
+                    <div className="hidden md:grid md:grid-cols-[80px_1fr_120px_80px_100px_100px_120px_60px] bg-slate-50 border-b border-slate-100 px-4 py-3 text-xs font-semibold uppercase text-slate-500">
                         <div>Type</div>
                         <div>S/N — EQ</div>
                         <div>Order No</div>
                         <div>Status</div>
+                        <div>In Date</div>
                         <div>Out Date</div>
-                        <div>Cause</div>
+                        <div>Supervisor</div>
                         <div></div>
                     </div>
                     <div className="divide-y divide-slate-100">
-                        {filtered.map((bag) => (
-                            <button key={bag.id} type="button" onClick={() => openBag(bag)}
-                                className="w-full text-left px-4 py-3 hover:bg-slate-50 transition md:grid md:grid-cols-[80px_1fr_120px_100px_100px_100px_60px] md:items-center">
-                                <div className="flex items-center gap-2 mb-1 md:mb-0">
-                                    <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-bold ${bag.bag_type === 'FAK' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                                        {bag.bag_type}
-                                    </span>
-                                </div>
-                                <div>
-                                    <div className="font-semibold text-slate-900 text-sm">{bag.serial_no}</div>
-                                    <div className="text-xs text-slate-500">EQ: {bag.equipment_no}</div>
-                                </div>
-                                <div className="text-xs text-slate-500 hidden md:block">{bag.order_no || '-'}</div>
-                                <div className="hidden md:block">
-                                    <span className={`inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold ${bag.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                                        {bag.status}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-slate-600 hidden md:block">{formatDate(bag.date_out)}</div>
-                                <div className="text-xs text-slate-500 hidden md:block">{bag.cause_1 || '-'}</div>
-                                <div className="text-teal-600 text-xs font-medium hidden md:block">ดูรายละเอียด →</div>
-                            </button>
-                        ))}
+                        {filtered.map((bag) => {
+                            const hasDone = (logCounts[bag.id] ?? 0) > 0
+                            return (
+                                <button key={bag.id} type="button" onClick={() => openBag(bag)}
+                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 transition md:grid md:grid-cols-[80px_1fr_120px_80px_100px_100px_120px_60px] md:items-center">
+                                    <div className="flex items-center gap-2 mb-1 md:mb-0">
+                                        <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-bold ${bag.bag_type === 'FAK' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                            {bag.bag_type}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-slate-900 text-sm">{bag.serial_no}</div>
+                                        <div className="text-xs text-slate-500">EQ: {bag.equipment_no}</div>
+                                    </div>
+                                    <div className="text-xs text-slate-500 hidden md:block">{bag.order_no || '-'}</div>
+                                    <div className="text-xs text-slate-700 hidden md:block font-medium">{bag.status}</div>
+                                    <div className="text-xs text-slate-600 hidden md:block">{formatDate(bag.date_in)}</div>
+                                    <div className="text-xs text-slate-600 hidden md:block">{formatDate(bag.date_out)}</div>
+                                    <div className="hidden md:block">
+                                        {hasDone ? (
+                                            <span className="inline-flex h-6 items-center rounded-full bg-emerald-50 px-2.5 text-[11px] font-semibold text-emerald-700">
+                                                ✓ มีบันทึกแล้ว
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex h-6 items-center rounded-full bg-amber-50 px-2.5 text-[11px] font-semibold text-amber-600">
+                                                ยังไม่มีบันทึก
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="text-teal-600 text-xs font-medium hidden md:block">ดูรายละเอียด →</div>
+                                </button>
+                            )
+                        })}
                     </div>
                 </Card>
             )}
@@ -140,7 +291,6 @@ function BagDetailModal({
     const [drugsLoaded, setDrugsLoaded] = useState(false)
     const [logsLoaded, setLogsLoaded] = useState(false)
 
-    // Edit form state
     const [editForm, setEditForm] = useState({
         order_no: bag.order_no ?? '',
         serial_no: bag.serial_no,
@@ -151,23 +301,15 @@ function BagDetailModal({
         cause_1: bag.cause_1 ?? '',
         cause_2: bag.cause_2 ?? '',
         date_in: bag.date_in ?? '',
-        date_out: bag.date_out,
+        date_out: bag.date_out ?? '',
     })
     const [editMsg, setEditMsg] = useState('')
 
-    // New log form
     const [logForm, setLogForm] = useState({ drug_name: '', qty_used: '', patient_condition: '', reason: '', notes: '' })
     const [logMsg, setLogMsg] = useState('')
 
-    useEffect(() => {
-        void loadDrugs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    useEffect(() => {
-        if (tab === 'log' && !logsLoaded) void loadLogs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tab])
+    useEffect(() => { void loadDrugs() }, [])
+    useEffect(() => { if (tab === 'log' && !logsLoaded) void loadLogs() }, [tab])
 
     async function loadDrugs() {
         const { data } = await supabase.from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id)
@@ -183,8 +325,8 @@ function BagDetailModal({
 
     async function handleSaveEdit() {
         setEditMsg('')
-        if (!editForm.serial_no.trim() || !editForm.equipment_no.trim() || !editForm.date_out) {
-            setEditMsg('S/N, EQ และ Out Date จำเป็นต้องกรอก')
+        if (!editForm.serial_no.trim() || !editForm.equipment_no.trim()) {
+            setEditMsg('S/N และ EQ จำเป็นต้องกรอก')
             return
         }
         const { data, error } = await supabase
@@ -199,7 +341,7 @@ function BagDetailModal({
                 cause_1: editForm.cause_1 || null,
                 cause_2: editForm.cause_2.trim() || null,
                 date_in: editForm.date_in || null,
-                date_out: editForm.date_out,
+                date_out: editForm.date_out || null,
             })
             .eq('id', bag.id)
             .select('*')
@@ -227,34 +369,34 @@ function BagDetailModal({
         void loadLogs()
     }
 
+    const tabs: { key: ModalTab; label: string }[] = [
+        { key: 'drugs', label: 'รายการยา' },
+        ...(privileged ? [{ key: 'edit' as ModalTab, label: 'แก้ไขข้อมูล' }] : []),
+        ...(privileged ? [{ key: 'log' as ModalTab, label: 'Usage Log' }] : []),
+    ]
+
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
             <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                        <Backpack className="size-5 text-teal-600" />
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <Backpack className="size-5 text-teal-600 shrink-0" />
                         <div>
                             <div className="font-semibold text-slate-900">{bag.bag_type} · {bag.serial_no}</div>
-                            <div className="text-xs text-slate-500">EQ: {bag.equipment_no} · Out: {formatDate(bag.date_out)}</div>
+                            <div className="text-xs text-slate-500">EQ: {bag.equipment_no} · In: {formatDate(bag.date_in)} · Out: {formatDate(bag.date_out)}</div>
                         </div>
-                        <span className={`ml-1 inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold ${bag.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                            {bag.status}
-                        </span>
+                        <span className="text-xs font-medium text-slate-600 bg-slate-100 rounded-full px-2.5 py-0.5">{bag.status}</span>
                     </div>
                     <button type="button" onClick={onClose}
-                        className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50">
+                        className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 shrink-0">
                         <X className="size-4" />
                     </button>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-0.5 border-b border-slate-100 px-5 pt-3 pb-0">
-                    {([
-                        { key: 'drugs', label: 'รายการยา' },
-                        ...(privileged ? [{ key: 'edit' as ModalTab, label: 'แก้ไขข้อมูล' }] : []),
-                        ...(privileged ? [{ key: 'log' as ModalTab, label: 'Usage Log' }] : []),
-                    ] as { key: ModalTab; label: string }[]).map((t) => (
+                <div className="flex gap-0.5 border-b border-slate-100 px-5 pt-3">
+                    {tabs.map((t) => (
                         <button key={t.key} type="button" onClick={() => setTab(t.key)}
                             className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition ${tab === t.key ? 'bg-teal-700 text-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}>
                             {t.label}
@@ -264,27 +406,24 @@ function BagDetailModal({
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-5">
+
                     {/* Drugs tab */}
                     {tab === 'drugs' && (
-                        <div>
-                            {!drugsLoaded ? (
-                                <p className="text-sm text-slate-400">กำลังโหลด...</p>
-                            ) : drugs.length === 0 ? (
-                                <p className="text-sm text-slate-400">ไม่มีรายการยา</p>
-                            ) : (
-                                <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
-                                    {drugs.map((d) => (
-                                        <div key={d.id} className="flex items-center justify-between px-4 py-3">
-                                            <div>
-                                                <div className="font-medium text-slate-900 text-sm">{d.drug_name}</div>
-                                                <div className="text-xs text-slate-400">{d.barcode}</div>
-                                            </div>
-                                            <div className="rounded-lg bg-teal-50 px-3 py-1 text-sm font-semibold text-teal-700">{d.qty} หน่วย</div>
+                        !drugsLoaded ? <p className="text-sm text-slate-400">กำลังโหลด...</p>
+                        : drugs.length === 0 ? <p className="text-sm text-slate-400">ไม่มีรายการยา</p>
+                        : (
+                            <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+                                {drugs.map((d) => (
+                                    <div key={d.id} className="flex items-center justify-between px-4 py-3">
+                                        <div>
+                                            <div className="font-medium text-slate-900 text-sm">{d.drug_name}</div>
+                                            <div className="text-xs text-slate-400">{d.barcode}</div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                        <div className="rounded-lg bg-teal-50 px-3 py-1 text-sm font-semibold text-teal-700">{d.qty} หน่วย</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
                     )}
 
                     {/* Edit tab */}
@@ -298,6 +437,7 @@ function BagDetailModal({
                                 <MiniField label="EQ *" value={editForm.equipment_no} onChange={(v) => setEditForm((p) => ({ ...p, equipment_no: v }))} />
                                 <MiniField label="Seal Number" value={editForm.seal_number} onChange={(v) => setEditForm((p) => ({ ...p, seal_number: v }))} />
                             </div>
+                            {/* Type between Seal Number and Status */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-slate-600">Type</label>
@@ -331,7 +471,7 @@ function BagDetailModal({
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <MiniField label="In Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} />
-                                <MiniField label="Out Date *" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} />
+                                <MiniField label="Out Date" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} />
                             </div>
                             {editMsg && (
                                 <div className={`rounded-md px-3 py-2 text-sm ${editMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
@@ -349,7 +489,6 @@ function BagDetailModal({
                     {/* Usage log tab */}
                     {tab === 'log' && privileged && (
                         <div className="space-y-5">
-                            {/* Add log form */}
                             <div className="rounded-xl border-2 border-teal-100 bg-teal-50/40 p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-teal-800">
                                     <PlusCircle className="size-4" /> เพิ่มบันทึกการใช้ยา
@@ -372,7 +511,6 @@ function BagDetailModal({
                                 </button>
                             </div>
 
-                            {/* Log list */}
                             {!logsLoaded ? (
                                 <p className="text-sm text-slate-400">กำลังโหลด...</p>
                             ) : logs.length === 0 ? (
@@ -384,7 +522,7 @@ function BagDetailModal({
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="font-medium text-slate-900 text-sm">{log.drug_name}</div>
                                                 {log.qty_used != null && (
-                                                    <span className="rounded-md bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700">{log.qty_used} หน่วย</span>
+                                                    <span className="rounded-md bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 shrink-0">{log.qty_used} หน่วย</span>
                                                 )}
                                             </div>
                                             {log.patient_condition && <div className="mt-1 text-xs text-slate-500">อาการ: {log.patient_condition}</div>}
@@ -399,7 +537,6 @@ function BagDetailModal({
                     )}
                 </div>
 
-                {/* Back button */}
                 <div className="border-t border-slate-100 px-5 py-3">
                     <button type="button" onClick={onClose}
                         className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
