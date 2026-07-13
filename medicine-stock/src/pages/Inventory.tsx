@@ -1,4 +1,4 @@
-﻿import { AlertTriangle, Boxes, Camera, Download, ImagePlus, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
+﻿import { AlertTriangle, Boxes, Camera, Download, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import CameraScanner from '../components/CameraScanner'
 import DrugIcon from '../components/DrugIcon'
@@ -33,7 +33,6 @@ function Inventory({ onLogout }: PageProps) {
     const [loading, setLoading] = useState(true)
     const [editingDrug, setEditingDrug] = useState<Drug | null>(null)
     const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '' })
-    const [editImage, setEditImage] = useState<File | null>(null)
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
@@ -73,22 +72,12 @@ function Inventory({ onLogout }: PageProps) {
 
     function openEdit(drug: Drug) {
         setEditingDrug(drug)
-        setEditImage(null)
         setEditForm({ drug_name: drug.drug_name, current_stock: String(drug.current_stock), min_stock: String(drug.min_stock), unit_per_scan: String(drug.unit_per_scan) })
     }
 
     async function handleSaveEdit() {
         if (!editingDrug) return
         setMessage('')
-        let imageUrl = editingDrug.image_url || ''
-        if (editImage) {
-            const fileName = `${Date.now()}-${editImage.name}`
-            const { error: upErr } = await supabase.storage.from('drug-image').upload(fileName, editImage)
-            if (!upErr) {
-                const { data } = supabase.storage.from('drug-image').getPublicUrl(fileName)
-                imageUrl = data.publicUrl
-            }
-        }
         const newStock = Number(editForm.current_stock)
         const diff = newStock - Number(editingDrug.current_stock)
         if (diff !== 0) {
@@ -105,10 +94,9 @@ function Inventory({ onLogout }: PageProps) {
             current_stock: newStock,
             min_stock: Number(editForm.min_stock),
             unit_per_scan: Number(editForm.unit_per_scan),
-            image_url: imageUrl,
         }).eq('id', editingDrug.id)
         if (error) { setMessage('Update failed.'); return }
-        setDrugs((cur) => cur.map((d) => d.id === editingDrug.id ? { ...d, ...editForm, current_stock: Number(editForm.current_stock), min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan), image_url: imageUrl } : d))
+        setDrugs((cur) => cur.map((d) => d.id === editingDrug.id ? { ...d, ...editForm, current_stock: Number(editForm.current_stock), min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan) } : d))
         setEditingDrug(null)
         setMessage('Updated.')
     }
@@ -317,11 +305,6 @@ function Inventory({ onLogout }: PageProps) {
                                 <FormInput label="Min" type="number" value={editForm.min_stock} onChange={(e) => setEditForm((c) => ({ ...c, min_stock: e.target.value }))} />
                                 <FormInput label="Unit" type="number" value={editForm.unit_per_scan} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan: e.target.value }))} />
                             </div>
-                            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-600 hover:border-blue-400 hover:bg-teal-50">
-                                <ImagePlus className="size-4 text-slate-400 shrink-0" />
-                                <span className="truncate">{editImage ? editImage.name : (editingDrug.image_url ? 'Replace image…' : 'Add image (optional)')}</span>
-                                <input type="file" className="hidden" accept="image/*" onChange={(e) => setEditImage(e.target.files?.[0] || null)} />
-                            </label>
                         </div>
                         <div className="mt-5 flex gap-2">
                             <button type="button" onClick={() => setEditingDrug(null)} className="flex-1 rounded-md border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
