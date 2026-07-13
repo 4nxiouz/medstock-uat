@@ -61,7 +61,7 @@ function IssueDrug({ onLogout }: PageProps) {
         setFormError('')
         if (!form.serial_no.trim()) { setFormError('S/N is required'); return }
         if (!form.equipment_no.trim()) { setFormError('EQ is required'); return }
-        if (!form.date_out) { setFormError('Out date is required'); return }
+        if (!form.date_in) { setFormError('In date is required'); return }
         setStep('scan')
     }
 
@@ -251,8 +251,8 @@ function IssueDrug({ onLogout }: PageProps) {
                             <Field label="2 Cause" value={form.cause_2} onChange={(v) => setField('cause_2', v)} placeholder="หมายเหตุ" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <Field label="In Date" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} />
-                            <Field label="Out Date *" type="date" value={form.date_out} onChange={(v) => setField('date_out', v)} required />
+                            <Field label="In Date *" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} required />
+                            <Field label="Out Date" type="date" value={form.date_out} onChange={(v) => setField('date_out', v)} />
                         </div>
 
                         {formError && (
