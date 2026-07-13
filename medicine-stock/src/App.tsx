@@ -124,7 +124,7 @@ function AppInner() {
         const locs = await loadLocations(user.id, user.role)
         setAvailableLocations(locs)
 
-        if (locs.length === 0 && user.role !== 'admin') {
+        if (locs.length === 0 && user.role !== 'admin' && user.role !== 'supervisor') {
             setLocationError('No location assigned to your account. Contact an administrator.')
             localStorage.removeItem('isLogin')
             localStorage.removeItem('isLoginExpiry')
