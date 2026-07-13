@@ -215,7 +215,8 @@ function IssueDrug({ onLogout }: PageProps) {
                     className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
                     <ChevronLeft className="size-4" /> เลือกกระเป๋าใหม่
                 </button>
-                <Card className="p-5 max-w-lg">
+                <div className="flex justify-center">
+                <Card className="p-5 w-full max-w-lg">
                     <div className="mb-4 flex items-center gap-2">
                         <Backpack className="size-5 text-teal-600" />
                         <span className="font-semibold text-slate-800">กระเป๋า {bagType}</span>
@@ -265,6 +266,7 @@ function IssueDrug({ onLogout }: PageProps) {
                         </button>
                     </div>
                 </Card>
+                </div>
             </PageLayout>
         )
     }
