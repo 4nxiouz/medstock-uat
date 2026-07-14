@@ -1,5 +1,6 @@
-﻿import { AlertTriangle, Boxes, Camera, Download, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Boxes, Camera, Download, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import CameraScanner from '../components/CameraScanner'
 import DrugIcon from '../components/DrugIcon'
 import EmptyState from '../components/EmptyState'
@@ -13,11 +14,11 @@ import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
 type PageProps = { onLogout: () => void }
-type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string }
+type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string; category: string }
 
 function downloadCSV(drugs: Drug[], locationCode: string) {
-    const header = ['Barcode', 'Name', 'Stock', 'Min Stock', 'Unit/Scan']
-    const rows = drugs.map((d) => [d.barcode, d.drug_name, d.current_stock, d.min_stock, d.unit_per_scan].join(','))
+    const header = ['Barcode', 'Name', 'Category', 'Stock', 'Min Stock', 'Unit/Scan']
+    const rows = drugs.map((d) => [d.barcode, d.drug_name, d.category ?? '', d.current_stock, d.min_stock, d.unit_per_scan].join(','))
     const csv = '﻿' + [header.join(','), ...rows].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -32,7 +33,7 @@ function Inventory({ onLogout }: PageProps) {
     const [message, setMessage] = useState('')
     const [loading, setLoading] = useState(true)
     const [editingDrug, setEditingDrug] = useState<Drug | null>(null)
-    const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '' })
+    const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '', category: '' })
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
@@ -64,17 +65,35 @@ function Inventory({ onLogout }: PageProps) {
         return drugs.filter((d) => {
             const matchSearch = d.drug_name.toLowerCase().includes(kw) || d.barcode.includes(search)
             const matchCat = activeCategory === 'ทั้งหมด' || (d.category || 'อื่นๆ') === activeCategory
-            const matchLow = !showLowOnly || Number(d.current_stock) <= Number(d.min_stock)
+            const matchLow = !showLowOnly || (Number(d.min_stock) > 0 && Number(d.current_stock) <= Number(d.min_stock))
             return matchSearch && matchCat && matchLow
         })
     }, [drugs, search, activeCategory, showLowOnly])
 
-    const lowStock = drugs.filter((d) => Number(d.current_stock) <= Number(d.min_stock))
+    // Group by category when viewing all
+    const grouped = useMemo(() => {
+        if (activeCategory !== 'ทั้งหมด') return null
+        const map = new Map<string, Drug[]>()
+        for (const d of filteredDrugs) {
+            const cat = d.category || 'อื่นๆ'
+            if (!map.has(cat)) map.set(cat, [])
+            map.get(cat)!.push(d)
+        }
+        return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, 'th'))
+    }, [filteredDrugs, activeCategory])
+
+    const lowStock = drugs.filter((d) => Number(d.min_stock) > 0 && Number(d.current_stock) <= Number(d.min_stock))
     const totalStock = drugs.reduce((sum, d) => sum + Number(d.current_stock || 0), 0)
 
     function openEdit(drug: Drug) {
         setEditingDrug(drug)
-        setEditForm({ drug_name: drug.drug_name, current_stock: String(drug.current_stock), min_stock: String(drug.min_stock), unit_per_scan: String(drug.unit_per_scan) })
+        setEditForm({
+            drug_name: drug.drug_name,
+            current_stock: String(drug.current_stock),
+            min_stock: String(drug.min_stock),
+            unit_per_scan: String(drug.unit_per_scan),
+            category: drug.category ?? '',
+        })
     }
 
     async function handleSaveEdit() {
@@ -96,9 +115,12 @@ function Inventory({ onLogout }: PageProps) {
             current_stock: newStock,
             min_stock: Number(editForm.min_stock),
             unit_per_scan: Number(editForm.unit_per_scan),
+            category: editForm.category.trim() || null,
         }).eq('id', editingDrug.id)
         if (error) { setMessage('Update failed.'); return }
-        setDrugs((cur) => cur.map((d) => d.id === editingDrug.id ? { ...d, ...editForm, current_stock: Number(editForm.current_stock), min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan) } : d))
+        setDrugs((cur) => cur.map((d) => d.id === editingDrug.id
+            ? { ...d, drug_name: editForm.drug_name, current_stock: newStock, min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan), category: editForm.category || null }
+            : d))
         setEditingDrug(null)
         setMessage('Updated.')
     }
@@ -108,18 +130,12 @@ function Inventory({ onLogout }: PageProps) {
         if (!drug) return
         if (!window.confirm(`Delete "${drug.drug_name}"? This cannot be undone.`)) return
         setMessage('')
-
-        // Record deletion as transaction before removing
         if (drug.current_stock > 0) {
             await supabase.from('stock_transaction').insert([{
-                barcode: drug.barcode,
-                qty: drug.current_stock,
-                action: 'OUT',
-                created_by: getCreatedBy() + ' [deleted]',
-                location_id: location?.id,
+                barcode: drug.barcode, qty: drug.current_stock, action: 'OUT',
+                created_by: getCreatedBy() + ' [deleted]', location_id: location?.id,
             }])
         }
-
         const { error } = await supabase.from('drug_master').delete().eq('id', id)
         if (error) { setMessage('Delete failed.'); return }
         setDrugs((cur) => cur.filter((d) => d.id !== id))
@@ -135,17 +151,14 @@ function Inventory({ onLogout }: PageProps) {
         if (error) { setMessage('Adjust failed.'); return }
         if (diff !== 0) {
             await supabase.from('stock_transaction').insert([{
-                barcode: adjustDrug.barcode,
-                qty: Math.abs(diff),
+                barcode: adjustDrug.barcode, qty: Math.abs(diff),
                 action: diff > 0 ? 'IN' : 'OUT',
                 created_by: getCreatedBy() + (adjustRemark ? ` [${adjustRemark}]` : ' [adjust]'),
                 location_id: location.id,
             }])
         }
         setDrugs((cur) => cur.map((d) => d.id === adjustDrug.id ? { ...d, current_stock: newStock } : d))
-        setAdjustDrug(null)
-        setAdjustCount('')
-        setAdjustRemark('')
+        setAdjustDrug(null); setAdjustCount(''); setAdjustRemark('')
         setMessage(`Stock adjusted to ${newStock}.`)
     }
 
@@ -175,6 +188,58 @@ function Inventory({ onLogout }: PageProps) {
         win.document.close()
     }
 
+    function DrugCard({ drug }: { drug: Drug }) {
+        const isLow = Number(drug.min_stock) > 0 && Number(drug.current_stock) <= Number(drug.min_stock)
+        return (
+            <article className={`overflow-hidden rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
+                <div className="h-28 bg-slate-50">
+                    {drug.image_url
+                        ? <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
+                        : <DrugIcon name={drug.drug_name} />
+                    }
+                </div>
+                <div className="space-y-3 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                        <div>
+                            <h3 className="font-semibold text-slate-950">{drug.drug_name}</h3>
+                            <p className="mt-1 break-all text-xs text-slate-500">{drug.barcode}</p>
+                            {drug.category && (
+                                <span className="mt-1.5 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
+                                    {drug.category}
+                                </span>
+                            )}
+                        </div>
+                        {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase text-red-700">Low</span>}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                        {([['Stock', drug.current_stock, isLow ? 'text-red-700' : 'text-slate-950'], ['Min', drug.min_stock, 'text-slate-950'], ['Unit', drug.unit_per_scan, 'text-slate-950']] as [string, number, string][]).map(([label, val, cls]) => (
+                            <div key={label} className="rounded-md bg-slate-50 p-2">
+                                <div className="text-[10px] uppercase text-slate-500">{label}</div>
+                                <div className={`text-lg font-semibold ${cls}`}>{val}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                        <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                            <Pencil className="size-3" />Edit
+                        </button>
+                        <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark('') }}
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50">
+                            <SlidersHorizontal className="size-3" />Adjust
+                        </button>
+                        <button type="button" onClick={() => handlePrint(drug)}
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                            <Printer className="size-3" />Print
+                        </button>
+                    </div>
+                    <button type="button" onClick={() => void handleDelete(drug.id)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-200 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
+                        <Trash2 className="size-3" />Delete
+                    </button>
+                </div>
+            </article>
+        )
+    }
+
     return (
         <PageLayout title="Stock" subtitle="All items" onLogout={onLogout}>
             <div className="grid gap-4 md:grid-cols-3">
@@ -184,7 +249,7 @@ function Inventory({ onLogout }: PageProps) {
             </div>
 
             <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                {/* Toolbar — gray bg ให้เห็นชัดว่าเป็น filter section */}
+                {/* Toolbar */}
                 <div className="flex items-center gap-3 bg-slate-100 px-5 py-3 border-b border-slate-200">
                     <div className="flex-1">
                         <SearchInput value={search} onChange={setSearch} placeholder="พิมพ์ชื่อยา หรือ scan barcode" />
@@ -204,16 +269,8 @@ function Inventory({ onLogout }: PageProps) {
                 {/* Category tabs */}
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200 px-5 py-2.5 scrollbar-none">
                     {categories.map((cat) => (
-                        <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setActiveCategory(cat)}
-                            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                                activeCategory === cat
-                                    ? 'bg-teal-700 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
-                        >
+                        <button key={cat} type="button" onClick={() => setActiveCategory(cat)}
+                            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${activeCategory === cat ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                             {cat}
                             {cat !== 'ทั้งหมด' && (
                                 <span className={`ml-1.5 ${activeCategory === cat ? 'text-white/70' : 'text-slate-400'}`}>
@@ -222,90 +279,47 @@ function Inventory({ onLogout }: PageProps) {
                             )}
                         </button>
                     ))}
-                    <button
-                        type="button"
-                        onClick={() => setShowLowOnly((v) => !v)}
-                        className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                            showLowOnly
-                                ? 'bg-red-500 text-white'
-                                : 'bg-red-50 text-red-500 hover:bg-red-100'
-                        }`}
-                    >
+                    <button type="button" onClick={() => setShowLowOnly((v) => !v)}
+                        className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${showLowOnly ? 'bg-red-500 text-white' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}>
                         ⚠ Low
-                        <span className={`ml-1.5 ${showLowOnly ? 'text-white/70' : 'text-red-400'}`}>
-                            {lowStock.length}
-                        </span>
+                        <span className={`ml-1.5 ${showLowOnly ? 'text-white/70' : 'text-red-400'}`}>{lowStock.length}</span>
                     </button>
                 </div>
 
                 {/* Drug cards */}
                 <div className="p-5">
-                {loading ? (
-                    <div className="py-16 text-center text-sm text-slate-500">Loading...</div>
-                ) : filteredDrugs.length === 0 ? (
-                    <EmptyState title="No items found" />
-                ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {filteredDrugs.map((drug) => {
-                            const isLow = Number(drug.current_stock) <= Number(drug.min_stock)
-                            return (
-                                <article key={drug.id} className={`overflow-hidden rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
-                                    <div className="h-28 bg-slate-50">
-                                        {drug.image_url ? (
-                                            <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
-                                        ) : (
-                                            <DrugIcon name={drug.drug_name} />
-                                        )}
+                    {loading ? (
+                        <div className="py-16 text-center text-sm text-slate-500">Loading...</div>
+                    ) : filteredDrugs.length === 0 ? (
+                        <EmptyState title="No items found" />
+                    ) : grouped ? (
+                        /* Grouped view (ทั้งหมด) */
+                        <div className="space-y-8">
+                            {grouped.map(([cat, items]) => (
+                                <div key={cat}>
+                                    <div className="mb-3 flex items-center gap-3">
+                                        <h2 className="text-sm font-bold text-slate-700">{cat}</h2>
+                                        <span className="text-xs text-slate-400">{items.length} รายการ</span>
+                                        <div className="flex-1 border-t border-slate-200" />
                                     </div>
-                                    <div className="space-y-3 p-4">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <h3 className="font-semibold text-slate-950">{drug.drug_name}</h3>
-                                                <p className="mt-1 break-all text-xs text-slate-500">{drug.barcode}</p>
-                                                {drug.category && (
-                                                    <span className="mt-1.5 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
-                                                        {drug.category}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase text-red-700">Low</span>}
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 text-center">
-                                            {[['Stock', drug.current_stock, isLow ? 'text-red-700' : 'text-slate-950'], ['Min', drug.min_stock, 'text-slate-950'], ['Unit', drug.unit_per_scan, 'text-slate-950']].map(([label, val, cls]) => (
-                                                <div key={String(label)} className="rounded-md bg-slate-50 p-2">
-                                                    <div className="text-[10px] uppercase text-slate-500">{label}</div>
-                                                    <div className={`text-lg font-semibold ${cls}`}>{val}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-1.5">
-                                            <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                                                <Pencil className="size-3" />Edit
-                                            </button>
-                                            <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark('') }}
-                                                className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50">
-                                                <SlidersHorizontal className="size-3" />Adjust
-                                            </button>
-                                            <button type="button" onClick={() => handlePrint(drug)}
-                                                className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
-                                                <Printer className="size-3" />Print
-                                            </button>
-                                        </div>
-                                        <button type="button" onClick={() => void handleDelete(drug.id)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-200 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
-                                            <Trash2 className="size-3" />Delete
-                                        </button>
+                                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                        {items.map((drug) => <DrugCard key={drug.id} drug={drug} />)}
                                     </div>
-                                </article>
-                            )
-                        })}
-                    </div>
-                )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        /* Filtered single-category view */
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {filteredDrugs.map((drug) => <DrugCard key={drug.id} drug={drug} />)}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Edit Modal */}
-            {editingDrug && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+            {/* Edit Modal — portal to escape any parent stacking context */}
+            {editingDrug && createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
@@ -316,10 +330,23 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                         <div className="space-y-3">
                             <FormInput label="Name" value={editForm.drug_name} onChange={(e) => setEditForm((c) => ({ ...c, drug_name: e.target.value }))} />
+                            <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">Category (หมวดยา)</label>
+                                <input
+                                    list="category-options"
+                                    value={editForm.category}
+                                    onChange={(e) => setEditForm((c) => ({ ...c, category: e.target.value }))}
+                                    placeholder="เลือกหรือพิมพ์หมวดยา"
+                                    className="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                                />
+                                <datalist id="category-options">
+                                    {categories.filter((c) => c !== 'ทั้งหมด').map((c) => <option key={c} value={c} />)}
+                                </datalist>
+                            </div>
                             <div className="grid grid-cols-3 gap-3">
                                 <FormInput label="Stock" type="number" value={editForm.current_stock} onChange={(e) => setEditForm((c) => ({ ...c, current_stock: e.target.value }))} />
                                 <FormInput label="Min" type="number" value={editForm.min_stock} onChange={(e) => setEditForm((c) => ({ ...c, min_stock: e.target.value }))} />
-                                <FormInput label="Unit" type="number" value={editForm.unit_per_scan} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan: e.target.value }))} />
+                                <FormInput label="Unit/Scan" type="number" value={editForm.unit_per_scan} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan: e.target.value }))} />
                             </div>
                         </div>
                         <div className="mt-5 flex gap-2">
@@ -327,12 +354,13 @@ function Inventory({ onLogout }: PageProps) {
                             <button type="button" onClick={() => void handleSaveEdit()} className="flex-1 rounded-md bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Save</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {/* Adjust Stock Modal */}
-            {adjustDrug && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+            {/* Adjust Stock Modal — portal */}
+            {adjustDrug && createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
@@ -343,7 +371,8 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                         <div className="mb-4 grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3 text-center text-sm">
                             <div><div className="text-xs text-slate-500">Current</div><div className="text-2xl font-bold text-slate-900">{adjustDrug.current_stock}</div></div>
-                            <div><div className="text-xs text-slate-500">After</div>
+                            <div>
+                                <div className="text-xs text-slate-500">After</div>
                                 <div className={`text-2xl font-bold ${Number(adjustCount) > Number(adjustDrug.current_stock) ? 'text-emerald-600' : Number(adjustCount) < Number(adjustDrug.current_stock) ? 'text-red-600' : 'text-slate-900'}`}>
                                     {adjustCount !== '' ? adjustCount : '—'}
                                 </div>
@@ -359,9 +388,9 @@ function Inventory({ onLogout }: PageProps) {
                                 className="flex-1 rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:bg-slate-300">Confirm</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
-
         </PageLayout>
     )
 }
