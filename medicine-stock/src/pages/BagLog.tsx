@@ -301,8 +301,8 @@ function BagLog({ onLogout }: PageProps) {
             ) : (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     {/* Table head */}
-                    <div className="hidden md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'In Date', 'Out Date', 'Log', ''].map((h, i) => (
+                    <div className="hidden md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'Out Date', 'In Date', 'Log', ''].map((h, i) => (
                             <div key={i} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</div>
                         ))}
                     </div>
@@ -348,11 +348,11 @@ function BagLog({ onLogout }: PageProps) {
                                     <StatusPill status={bag.status} />
                                 </div>
 
-                                {/* In Date */}
-                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_in)}</div>
-
                                 {/* Out Date */}
                                 <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_out)}</div>
+
+                                {/* In Date */}
+                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_in)}</div>
 
                                 {/* Log */}
                                 <div className="hidden md:block">
@@ -561,7 +561,7 @@ function BagDetailModal({
     const tabs: { key: ModalTab; label: string; icon: React.ReactNode }[] = [
         { key: 'drugs', label: 'Drug list', icon: <Package className="size-3.5" /> },
         ...(canEdit ? [{ key: 'edit' as ModalTab, label: 'Edit info', icon: <Edit2 className="size-3.5" /> }] : []),
-        ...(canLog ? [{ key: 'log' as ModalTab, label: 'Usage log', icon: <ClipboardList className="size-3.5" /> }] : []),
+        ...(canLog ? [{ key: 'log' as ModalTab, label: 'Incident Report', icon: <ClipboardList className="size-3.5" /> }] : []),
     ]
 
     const badgeCls = bag.bag_type === 'FAK'
