@@ -144,9 +144,6 @@ function BagLog({ onLogout }: PageProps) {
         const bagIds = new Set(allBags.map((b) => b.id))
         const relevantDrugs = allDrugs.filter((d) => bagIds.has(d.dispatch_id))
         const drugNames = Array.from(new Set(relevantDrugs.map((d) => d.drug_name)))
-        const maxLogs = allBags.reduce((max, bag) => {
-            return Math.max(max, allLogs.filter((l) => l.dispatch_id === bag.id).length)
-        }, 0)
         const rows: Record<string, unknown>[] = []
         for (const bag of allBags) {
             const bagDrugs = allDrugs.filter((d) => d.dispatch_id === bag.id)
@@ -172,19 +169,14 @@ function BagLog({ onLogout }: PageProps) {
             row['Check Out'] = bag.date_out ? fmt(bag.date_out) : ''
             row['Duration (Days)'] = durationDays
             row['Remark'] = bag.remark ?? ''
-            const loopCount = Math.max(maxLogs, 1)
-            for (let i = 0; i < loopCount; i++) {
-                const prefix = loopCount > 1 ? `Log ${i + 1} - ` : 'Log - '
-                const log = bagLogs[i]
-                row[prefix + 'Opened Date'] = log?.opened_date ?? ''
-                row[prefix + 'Person'] = log?.person ?? ''
-                row[prefix + 'Illness'] = log?.illness ?? ''
-                row[prefix + 'Used Item'] = log?.used_item ?? ''
-                row[prefix + 'FLT.No.'] = log?.flt_no ?? ''
-                row[prefix + 'Seal No.'] = log?.seal_no ?? ''
-                row[prefix + 'Remark'] = log?.remark ?? ''
-                row[prefix + 'By'] = log?.created_by ?? ''
-            }
+            const latestLog = bagLogs[bagLogs.length - 1]
+            row['Opened Date'] = latestLog?.opened_date ?? ''
+            row['Person'] = latestLog?.person ?? ''
+            row['Illness'] = latestLog?.illness ?? ''
+            row['Used Item'] = latestLog?.used_item ?? ''
+            row['FLT.No.'] = latestLog?.flt_no ?? ''
+            row['Log Seal No.'] = latestLog?.seal_no ?? ''
+            row['Log Remark'] = latestLog?.remark ?? ''
             rows.push(row)
         }
         const wb = XLSX.utils.book_new()
