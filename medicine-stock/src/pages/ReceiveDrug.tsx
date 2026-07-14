@@ -34,6 +34,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [newName, setNewName] = useState('')
     const [newMinStock, setNewMinStock] = useState('5')
     const [newUnitPerScan, setNewUnitPerScan] = useState('1')
+    const [newUnitPerScanIn, setNewUnitPerScanIn] = useState('1')
     const [newInitQty, setNewInitQty] = useState('1')
     const [newCategory, setNewCategory] = useState('')
     const [newMessage, setNewMessage] = useState('')
@@ -58,7 +59,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
 
         const { data } = await supabase
             .from('drug_master')
-            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url')
+            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, unit_per_scan_in, image_url')
             .eq('barcode', trimmed)
             .eq('location_id', location.id)
             .maybeSingle()
@@ -90,7 +91,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setRsConfirming(true)
         setRsConfirmMsg('')
         for (const item of rsCart) {
-            const totalAdd = item.qty * Number(item.drug.unit_per_scan || 1)
+            const totalAdd = item.qty * Number(item.drug.unit_per_scan_in ?? item.drug.unit_per_scan ?? 1)
             const newStock = Number(item.drug.current_stock) + totalAdd
             await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', item.drug.id)
             await supabase.from('stock_transaction').insert([{
@@ -118,9 +119,10 @@ function ReceiveDrug({ onLogout }: PageProps) {
         const { error } = await supabase.from('drug_master').insert([{
             barcode: code,
             drug_name: newName.trim(),
-            current_stock: Number(newInitQty) * Number(newUnitPerScan),
+            current_stock: Number(newInitQty) * Number(newUnitPerScanIn || 1),
             min_stock: Number(newMinStock || 0),
             unit_per_scan: Number(newUnitPerScan || 1),
+            unit_per_scan_in: Number(newUnitPerScanIn || 1),
             location_id: location.id,
             category: newCategory.trim() || null,
         }])
@@ -139,10 +141,11 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setNewCategory('')
         setNewMinStock('5')
         setNewUnitPerScan('1')
+        setNewUnitPerScanIn('1')
         setNewInitQty('1')
     }
 
-    const totalNew = Number(newInitQty || 0) * Number(newUnitPerScan || 1)
+    const totalNew = Number(newInitQty || 0) * Number(newUnitPerScanIn || 1)
     const rsTotalUnits = rsCart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan || 1), 0)
 
     return (
@@ -174,7 +177,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
                                 </div>
                                 <div className="divide-y divide-slate-100">
                                     {rsCart.map((item) => {
-                                        const total = item.qty * Number(item.drug.unit_per_scan || 1)
+                                        const total = item.qty * Number(item.drug.unit_per_scan_in ?? item.drug.unit_per_scan ?? 1)
                                         return (
                                             <div key={item.drug.barcode} className="flex items-center gap-3 px-5 py-3">
                                                 <div className="flex-1 min-w-0">
@@ -258,9 +261,12 @@ function ReceiveDrug({ onLogout }: PageProps) {
                                 {categoryOptions.map((c) => <option key={c} value={c} />)}
                             </datalist>
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <FormInput label="Unit / Scan (IN)" type="number" value={newUnitPerScanIn} onChange={(e) => setNewUnitPerScanIn(e.target.value)} />
+                            <FormInput label="Unit / Scan (OUT)" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
                             <FormInput label="Min Stock Alert" type="number" value={newMinStock} onChange={(e) => setNewMinStock(e.target.value)} />
-                            <FormInput label="Unit / Scan" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />
                             <FormInput label="Initial Scan Count" type="number" value={newInitQty} onChange={(e) => setNewInitQty(e.target.value)} />
                         </div>
                         {newMessage && <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{newMessage}</div>}
@@ -270,7 +276,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
                         <Card className="p-5">
                             <div className="text-sm font-medium text-slate-500">Initial Stock</div>
                             <div className="mt-2 text-4xl font-bold text-teal-700">{totalNew}</div>
-                            <div className="mt-1 text-xs text-slate-400">{newInitQty} scans × {newUnitPerScan} unit/scan</div>
+                            <div className="mt-1 text-xs text-slate-400">{newInitQty} scans × {newUnitPerScanIn} unit/scan (IN)</div>
                             <button type="button" onClick={() => void handleRegister()}
                                 className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-teal-700 text-sm font-semibold text-white hover:bg-teal-800">
                                 <PackagePlus className="size-4" />Register Medicine

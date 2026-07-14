@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
 type PageProps = { onLogout: () => void }
-type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string; category: string }
+type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string; unit_per_scan_in: string; category: string }
 
 function downloadCSV(drugs: Drug[], locationCode: string) {
     const header = ['Barcode', 'Name', 'Category', 'Stock', 'Min Stock', 'Unit/Scan']
@@ -33,7 +33,7 @@ function Inventory({ onLogout }: PageProps) {
     const [message, setMessage] = useState('')
     const [loading, setLoading] = useState(true)
     const [editingDrug, setEditingDrug] = useState<Drug | null>(null)
-    const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '', category: '' })
+    const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '', unit_per_scan_in: '', category: '' })
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
@@ -46,7 +46,7 @@ function Inventory({ onLogout }: PageProps) {
         setLoading(true)
         const { data, error } = await supabase
             .from('drug_master')
-            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url, category')
+            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, unit_per_scan_in, image_url, category')
             .eq('location_id', location.id)
             .order('drug_name')
         setLoading(false)
@@ -92,6 +92,7 @@ function Inventory({ onLogout }: PageProps) {
             current_stock: String(drug.current_stock),
             min_stock: String(drug.min_stock),
             unit_per_scan: String(drug.unit_per_scan),
+            unit_per_scan_in: String(drug.unit_per_scan_in ?? drug.unit_per_scan),
             category: drug.category ?? '',
         })
     }
@@ -115,6 +116,7 @@ function Inventory({ onLogout }: PageProps) {
             current_stock: newStock,
             min_stock: Number(editForm.min_stock),
             unit_per_scan: Number(editForm.unit_per_scan),
+            unit_per_scan_in: Number(editForm.unit_per_scan_in) || null,
             category: editForm.category.trim() || null,
         }).eq('id', editingDrug.id)
         if (error) { setMessage('Update failed.'); return }
@@ -346,7 +348,11 @@ function Inventory({ onLogout }: PageProps) {
                             <div className="grid grid-cols-3 gap-3">
                                 <FormInput label="Stock" type="number" value={editForm.current_stock} onChange={(e) => setEditForm((c) => ({ ...c, current_stock: e.target.value }))} />
                                 <FormInput label="Min" type="number" value={editForm.min_stock} onChange={(e) => setEditForm((c) => ({ ...c, min_stock: e.target.value }))} />
-                                <FormInput label="Unit/Scan" type="number" value={editForm.unit_per_scan} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan: e.target.value }))} />
+                                <div />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <FormInput label="Unit/Scan (IN)" type="number" value={editForm.unit_per_scan_in} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan_in: e.target.value }))} />
+                                <FormInput label="Unit/Scan (OUT)" type="number" value={editForm.unit_per_scan} onChange={(e) => setEditForm((c) => ({ ...c, unit_per_scan: e.target.value }))} />
                             </div>
                         </div>
                         <div className="mt-5 flex gap-2">

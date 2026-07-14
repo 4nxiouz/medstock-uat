@@ -5,6 +5,7 @@ export type Drug = {
     current_stock: number
     min_stock: number
     unit_per_scan: number
+    unit_per_scan_in?: number | null
     image_url?: string | null
     location_id?: number | null
     category?: string | null
