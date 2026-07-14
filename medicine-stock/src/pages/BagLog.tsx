@@ -82,6 +82,8 @@ function BagLog({ onLogout }: PageProps) {
     const [loading, setLoading] = useState(true)
     const [selectedBag, setSelectedBag] = useState<BagDispatch | null>(null)
     const [modalTab, setModalTab] = useState<ModalTab>('drugs')
+    const [filterFrom, setFilterFrom] = useState('')
+    const [filterTo, setFilterTo] = useState('')
     const [exportFrom, setExportFrom] = useState('')
     const [exportTo, setExportTo] = useState('')
     const [exporting, setExporting] = useState(false)
@@ -106,7 +108,17 @@ function BagLog({ onLogout }: PageProps) {
         setLoading(false)
     }
 
-    const filtered = bags
+    const dateBased = bags.filter((b) => {
+        if (!filterFrom && !filterTo) return true
+        const d = b.date_in || b.created_at || ''
+        if (!d) return true
+        const day = d.slice(0, 10)
+        if (filterFrom && day < filterFrom) return false
+        if (filterTo && day > filterTo) return false
+        return true
+    })
+
+    const filtered = dateBased
         .filter((b) => bagFilter === 'ALL' || b.bag_type === bagFilter)
         .filter((b) => {
             if (logFilter === 'ALL') return true
@@ -114,9 +126,9 @@ function BagLog({ onLogout }: PageProps) {
             return logFilter === 'done' ? has : !has
         })
 
-    const fakCount = bags.filter((b) => b.bag_type === 'FAK').length
-    const emkCount = bags.filter((b) => b.bag_type === 'EMK').length
-    const pendingCount = bags.filter((b) => (logCounts[b.id] ?? 0) === 0).length
+    const fakCount = dateBased.filter((b) => b.bag_type === 'FAK').length
+    const emkCount = dateBased.filter((b) => b.bag_type === 'EMK').length
+    const pendingCount = dateBased.filter((b) => (logCounts[b.id] ?? 0) === 0).length
 
     function openBag(bag: BagDispatch) {
         setSelectedBag(bag)
@@ -190,7 +202,7 @@ function BagLog({ onLogout }: PageProps) {
 
             {/* ── Stats strip ── */}
             <div className="mb-5 flex flex-wrap gap-2">
-                <StatChip label="Total bags" value={bags.length} color="bg-white border-slate-200 text-slate-800" />
+                <StatChip label="Total bags" value={dateBased.length} color="bg-white border-slate-200 text-slate-800" />
                 <StatChip label="FAK" value={fakCount} color="bg-blue-50 border-blue-200 text-blue-800" />
                 <StatChip label="EMK" value={emkCount} color="bg-violet-50 border-violet-200 text-violet-800" />
                 <StatChip label="Reported" value={bags.length - pendingCount} color="bg-emerald-50 border-emerald-200 text-emerald-800" />
@@ -231,6 +243,22 @@ function BagLog({ onLogout }: PageProps) {
                             </span>
                         )}
                     </button>
+                </div>
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+
+                {/* Date filter */}
+                <div className="flex items-center gap-1.5">
+                    <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)}
+                        className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-teal-500" />
+                    <span className="text-slate-400 text-sm">→</span>
+                    <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)}
+                        className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-teal-500" />
+                    {(filterFrom || filterTo) && (
+                        <button type="button" onClick={() => { setFilterFrom(''); setFilterTo('') }}
+                            className="h-8 px-2 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 text-sm">✕</button>
+                    )}
                 </div>
 
                 {/* Spacer */}
@@ -274,7 +302,7 @@ function BagLog({ onLogout }: PageProps) {
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     {/* Table head */}
                     <div className="hidden md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'Out Date', 'In Date', 'Log', ''].map((h, i) => (
+                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'In Date', 'Out Date', 'Log', ''].map((h, i) => (
                             <div key={i} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</div>
                         ))}
                     </div>
@@ -320,11 +348,11 @@ function BagLog({ onLogout }: PageProps) {
                                     <StatusPill status={bag.status} />
                                 </div>
 
-                                {/* Out Date */}
-                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_out)}</div>
-
                                 {/* In Date */}
                                 <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_in)}</div>
+
+                                {/* Out Date */}
+                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_out)}</div>
 
                                 {/* Log */}
                                 <div className="hidden md:block">
