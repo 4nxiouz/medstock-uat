@@ -1,5 +1,5 @@
 ﻿import { PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
@@ -35,9 +35,20 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [newMinStock, setNewMinStock] = useState('5')
     const [newUnitPerScan, setNewUnitPerScan] = useState('1')
     const [newInitQty, setNewInitQty] = useState('1')
+    const [newCategory, setNewCategory] = useState('')
     const [newMessage, setNewMessage] = useState('')
     const [registeredBarcode, setRegisteredBarcode] = useState('')
     const [registeredName, setRegisteredName] = useState('')
+    const [categoryOptions, setCategoryOptions] = useState<string[]>([])
+
+    useEffect(() => {
+        if (!location) return
+        supabase.from('drug_master').select('category').eq('location_id', location.id)
+            .then(({ data }) => {
+                const cats = Array.from(new Set((data || []).map((d: { category: string | null }) => d.category).filter(Boolean))) as string[]
+                setCategoryOptions(cats.sort())
+            })
+    }, [location])
 
     async function handleRsScan(code: string) {
         setRsScanMsg('')
@@ -111,6 +122,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
             min_stock: Number(newMinStock || 0),
             unit_per_scan: Number(newUnitPerScan || 1),
             location_id: location.id,
+            category: newCategory.trim() || null,
         }])
 
         if (error) { setNewMessage('Registration failed: ' + error.message); return }
@@ -124,6 +136,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setRegisteredName(newName.trim())
         setNewBarcode('')
         setNewName('')
+        setNewCategory('')
         setNewMinStock('5')
         setNewUnitPerScan('1')
         setNewInitQty('1')
@@ -232,6 +245,19 @@ function ReceiveDrug({ onLogout }: PageProps) {
                             <p className="mt-1.5 text-xs text-slate-400">This code will be the barcode label on the cabinet.</p>
                         </div>
                         <FormInput label="Medicine Name" placeholder="e.g. Paracetamol 500mg" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Category (หมวดยา)</label>
+                            <input
+                                list="rx-category-options"
+                                value={newCategory}
+                                onChange={(e) => setNewCategory(e.target.value)}
+                                placeholder="เลือกหรือพิมพ์หมวดยา"
+                                className="h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                            />
+                            <datalist id="rx-category-options">
+                                {categoryOptions.map((c) => <option key={c} value={c} />)}
+                            </datalist>
+                        </div>
                         <div className="grid gap-4 sm:grid-cols-3">
                             <FormInput label="Min Stock Alert" type="number" value={newMinStock} onChange={(e) => setNewMinStock(e.target.value)} />
                             <FormInput label="Unit / Scan" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />

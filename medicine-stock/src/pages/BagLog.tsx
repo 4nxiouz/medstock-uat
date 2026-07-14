@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx'
 import {
     Backpack, CalendarRange, ChevronLeft, ClipboardList,
-    Download, Edit2, Package, PlusCircle, X,
+    Download, Edit2, Package, Printer, PlusCircle, X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -380,6 +380,89 @@ function BagDetailModal({
     useEffect(() => { void loadDrugs() }, [])
     useEffect(() => { if (tab === 'log' && !logsLoaded) void loadLogs() }, [tab])
 
+    async function handlePrint() {
+        // Fetch everything needed (drugs may already be loaded, logs may not)
+        const [drugsRes, logsRes] = await Promise.all([
+            supabase.from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id),
+            supabase.from('bag_usage_log').select('*').eq('dispatch_id', bag.id).order('created_at'),
+        ])
+        const allDrugs = (drugsRes.data || []) as BagDispatchDrug[]
+        const allLogs = (logsRes.data || []) as BagUsageLog[]
+
+        const drugRows = allDrugs.map((d) =>
+            `<tr><td>${d.drug_name}</td><td>${d.barcode ?? ''}</td><td style="text-align:center">${d.qty}</td></tr>`
+        ).join('')
+
+        const logRows = allLogs.map((l, i) => `
+            <tr>
+                <td style="text-align:center">${i + 1}</td>
+                <td>${l.drug_name}</td>
+                <td style="text-align:center">${l.qty_used ?? ''}</td>
+                <td>${l.patient_condition ?? ''}</td>
+                <td>${l.reason ?? ''}</td>
+                <td>${l.notes ?? ''}</td>
+                <td>${l.created_by ?? ''}</td>
+            </tr>`
+        ).join('')
+
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bag Report</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Sarabun', sans-serif; font-size: 11pt; margin: 0; padding: 20mm 15mm; color: #111; }
+  h1 { font-size: 16pt; margin: 0 0 2mm; }
+  .subtitle { font-size: 10pt; color: #555; margin-bottom: 6mm; }
+  .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm 4mm; margin-bottom: 6mm; border: 1px solid #ccc; padding: 4mm; border-radius: 3mm; }
+  .meta-item label { display: block; font-size: 8pt; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+  .meta-item span { font-weight: 700; font-size: 11pt; }
+  h2 { font-size: 11pt; border-bottom: 1.5px solid #0f766e; color: #0f766e; padding-bottom: 1mm; margin: 5mm 0 2mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  th { background: #f1f5f9; text-align: left; padding: 2mm 3mm; font-size: 9pt; }
+  td { padding: 2mm 3mm; border-bottom: 1px solid #eee; vertical-align: top; }
+  .badge { display:inline-block; padding: 0.5mm 2mm; border-radius:2mm; font-size:9pt; font-weight:700; }
+  .open { background:#d1fae5; color:#065f46; }
+  .close { background:#f1f5f9; color:#475569; }
+  .footer { margin-top: 10mm; font-size: 9pt; color: #aaa; text-align: right; }
+  @media print { @page { size: A4; margin: 15mm; } body { padding: 0; } }
+</style>
+</head><body>
+  <h1>Bag Report — ${bag.bag_type} · ${bag.serial_no}</h1>
+  <div class="subtitle">พิมพ์เมื่อ ${new Date().toLocaleString('th-TH')}</div>
+
+  <div class="meta-grid">
+    <div class="meta-item"><label>Type</label><span>${bag.bag_type}</span></div>
+    <div class="meta-item"><label>S/N</label><span>${bag.serial_no}</span></div>
+    <div class="meta-item"><label>EQ</label><span>${bag.equipment_no}</span></div>
+    <div class="meta-item"><label>Status</label><span class="badge ${bag.status === 'OPEN' ? 'open' : 'close'}">${bag.status}</span></div>
+    <div class="meta-item"><label>Order No</label><span>${bag.order_no ?? '—'}</span></div>
+    <div class="meta-item"><label>Seal No</label><span>${bag.seal_number ?? '—'}</span></div>
+    <div class="meta-item"><label>In Date</label><span>${fmt(bag.date_in)}</span></div>
+    <div class="meta-item"><label>Out Date</label><span>${fmt(bag.date_out)}</span></div>
+    ${bag.cause_1 ? `<div class="meta-item"><label>1st Cause</label><span>${bag.cause_1}</span></div>` : ''}
+    ${bag.cause_2 ? `<div class="meta-item"><label>2nd Cause</label><span>${bag.cause_2}</span></div>` : ''}
+  </div>
+
+  <h2>รายการยาในกระเป๋า (${allDrugs.length} รายการ)</h2>
+  <table>
+    <thead><tr><th>ชื่อยา</th><th>Barcode</th><th style="text-align:center">จำนวน (หน่วย)</th></tr></thead>
+    <tbody>${drugRows || '<tr><td colspan="3" style="color:#aaa">ไม่มีรายการยา</td></tr>'}</tbody>
+  </table>
+
+  <h2>Usage Log (${allLogs.length} รายการ)</h2>
+  <table>
+    <thead><tr><th>#</th><th>ชื่อยา</th><th style="text-align:center">จำนวนที่ใช้</th><th>อาการผู้ป่วย</th><th>เหตุผล</th><th>หมายเหตุ</th><th>บันทึกโดย</th></tr></thead>
+    <tbody>${logRows || '<tr><td colspan="7" style="color:#aaa">ยังไม่มีบันทึก</td></tr>'}</tbody>
+  </table>
+
+  <div class="footer">MedStock · ID #${bag.id}</div>
+<script>window.onload = function(){ window.print(); window.onafterprint = function(){ window.close(); }; }<\/script>
+</body></html>`
+
+        const win = window.open('', '_blank', 'width=900,height=700')
+        if (!win) return
+        win.document.write(html)
+        win.document.close()
+    }
+
     async function loadDrugs() {
         const { data } = await supabase.from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id)
         setDrugs((data || []) as BagDispatchDrug[])
@@ -647,7 +730,10 @@ function BagDetailModal({
                         className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-slate-700 transition-colors">
                         <ChevronLeft className="size-4" /> Close
                     </button>
-                    <span className="text-[10px] text-slate-300 tabular-nums">ID #{bag.id}</span>
+                    <button type="button" onClick={() => void handlePrint()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                        <Printer className="size-3.5" /> Print A4
+                    </button>
                 </div>
             </div>
         </div>,
