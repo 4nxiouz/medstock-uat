@@ -1,5 +1,5 @@
 ﻿import { PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
