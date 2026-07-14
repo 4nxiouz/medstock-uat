@@ -197,7 +197,7 @@ function Inventory({ onLogout }: PageProps) {
                 <div className="h-28 bg-slate-50">
                     {drug.image_url
                         ? <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
-                        : <DrugIcon name={drug.drug_name} />
+                        : <DrugIcon name={drug.drug_name} category={drug.category} />
                     }
                 </div>
                 <div className="space-y-3 p-4">

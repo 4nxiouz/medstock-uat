@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 
-type Props = { name: string; className?: string }
+type Props = { name: string; category?: string | null; className?: string }
 
 type Category = {
     keywords: string[]
+    categoryNames: string[]   // drug_master.category values that map here
     bg: string
     iconBg: string
     label: string
@@ -14,22 +15,26 @@ const categories: Category[] = [
     {
         // IV / saline bag
         keywords: ['normal saline', 'n/s', 'ringer', 'dextrose', 'iv fluid', 'iv solution', 'iv bag', 'lactated', 'สารน้ำ', '0.9%nacl', 'nacl', 'sodium chloride', 'hartmann'],
+        categoryNames: ['สารน้ำและ iv', 'สารน้ำและอุปกรณ์', 'iv fluid', 'สารน้ำ'],
         bg: 'from-sky-100 to-cyan-50',
         iconBg: '#0369A1',
-        label: 'IV / Saline',
+        label: 'สารน้ำและอุปกรณ์',
         svg: () => (
             <svg viewBox="0 0 64 64" fill="none" className="size-14">
-                <rect x="22" y="10" width="20" height="32" rx="10" fill="#BAE6FD" stroke="#0369A1" strokeWidth="1.5" />
-                <rect x="28" y="6" width="8" height="6" rx="2" fill="#7DD3FC" stroke="#0369A1" strokeWidth="1.5" />
-                <path d="M22 30 Q32 26 42 30 V40 Q42 50 32 50 Q22 50 22 40 Z" fill="#38BDF8" opacity="0.6" />
-                <line x1="32" y1="50" x2="32" y2="58" stroke="#0369A1" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="32" cy="59" r="2" fill="#0369A1" opacity="0.5" />
+                {/* saline bottle */}
+                <rect x="24" y="8" width="16" height="4" rx="2" fill="#7DD3FC" stroke="#0369A1" strokeWidth="1.5" />
+                <path d="M20 16 L24 12 H40 L44 16 V52 Q44 56 40 56 H24 Q20 56 20 52 Z" fill="#BAE6FD" stroke="#0369A1" strokeWidth="1.5" />
+                <path d="M20 38 Q32 34 44 38 V52 Q44 56 40 56 H24 Q20 56 20 52 Z" fill="#38BDF8" opacity="0.5" />
+                <text x="32" y="30" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#0369A1">N/S</text>
+                <line x1="32" y1="4" x2="32" y2="8" stroke="#0369A1" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="32" cy="3" r="1.5" fill="#0369A1" opacity="0.5" />
             </svg>
         ),
     },
     {
         // Spray / inhaler
         keywords: ['salbutamol', 'ventolin', 'spray', 'inhaler', 'aerosol', 'nasal spray', 'oxymet', 'oxymetazoline', 'fluticasone', 'budesonide', 'mdi', 'puffer'],
+        categoryNames: ['spray', 'inhaler', 'ยาพ่น'],
         bg: 'from-indigo-100 to-blue-50',
         iconBg: '#4338CA',
         label: 'Spray',
@@ -46,6 +51,7 @@ const categories: Category[] = [
     },
     {
         keywords: ['capsule', 'cap ', 'cap.', 'amoxicillin', 'omeprazole', 'clarithromycin', 'doxycycline'],
+        categoryNames: ['ยาแคปซูล', 'capsule'],
         bg: 'from-violet-100 to-purple-50',
         iconBg: '#7C3AED',
         label: 'Capsule',
@@ -63,6 +69,7 @@ const categories: Category[] = [
     },
     {
         keywords: ['syrup', 'suspension', 'liquid', 'solution', 'drops', 'drop', 'น้ำเชื่อม', 'ยาน้ำ'],
+        categoryNames: ['ยาน้ำ', 'ยาน้ำเชื่อม', 'syrup', 'ยาน้ำแขวนตะกอน'],
         bg: 'from-cyan-100 to-sky-50',
         iconBg: '#0891B2',
         label: 'Syrup',
@@ -78,10 +85,11 @@ const categories: Category[] = [
         ),
     },
     {
-        keywords: ['cream', 'ointment', 'gel', 'lotion', 'paste', 'ครีม', 'ยาทา', 'silverderm', 'silver sulfadiazine', 'lidocaine gel', 'lignocaine gel', 'lidocaine topical', 'lidocaine cream', 'hydrogel', 'mupirocin', 'bacitracin'],
+        keywords: ['cream', 'ointment', 'gel', 'lotion', 'paste', 'ครีม', 'ยาทา', 'silverderm', 'silver sulfadiazine', 'lidocaine', 'lignocaine', 'hydrogel', 'mupirocin', 'bacitracin'],
+        categoryNames: ['ยาทา', 'ครีม', 'gel', 'ยาทาภายนอก'],
         bg: 'from-yellow-100 to-amber-50',
         iconBg: '#D97706',
-        label: 'Cream',
+        label: 'Cream / Gel',
         svg: () => (
             <svg viewBox="0 0 64 64" fill="none" className="size-14">
                 <rect x="20" y="28" width="24" height="26" rx="4" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5" />
@@ -93,22 +101,35 @@ const categories: Category[] = [
         ),
     },
     {
-        keywords: ['injection', 'inject', 'vaccine', 'insulin', 'syringe', 'วัคซีน', 'ฉีด', 'tramol', 'tramadol', 'morphine', 'pethidine', 'fentanyl', 'ketorolac', 'diclofenac inj', 'ondansetron inj', 'metoclopramide inj', 'dexamethasone inj', 'hydrocortisone inj', 'adrenaline', 'epinephrine', 'atropine inj', 'lidocaine inj', 'dopamine', 'norepinephrine', 'furosemide inj', 'omeprazole inj', 'pantoprazole inj', 'amikacin', 'ceftriaxone', 'ampicillin inj', 'benzylpenicillin', 'gentamicin', 'clindamycin inj', 'metronidazole inj', 'heparin'],
+        keywords: ['injection', 'inject', 'vaccine', 'insulin', 'syringe', 'วัคซีน', 'ฉีด', 'tramol', 'tramadol', 'morphine', 'pethidine', 'fentanyl', 'ketorolac', 'diclofenac inj', 'ondansetron inj', 'metoclopramide inj', 'dexamethasone inj', 'hydrocortisone inj', 'adrenaline', 'epinephrine', 'atropine', 'dopamine', 'norepinephrine', 'furosemide inj', 'omeprazole inj', 'pantoprazole inj', 'amikacin', 'ceftriaxone', 'ampicillin inj', 'benzylpenicillin', 'gentamicin', 'clindamycin inj', 'metronidazole inj', 'heparin'],
+        categoryNames: ['ยาฉีด', 'injection', 'วัคซีน'],
         bg: 'from-rose-100 to-red-50',
         iconBg: '#DC2626',
-        label: 'Injection',
+        label: 'ยาฉีด',
         svg: () => (
             <svg viewBox="0 0 64 64" fill="none" className="size-14">
-                <line x1="12" y1="52" x2="52" y2="12" stroke="#FCA5A5" strokeWidth="3" strokeLinecap="round" />
-                <rect x="28" y="20" width="20" height="10" rx="2" transform="rotate(45 28 20)" fill="#FEE2E2" stroke="#DC2626" strokeWidth="1.5" />
-                <rect x="24" y="26" width="20" height="12" rx="2" transform="rotate(45 24 26)" fill="#FECACA" stroke="#DC2626" strokeWidth="1.5" />
-                <line x1="30" y1="30" x2="34" y2="26" stroke="#DC2626" strokeWidth="1.5" strokeDasharray="2 2" />
-                <polygon points="48,10 56,16 54,18 46,12" fill="#DC2626" />
+                {/* syringe body */}
+                <rect x="10" y="29" width="34" height="6" rx="3" fill="#FECACA" stroke="#DC2626" strokeWidth="1.5" />
+                {/* plunger handle */}
+                <rect x="6" y="26" width="6" height="12" rx="1.5" fill="#FCA5A5" stroke="#DC2626" strokeWidth="1.5" />
+                {/* plunger rod */}
+                <line x1="12" y1="32" x2="44" y2="32" stroke="#DC2626" strokeWidth="1" strokeDasharray="3 2" opacity="0.4" />
+                {/* needle hub */}
+                <rect x="44" y="30" width="6" height="4" rx="1" fill="#DC2626" />
+                {/* needle */}
+                <line x1="50" y1="32" x2="58" y2="32" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" />
+                {/* graduation marks */}
+                <line x1="20" y1="29" x2="20" y2="27" stroke="#DC2626" strokeWidth="1" opacity="0.5" />
+                <line x1="28" y1="29" x2="28" y2="27" stroke="#DC2626" strokeWidth="1" opacity="0.5" />
+                <line x1="36" y1="29" x2="36" y2="27" stroke="#DC2626" strokeWidth="1" opacity="0.5" />
+                {/* liquid fill */}
+                <rect x="12" y="30" width="20" height="4" rx="1" fill="#FCA5A5" opacity="0.6" />
             </svg>
         ),
     },
     {
         keywords: ['vitamin', 'supplement', 'mineral', 'calcium', 'zinc', 'iron', 'vit ', 'วิตามิน', 'อาหารเสริม'],
+        categoryNames: ['วิตามิน', 'อาหารเสริม', 'vitamin'],
         bg: 'from-orange-100 to-amber-50',
         iconBg: '#EA580C',
         label: 'Vitamin',
@@ -126,6 +147,7 @@ const categories: Category[] = [
     },
     {
         keywords: ['plaster', 'bandage', 'dressing', 'gauze', 'cotton', 'tape', 'พลาสเตอร์', 'ผ้าพัน', 'wound', 'elastic', 'crepe', 'tegaderm', 'micropore', 'transpore', 'สำลี', 'ผ้าก๊อซ', 'วัสดุทำแผล'],
+        categoryNames: ['พลาสเตอร์', 'วัสดุทำแผล'],
         bg: 'from-pink-100 to-rose-50',
         iconBg: '#DB2777',
         label: 'Plaster',
@@ -143,6 +165,7 @@ const categories: Category[] = [
     },
     {
         keywords: ['eye', 'ear', 'nose', 'nasal', 'ophthal', 'ตา', 'หู', 'จมูก'],
+        categoryNames: ['ยาหยอด', 'ยาหยอดตา', 'ยาหยอดหู'],
         bg: 'from-teal-100 to-emerald-50',
         iconBg: '#059669',
         label: 'Drops',
@@ -157,8 +180,52 @@ const categories: Category[] = [
         ),
     },
     {
+        // Medical equipment — stethoscope
+        keywords: [],
+        categoryNames: ['อุปกรณ์การแพทย์', 'medical equipment', 'อุปกรณ์'],
+        bg: 'from-slate-100 to-gray-50',
+        iconBg: '#475569',
+        label: 'อุปกรณ์การแพทย์',
+        svg: () => (
+            <svg viewBox="0 0 64 64" fill="none" className="size-14">
+                {/* stethoscope */}
+                <path d="M20 14 Q20 26 28 30 Q36 34 36 44 Q36 52 44 52" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <circle cx="44" cy="52" r="5" fill="#CBD5E1" stroke="#475569" strokeWidth="1.5" />
+                <circle cx="44" cy="52" r="2.5" fill="#475569" />
+                <path d="M24 14 Q24 24 28 28" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <circle cx="18" cy="13" r="3.5" fill="#94A3B8" stroke="#475569" strokeWidth="1.5" />
+                <circle cx="26" cy="13" r="3.5" fill="#94A3B8" stroke="#475569" strokeWidth="1.5" />
+                {/* ear tubes */}
+                <line x1="18" y1="9" x2="18" y2="6" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+                <line x1="26" y1="9" x2="26" y2="6" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+        ),
+    },
+    {
+        // Consumables / supplies — scissors + roll
+        keywords: [],
+        categoryNames: ['วัสดุสิ้นเปลือง', 'consumable', 'consumables', 'สิ้นเปลือง'],
+        bg: 'from-lime-100 to-green-50',
+        iconBg: '#16A34A',
+        label: 'วัสดุสิ้นเปลือง',
+        svg: () => (
+            <svg viewBox="0 0 64 64" fill="none" className="size-14">
+                {/* scissors */}
+                <circle cx="18" cy="22" r="5" fill="#BBF7D0" stroke="#16A34A" strokeWidth="1.5" />
+                <circle cx="18" cy="38" r="5" fill="#BBF7D0" stroke="#16A34A" strokeWidth="1.5" />
+                <line x1="22" y1="24" x2="46" y2="42" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" />
+                <line x1="22" y1="36" x2="46" y2="22" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" />
+                {/* roll of tape */}
+                <circle cx="46" cy="46" r="8" fill="#D1FAE5" stroke="#16A34A" strokeWidth="1.5" />
+                <circle cx="46" cy="46" r="4" fill="#16A34A" opacity="0.15" />
+                <circle cx="46" cy="46" r="2" fill="#16A34A" opacity="0.3" />
+            </svg>
+        ),
+    },
+    {
         // Default — tablet/pill
         keywords: [],
+        categoryNames: ['ยาเม็ด', 'tablet'],
         bg: 'from-blue-100 to-indigo-50',
         iconBg: '#2563EB',
         label: 'Tablet',
@@ -174,7 +241,16 @@ const categories: Category[] = [
     },
 ]
 
-function detectCategory(name: string): Category {
+function detectCategory(name: string, category?: string | null): Category {
+    // 1. Try category from DB first (most reliable)
+    if (category) {
+        const lowerCat = category.toLowerCase()
+        const byCategory = categories.find((c) =>
+            c.categoryNames.some((cn) => lowerCat.includes(cn.toLowerCase()))
+        )
+        if (byCategory) return byCategory
+    }
+    // 2. Fall back to keyword detection from drug name
     const lower = name.toLowerCase()
     return (
         categories.find((c) => c.keywords.some((kw) => lower.includes(kw))) ??
@@ -182,8 +258,8 @@ function detectCategory(name: string): Category {
     )
 }
 
-export default function DrugIcon({ name, className }: Props) {
-    const cat = detectCategory(name)
+export default function DrugIcon({ name, category, className }: Props) {
+    const cat = detectCategory(name, category)
     return (
         <div className={`flex size-full flex-col items-center justify-center bg-gradient-to-br ${cat.bg} ${className ?? ''}`}>
             {cat.svg()}
