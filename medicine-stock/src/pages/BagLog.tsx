@@ -193,7 +193,8 @@ function BagLog({ onLogout }: PageProps) {
                 <StatChip label="Total bags" value={bags.length} color="bg-white border-slate-200 text-slate-800" />
                 <StatChip label="FAK" value={fakCount} color="bg-blue-50 border-blue-200 text-blue-800" />
                 <StatChip label="EMK" value={emkCount} color="bg-violet-50 border-violet-200 text-violet-800" />
-                <StatChip label="No log yet" value={pendingCount} color="bg-amber-50 border-amber-200 text-amber-800" />
+                <StatChip label="Reported" value={bags.length - pendingCount} color="bg-emerald-50 border-emerald-200 text-emerald-800" />
+                <StatChip label="Unreported" value={pendingCount} color="bg-amber-50 border-amber-200 text-amber-800" />
             </div>
 
             {/* ── Toolbar ── */}
@@ -219,11 +220,11 @@ function BagLog({ onLogout }: PageProps) {
                     </button>
                     <button type="button" onClick={() => setLogFilter('done')}
                         className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition-all ${logFilter === 'done' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
-                        Has log
+                        Reported
                     </button>
                     <button type="button" onClick={() => setLogFilter('pending')}
                         className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition-all ${logFilter === 'pending' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
-                        No log
+                        Unreported
                         {pendingCount > 0 && (
                             <span className={`rounded-full px-1.5 py-px text-[10px] font-bold ${logFilter === 'pending' ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-700'}`}>
                                 {pendingCount}
@@ -273,7 +274,7 @@ function BagLog({ onLogout }: PageProps) {
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     {/* Table head */}
                     <div className="hidden md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'In Date', 'Out Date', 'Log', ''].map((h, i) => (
+                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'Out Date', 'In Date', 'Log', ''].map((h, i) => (
                             <div key={i} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</div>
                         ))}
                     </div>
@@ -319,11 +320,11 @@ function BagLog({ onLogout }: PageProps) {
                                     <StatusPill status={bag.status} />
                                 </div>
 
-                                {/* In Date */}
-                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_in)}</div>
-
                                 {/* Out Date */}
                                 <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_out)}</div>
+
+                                {/* In Date */}
+                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_in)}</div>
 
                                 {/* Log */}
                                 <div className="hidden md:block">
