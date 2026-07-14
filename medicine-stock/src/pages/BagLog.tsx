@@ -149,7 +149,7 @@ function BagLog({ onLogout }: PageProps) {
             const bagDrugs = allDrugs.filter((d) => d.dispatch_id === bag.id)
             const bagLogs = allLogs.filter((l) => l.dispatch_id === bag.id)
             const durationDays = bag.date_in && bag.date_out
-                ? Math.round((new Date(bag.date_in).getTime() - new Date(bag.date_out).getTime()) / 86400000)
+                ? Math.abs(Math.round((new Date(bag.date_in).getTime() - new Date(bag.date_out).getTime()) / 86400000))
                 : ''
             const row: Record<string, unknown> = {
                 'Order No.': bag.order_no ?? '',
@@ -160,6 +160,7 @@ function BagLog({ onLogout }: PageProps) {
                 'Status': bag.status,
                 '1st Cause': bag.cause_1 ?? '',
                 '2nd Cause': bag.cause_2 ?? '',
+                'Bag Remark': bag.remark ?? '',
             }
             for (const name of drugNames) {
                 const found = bagDrugs.find((d) => d.drug_name === name)
@@ -168,7 +169,6 @@ function BagLog({ onLogout }: PageProps) {
             row['Check In'] = bag.date_in ? fmt(bag.date_in) : ''
             row['Check Out'] = bag.date_out ? fmt(bag.date_out) : ''
             row['Duration (Days)'] = durationDays
-            row['Remark'] = bag.remark ?? ''
             const latestLog = bagLogs[bagLogs.length - 1]
             row['Opened Date'] = latestLog?.opened_date ?? ''
             row['Person'] = latestLog?.person ?? ''
@@ -176,7 +176,7 @@ function BagLog({ onLogout }: PageProps) {
             row['Used Item'] = latestLog?.used_item ?? ''
             row['FLT.No.'] = latestLog?.flt_no ?? ''
             row['Log Seal No.'] = latestLog?.seal_no ?? ''
-            row['Log Remark'] = latestLog?.remark ?? ''
+            row['Remark'] = latestLog?.remark ?? ''
             rows.push(row)
         }
         const wb = XLSX.utils.book_new()
