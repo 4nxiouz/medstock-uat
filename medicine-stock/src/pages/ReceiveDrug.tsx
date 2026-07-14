@@ -122,7 +122,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
         if (error) { setNewMessage('Registration failed: ' + error.message); return }
 
         await supabase.from('stock_transaction').insert([{
-            barcode: code, qty: Number(newInitQty) * Number(newUnitPerScan),
+            barcode: code, qty: Number(newInitQty) * Number(newUnitPerScanIn || 1),
             action: 'IN', created_by: getCreatedBy(), location_id: location.id,
         }])
 
@@ -139,7 +139,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
     }
 
     const totalNew = Number(newInitQty || 0) * Number(newUnitPerScanIn || 1)
-    const rsTotalUnits = rsCart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan || 1), 0)
+    const rsTotalUnits = rsCart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan_in ?? c.drug.unit_per_scan ?? 1), 0)
 
     return (
         <PageLayout title="In Stock" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>

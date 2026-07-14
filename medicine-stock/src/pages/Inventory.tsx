@@ -124,7 +124,7 @@ function Inventory({ onLogout }: PageProps) {
         }).eq('id', editingDrug.id)
         if (error) { setMessage('Update failed.'); return }
         setDrugs((cur) => cur.map((d) => d.id === editingDrug.id
-            ? { ...d, drug_name: editForm.drug_name, current_stock: newStock, min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan), category: editForm.category || null, icon_type: editForm.icon_type || null }
+            ? { ...d, drug_name: editForm.drug_name, current_stock: newStock, min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan), unit_per_scan_in: Number(editForm.unit_per_scan_in) || null, category: editForm.category || null, icon_type: editForm.icon_type || null }
             : d))
         setEditingDrug(null)
         setMessage('Updated.')
