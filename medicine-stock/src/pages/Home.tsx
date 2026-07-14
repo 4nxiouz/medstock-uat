@@ -60,7 +60,7 @@ function Home({ onLogout }: PageProps) {
             const drugs = (drugRes.data || []) as Drug[]
             setTotalDrug(drugs.length)
             setTotalStock(drugs.reduce((s, d) => s + Number(d.current_stock || 0), 0))
-            setLowStock(drugs.filter((d) => Number(d.current_stock) <= Number(d.min_stock)))
+            setLowStock(drugs.filter((d) => Number(d.min_stock) > 0 && Number(d.current_stock) <= Number(d.min_stock)))
         }
 
         const txs = (txRes.data || []) as StockTransaction[]

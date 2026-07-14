@@ -12,6 +12,39 @@ type Category = {
 
 const categories: Category[] = [
     {
+        // IV / saline bag
+        keywords: ['normal saline', 'n/s', 'ringer', 'dextrose', 'iv fluid', 'iv solution', 'iv bag', 'lactated', 'สารน้ำ', '0.9%nacl', 'nacl', 'sodium chloride', 'hartmann'],
+        bg: 'from-sky-100 to-cyan-50',
+        iconBg: '#0369A1',
+        label: 'IV / Saline',
+        svg: () => (
+            <svg viewBox="0 0 64 64" fill="none" className="size-14">
+                <rect x="22" y="10" width="20" height="32" rx="10" fill="#BAE6FD" stroke="#0369A1" strokeWidth="1.5" />
+                <rect x="28" y="6" width="8" height="6" rx="2" fill="#7DD3FC" stroke="#0369A1" strokeWidth="1.5" />
+                <path d="M22 30 Q32 26 42 30 V40 Q42 50 32 50 Q22 50 22 40 Z" fill="#38BDF8" opacity="0.6" />
+                <line x1="32" y1="50" x2="32" y2="58" stroke="#0369A1" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="32" cy="59" r="2" fill="#0369A1" opacity="0.5" />
+            </svg>
+        ),
+    },
+    {
+        // Spray / inhaler
+        keywords: ['salbutamol', 'ventolin', 'spray', 'inhaler', 'aerosol', 'nasal spray', 'oxymet', 'oxymetazoline', 'fluticasone', 'budesonide', 'mdi', 'puffer'],
+        bg: 'from-indigo-100 to-blue-50',
+        iconBg: '#4338CA',
+        label: 'Spray',
+        svg: () => (
+            <svg viewBox="0 0 64 64" fill="none" className="size-14">
+                <rect x="22" y="24" width="16" height="28" rx="5" fill="#C7D2FE" stroke="#4338CA" strokeWidth="1.5" />
+                <rect x="24" y="18" width="12" height="8" rx="3" fill="#A5B4FC" stroke="#4338CA" strokeWidth="1.5" />
+                <rect x="34" y="16" width="10" height="5" rx="2" fill="#818CF8" stroke="#4338CA" strokeWidth="1.5" />
+                <path d="M44 14 Q50 11 54 8" stroke="#4338CA" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+                <path d="M44 16 Q51 15 56 14" stroke="#4338CA" strokeWidth="1" strokeLinecap="round" opacity="0.35" />
+                <path d="M44 18 Q50 19 54 22" stroke="#4338CA" strokeWidth="1" strokeLinecap="round" opacity="0.2" />
+            </svg>
+        ),
+    },
+    {
         keywords: ['capsule', 'cap ', 'cap.', 'amoxicillin', 'omeprazole', 'clarithromycin', 'doxycycline'],
         bg: 'from-violet-100 to-purple-50',
         iconBg: '#7C3AED',
@@ -45,7 +78,7 @@ const categories: Category[] = [
         ),
     },
     {
-        keywords: ['cream', 'ointment', 'gel', 'lotion', 'paste', 'ครีม', 'ยาทา'],
+        keywords: ['cream', 'ointment', 'gel', 'lotion', 'paste', 'ครีม', 'ยาทา', 'silverderm', 'silver sulfadiazine', 'lidocaine gel', 'lignocaine gel', 'lidocaine topical', 'lidocaine cream', 'hydrogel', 'mupirocin', 'bacitracin'],
         bg: 'from-yellow-100 to-amber-50',
         iconBg: '#D97706',
         label: 'Cream',
@@ -60,7 +93,7 @@ const categories: Category[] = [
         ),
     },
     {
-        keywords: ['injection', 'inject', 'vaccine', 'insulin', 'syringe', 'วัคซีน', 'ฉีด'],
+        keywords: ['injection', 'inject', 'vaccine', 'insulin', 'syringe', 'วัคซีน', 'ฉีด', 'tramol', 'tramadol', 'morphine', 'pethidine', 'fentanyl', 'ketorolac', 'diclofenac inj', 'ondansetron inj', 'metoclopramide inj', 'dexamethasone inj', 'hydrocortisone inj', 'adrenaline', 'epinephrine', 'atropine inj', 'lidocaine inj', 'dopamine', 'norepinephrine', 'furosemide inj', 'omeprazole inj', 'pantoprazole inj', 'amikacin', 'ceftriaxone', 'ampicillin inj', 'benzylpenicillin', 'gentamicin', 'clindamycin inj', 'metronidazole inj', 'heparin'],
         bg: 'from-rose-100 to-red-50',
         iconBg: '#DC2626',
         label: 'Injection',
@@ -92,7 +125,7 @@ const categories: Category[] = [
         ),
     },
     {
-        keywords: ['plaster', 'bandage', 'dressing', 'gauze', 'cotton', 'tape', 'พลาสเตอร์', 'ผ้าพัน'],
+        keywords: ['plaster', 'bandage', 'dressing', 'gauze', 'cotton', 'tape', 'พลาสเตอร์', 'ผ้าพัน', 'wound', 'elastic', 'crepe', 'tegaderm', 'micropore', 'transpore', 'สำลี', 'ผ้าก๊อซ', 'วัสดุทำแผล'],
         bg: 'from-pink-100 to-rose-50',
         iconBg: '#DB2777',
         label: 'Plaster',
