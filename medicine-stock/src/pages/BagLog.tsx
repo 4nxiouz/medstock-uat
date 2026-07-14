@@ -151,16 +151,27 @@ function BagLog({ onLogout }: PageProps) {
         for (const bag of allBags) {
             const bagDrugs = allDrugs.filter((d) => d.dispatch_id === bag.id)
             const bagLogs = allLogs.filter((l) => l.dispatch_id === bag.id)
+            const durationDays = bag.date_in && bag.date_out
+                ? Math.round((new Date(bag.date_in).getTime() - new Date(bag.date_out).getTime()) / 86400000)
+                : ''
             const row: Record<string, unknown> = {
-                'Order No': bag.order_no ?? '', 'S/N': bag.serial_no, 'EQ': bag.equipment_no,
-                'Seal Number': bag.seal_number ?? '', 'Type': bag.type ?? '',
-                'In Date': bag.date_in ? fmt(bag.date_in) : '', 'Out Date': bag.date_out ? fmt(bag.date_out) : '',
-                'Status': bag.status, '1 Cause': bag.cause_1 ?? '', '2 Cause': bag.cause_2 ?? '',
+                'Order No.': bag.order_no ?? '',
+                'S/N': bag.serial_no,
+                'EQ No.': bag.equipment_no,
+                'Seal No.': bag.seal_number ?? '',
+                'Type': bag.type ?? '',
+                'Status': bag.status,
+                '1st Cause': bag.cause_1 ?? '',
+                '2nd Cause': bag.cause_2 ?? '',
             }
             for (const name of drugNames) {
                 const found = bagDrugs.find((d) => d.drug_name === name)
                 row[name] = found ? found.qty : ''
             }
+            row['Check In'] = bag.date_in ? fmt(bag.date_in) : ''
+            row['Check Out'] = bag.date_out ? fmt(bag.date_out) : ''
+            row['Duration (Days)'] = durationDays
+            row['Remark'] = bag.remark ?? ''
             const loopCount = Math.max(maxLogs, 1)
             for (let i = 0; i < loopCount; i++) {
                 const prefix = loopCount > 1 ? `Log ${i + 1} - ` : 'Log - '
