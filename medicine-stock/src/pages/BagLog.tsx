@@ -107,9 +107,8 @@ function BagLog({ onLogout }: PageProps) {
 
     const dateBased = bags.filter((b) => {
         if (!dateFrom && !dateTo) return true
-        const d = b.date_in || b.created_at || ''
-        if (!d) return true
-        const day = d.slice(0, 10)
+        const day = (b.date_in ?? '').slice(0, 10)
+        if (!day) return false
         if (dateFrom && day < dateFrom) return false
         if (dateTo && day > dateTo) return false
         return true
@@ -140,10 +139,8 @@ function BagLog({ onLogout }: PageProps) {
     async function handleExport() {
         if (!dateFrom || !dateTo) return
         setExporting(true)
-        const from = dateFrom + 'T00:00:00'
-        const to = dateTo + 'T23:59:59'
         const [bagsRes, drugsRes, logsRes] = await Promise.all([
-            supabase.from('bag_dispatch').select('*').gte('created_at', from).lte('created_at', to).order('created_at'),
+            supabase.from('bag_dispatch').select('*').gte('date_in', dateFrom).lte('date_in', dateTo).order('date_in'),
             supabase.from('bag_dispatch_drug').select('*'),
             supabase.from('bag_usage_log').select('*').order('dispatch_id').order('created_at'),
         ])
@@ -202,7 +199,7 @@ function BagLog({ onLogout }: PageProps) {
                 <StatChip label="Total bags" value={dateBased.length} color="bg-white border-slate-200 text-slate-800" />
                 <StatChip label="FAK" value={fakCount} color="bg-blue-50 border-blue-200 text-blue-800" />
                 <StatChip label="EMK" value={emkCount} color="bg-violet-50 border-violet-200 text-violet-800" />
-                <StatChip label="Reported" value={bags.length - pendingCount} color="bg-emerald-50 border-emerald-200 text-emerald-800" />
+                <StatChip label="Reported" value={dateBased.length - pendingCount} color="bg-emerald-50 border-emerald-200 text-emerald-800" />
                 <StatChip label="Unreported" value={pendingCount} color="bg-amber-50 border-amber-200 text-amber-800" />
             </div>
 
