@@ -5,6 +5,7 @@ import CameraScanner from '../components/CameraScanner'
 import DrugIcon from '../components/DrugIcon'
 import EmptyState from '../components/EmptyState'
 import FormInput from '../components/FormInput'
+import IconPicker from '../components/IconPicker'
 import PageLayout from '../components/PageLayout'
 import SearchInput from '../components/SearchInput'
 import StatCard from '../components/StatCard'
@@ -332,19 +333,11 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                         <div className="space-y-3">
                             <FormInput label="Name" value={editForm.drug_name} onChange={(e) => setEditForm((c) => ({ ...c, drug_name: e.target.value }))} />
-                            <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">Category (หมวดยา)</label>
-                                <input
-                                    list="category-options"
-                                    value={editForm.category}
-                                    onChange={(e) => setEditForm((c) => ({ ...c, category: e.target.value }))}
-                                    placeholder="เลือกหรือพิมพ์หมวดยา"
-                                    className="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
-                                />
-                                <datalist id="category-options">
-                                    {categories.filter((c) => c !== 'ทั้งหมด').map((c) => <option key={c} value={c} />)}
-                                </datalist>
-                            </div>
+                            <IconPicker
+                                label="รูปไอคอน"
+                                value={editForm.category}
+                                onChange={(v) => setEditForm((c) => ({ ...c, category: v }))}
+                            />
                             <div className="grid grid-cols-3 gap-3">
                                 <FormInput label="Stock" type="number" value={editForm.current_stock} onChange={(e) => setEditForm((c) => ({ ...c, current_stock: e.target.value }))} />
                                 <FormInput label="Min" type="number" value={editForm.min_stock} onChange={(e) => setEditForm((c) => ({ ...c, min_stock: e.target.value }))} />

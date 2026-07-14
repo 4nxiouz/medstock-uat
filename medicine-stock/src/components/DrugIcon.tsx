@@ -258,6 +258,22 @@ function detectCategory(name: string, category?: string | null): Category {
     )
 }
 
+export type DrugIconOption = {
+    label: string
+    categoryName: string
+    bg: string
+    iconBg: string
+    svg: () => ReactNode
+}
+
+export const DRUG_ICON_OPTIONS: DrugIconOption[] = categories.map((c) => ({
+    label: c.label,
+    categoryName: c.categoryNames[0] ?? c.label,
+    bg: c.bg,
+    iconBg: c.iconBg,
+    svg: c.svg,
+}))
+
 export default function DrugIcon({ name, category, className }: Props) {
     const cat = detectCategory(name, category)
     return (
