@@ -372,9 +372,10 @@ function BagDetailModal({
         type: bag.type ?? '', status: bag.status,
         cause_1: bag.cause_1 ?? '', cause_2: bag.cause_2 ?? '',
         date_in: bag.date_in ?? '', date_out: bag.date_out ?? '',
+        remark: bag.remark ?? '',
     })
     const [editMsg, setEditMsg] = useState('')
-    const [logForm, setLogForm] = useState({ drug_name: '', qty_used: '', patient_condition: '', reason: '', notes: '' })
+    const [logForm, setLogForm] = useState({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '' })
     const [logMsg, setLogMsg] = useState('')
 
     useEffect(() => { void loadDrugs() }, [])
@@ -396,12 +397,13 @@ function BagDetailModal({
         const logRows = allLogs.map((l, i) => `
             <tr>
                 <td style="text-align:center">${i + 1}</td>
-                <td>${l.drug_name}</td>
-                <td style="text-align:center">${l.qty_used ?? ''}</td>
-                <td>${l.patient_condition ?? ''}</td>
-                <td>${l.reason ?? ''}</td>
-                <td>${l.notes ?? ''}</td>
-                <td>${l.created_by ?? ''}</td>
+                <td>${l.opened_date ? new Date(l.opened_date).toLocaleDateString('th-TH') : ''}</td>
+                <td>${l.person ?? ''}</td>
+                <td>${l.illness ?? ''}</td>
+                <td>${l.used_item ?? ''}</td>
+                <td>${l.flt_no ?? ''}</td>
+                <td>${l.seal_no ?? ''}</td>
+                <td>${l.remark ?? ''}</td>
             </tr>`
         ).join('')
 
@@ -439,6 +441,7 @@ function BagDetailModal({
     <div class="meta-item"><label>Out Date</label><span>${fmt(bag.date_out)}</span></div>
     ${bag.cause_1 ? `<div class="meta-item"><label>1st Cause</label><span>${bag.cause_1}</span></div>` : ''}
     ${bag.cause_2 ? `<div class="meta-item"><label>2nd Cause</label><span>${bag.cause_2}</span></div>` : ''}
+    ${bag.remark ? `<div class="meta-item" style="grid-column:1/-1"><label>Remark</label><span>${bag.remark}</span></div>` : ''}
   </div>
 
   <h2>รายการยาในกระเป๋า (${allDrugs.length} รายการ)</h2>
@@ -448,9 +451,9 @@ function BagDetailModal({
   </table>
 
   <h2>Usage Log (${allLogs.length} รายการ)</h2>
-  <table>
-    <thead><tr><th>#</th><th>ชื่อยา</th><th style="text-align:center">จำนวนที่ใช้</th><th>อาการผู้ป่วย</th><th>เหตุผล</th><th>หมายเหตุ</th><th>บันทึกโดย</th></tr></thead>
-    <tbody>${logRows || '<tr><td colspan="7" style="color:#aaa">ยังไม่มีบันทึก</td></tr>'}</tbody>
+  <table style="font-size:9pt">
+    <thead><tr><th>#</th><th>Opened Date</th><th>Person</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th></tr></thead>
+    <tbody>${logRows || '<tr><td colspan="8" style="color:#aaa">ยังไม่มีบันทึก</td></tr>'}</tbody>
   </table>
 
   <div class="footer">MedStock · ID #${bag.id}</div>
@@ -493,6 +496,7 @@ function BagDetailModal({
                 cause_2: editForm.cause_2.trim() || null,
                 date_in: editForm.date_in || null,
                 date_out: editForm.date_out || null,
+                remark: editForm.remark.trim() || null,
             })
             .eq('id', bag.id).select('*').single()
         if (error) { setEditMsg('Save failed: ' + error.message); return }
@@ -505,16 +509,18 @@ function BagDetailModal({
         setLogMsg('')
         const { error } = await supabase.from('bag_usage_log').insert([{
             dispatch_id: bag.id,
-            drug_name: logForm.drug_name.trim(),
-            qty_used: logForm.qty_used ? Number(logForm.qty_used) : null,
-            patient_condition: logForm.patient_condition.trim() || null,
-            reason: logForm.reason.trim() || null,
-            notes: logForm.notes.trim() || null,
+            opened_date: logForm.opened_date || null,
+            person: logForm.person.trim() || null,
+            illness: logForm.illness.trim() || null,
+            used_item: logForm.used_item.trim() || null,
+            flt_no: logForm.flt_no.trim() || null,
+            seal_no: logForm.seal_no.trim() || null,
+            remark: logForm.remark.trim() || null,
             created_by: getCreatedBy(),
         }])
         if (error) { setLogMsg('Failed: ' + error.message); return }
         setLogMsg('✓ Log added')
-        setLogForm({ drug_name: '', qty_used: '', patient_condition: '', reason: '', notes: '' })
+        setLogForm({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '' })
         void loadLogs()
     }
 
@@ -656,6 +662,7 @@ function BagDetailModal({
                                 <Field label="In Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} />
                                 <Field label="Out Date" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} />
                             </div>
+                            <Field label="Remark" value={editForm.remark} onChange={(v) => setEditForm((p) => ({ ...p, remark: v }))} />
                             {editMsg && (
                                 <div className={`rounded-lg px-3 py-2.5 text-sm font-medium ${editMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-red-50 text-red-700 ring-1 ring-red-200'}`}>
                                     {editMsg}
@@ -676,13 +683,17 @@ function BagDetailModal({
                                 <div className="flex items-center gap-2 text-sm font-bold text-teal-800">
                                     <PlusCircle className="size-4 text-teal-500" /> Add usage entry
                                 </div>
-                                <Field label="Drug name" value={logForm.drug_name} onChange={(v) => setLogForm((p) => ({ ...p, drug_name: v }))} />
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Field label="Qty used" type="number" value={logForm.qty_used} onChange={(v) => setLogForm((p) => ({ ...p, qty_used: v }))} />
-                                    <Field label="Patient condition" value={logForm.patient_condition} onChange={(v) => setLogForm((p) => ({ ...p, patient_condition: v }))} />
+                                    <Field label="Opened Date" type="date" value={logForm.opened_date} onChange={(v) => setLogForm((p) => ({ ...p, opened_date: v }))} />
+                                    <Field label="Person" value={logForm.person} onChange={(v) => setLogForm((p) => ({ ...p, person: v }))} />
                                 </div>
-                                <Field label="Reason" value={logForm.reason} onChange={(v) => setLogForm((p) => ({ ...p, reason: v }))} />
-                                <Field label="Notes" value={logForm.notes} onChange={(v) => setLogForm((p) => ({ ...p, notes: v }))} />
+                                <Field label="Illness" value={logForm.illness} onChange={(v) => setLogForm((p) => ({ ...p, illness: v }))} />
+                                <Field label="Used Item" value={logForm.used_item} onChange={(v) => setLogForm((p) => ({ ...p, used_item: v }))} />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="FLT.No." value={logForm.flt_no} onChange={(v) => setLogForm((p) => ({ ...p, flt_no: v }))} />
+                                    <Field label="Seal No." value={logForm.seal_no} onChange={(v) => setLogForm((p) => ({ ...p, seal_no: v }))} />
+                                </div>
+                                <Field label="Remark" value={logForm.remark} onChange={(v) => setLogForm((p) => ({ ...p, remark: v }))} />
                                 {logMsg && (
                                     <div className={`rounded-lg px-3 py-2 text-sm font-medium ${logMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                         {logMsg}
@@ -701,19 +712,21 @@ function BagDetailModal({
                             ) : (
                                 <div className="space-y-2">
                                     {logs.map((log) => (
-                                        <div key={log.id} className="rounded-xl border border-slate-200 bg-white p-3.5">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <span className="font-semibold text-slate-900 text-sm">{log.drug_name}</span>
-                                                {log.qty_used != null && (
-                                                    <span className="shrink-0 rounded-md bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-700 ring-1 ring-teal-200 tabular-nums">
-                                                        {log.qty_used} units
-                                                    </span>
+                                        <div key={log.id} className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="font-semibold text-slate-900 text-sm">{log.person || '—'}</span>
+                                                {log.opened_date && (
+                                                    <span className="text-[10px] text-slate-400 tabular-nums">{new Date(log.opened_date).toLocaleDateString('th-TH')}</span>
                                                 )}
                                             </div>
-                                            {log.patient_condition && <div className="mt-1 text-xs text-slate-500">Condition: {log.patient_condition}</div>}
-                                            {log.reason && <div className="text-xs text-slate-500">Reason: {log.reason}</div>}
-                                            {log.notes && <div className="text-xs text-slate-400 italic">{log.notes}</div>}
-                                            <div className="mt-2 text-[10px] text-slate-300 tabular-nums">
+                                            {log.illness && <div className="text-xs text-slate-600">Illness: <span className="font-medium">{log.illness}</span></div>}
+                                            {log.used_item && <div className="text-xs text-slate-600">Used item: <span className="font-medium">{log.used_item}</span></div>}
+                                            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                                                {log.flt_no && <div className="text-xs text-slate-500">FLT.No.: {log.flt_no}</div>}
+                                                {log.seal_no && <div className="text-xs text-slate-500">Seal: {log.seal_no}</div>}
+                                            </div>
+                                            {log.remark && <div className="text-xs text-slate-400 italic">{log.remark}</div>}
+                                            <div className="pt-1 text-[10px] text-slate-300 tabular-nums">
                                                 By {log.created_by} · {log.created_at ? new Date(log.created_at).toLocaleString('th-TH') : ''}
                                             </div>
                                         </div>

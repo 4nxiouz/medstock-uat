@@ -59,6 +59,7 @@ export type BagDispatch = {
     cause_2?: string | null
     date_in?: string | null
     date_out: string
+    remark?: string | null
     location_id?: number | null
     created_by?: string | null
     created_at?: string | null
@@ -75,12 +76,13 @@ export type BagDispatchDrug = {
 export type BagUsageLog = {
     id: number
     dispatch_id: number
-    drug_barcode?: string | null
-    drug_name?: string | null
-    qty_used?: number | null
-    patient_condition?: string | null
-    reason?: string | null
-    notes?: string | null
+    opened_date?: string | null
+    person?: string | null
+    illness?: string | null
+    used_item?: string | null
+    flt_no?: string | null
+    seal_no?: string | null
+    remark?: string | null
     created_by?: string | null
     created_at?: string | null
 }
