@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import {
-    Backpack, CalendarRange, ChevronLeft, ClipboardList,
+    Backpack, ChevronLeft, ClipboardList,
     Download, Edit2, Package, Printer, PlusCircle, X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -82,12 +82,9 @@ function BagLog({ onLogout }: PageProps) {
     const [loading, setLoading] = useState(true)
     const [selectedBag, setSelectedBag] = useState<BagDispatch | null>(null)
     const [modalTab, setModalTab] = useState<ModalTab>('drugs')
-    const [filterFrom, setFilterFrom] = useState('')
-    const [filterTo, setFilterTo] = useState('')
-    const [exportFrom, setExportFrom] = useState('')
-    const [exportTo, setExportTo] = useState('')
+    const [dateFrom, setDateFrom] = useState('')
+    const [dateTo, setDateTo] = useState('')
     const [exporting, setExporting] = useState(false)
-    const [showExport, setShowExport] = useState(false)
 
     const canEdit = canAccessBagLogEdit()
     const canLog = canAccessBagLogLog()
@@ -109,12 +106,12 @@ function BagLog({ onLogout }: PageProps) {
     }
 
     const dateBased = bags.filter((b) => {
-        if (!filterFrom && !filterTo) return true
+        if (!dateFrom && !dateTo) return true
         const d = b.date_in || b.created_at || ''
         if (!d) return true
         const day = d.slice(0, 10)
-        if (filterFrom && day < filterFrom) return false
-        if (filterTo && day > filterTo) return false
+        if (dateFrom && day < dateFrom) return false
+        if (dateTo && day > dateTo) return false
         return true
     })
 
@@ -141,10 +138,10 @@ function BagLog({ onLogout }: PageProps) {
     }
 
     async function handleExport() {
-        if (!exportFrom || !exportTo) return
+        if (!dateFrom || !dateTo) return
         setExporting(true)
-        const from = exportFrom + 'T00:00:00'
-        const to = exportTo + 'T23:59:59'
+        const from = dateFrom + 'T00:00:00'
+        const to = dateTo + 'T23:59:59'
         const [bagsRes, drugsRes, logsRes] = await Promise.all([
             supabase.from('bag_dispatch').select('*').gte('created_at', from).lte('created_at', to).order('created_at'),
             supabase.from('bag_dispatch_drug').select('*'),
@@ -193,7 +190,7 @@ function BagLog({ onLogout }: PageProps) {
         }
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Bag Log')
-        XLSX.writeFile(wb, `BagLog_${exportFrom}_${exportTo}.xlsx`)
+        XLSX.writeFile(wb, `BagLog_${dateFrom}_${dateTo}.xlsx`)
         setExporting(false)
     }
 
@@ -250,13 +247,13 @@ function BagLog({ onLogout }: PageProps) {
 
                 {/* Date filter */}
                 <div className="flex items-center gap-1.5">
-                    <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)}
+                    <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
                         className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-teal-500" />
                     <span className="text-slate-400 text-sm">→</span>
-                    <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)}
+                    <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
                         className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-teal-500" />
-                    {(filterFrom || filterTo) && (
-                        <button type="button" onClick={() => { setFilterFrom(''); setFilterTo('') }}
+                    {(dateFrom || dateTo) && (
+                        <button type="button" onClick={() => { setDateFrom(''); setDateTo('') }}
                             className="h-8 px-2 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 text-sm">✕</button>
                     )}
                 </div>
@@ -264,31 +261,14 @@ function BagLog({ onLogout }: PageProps) {
                 {/* Spacer */}
                 <div className="flex-1" />
 
-                {/* Export toggle */}
-                <button type="button" onClick={() => setShowExport((v) => !v)}
-                    className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-1.5 text-sm font-semibold transition-all ${showExport ? 'border-teal-600 bg-teal-700 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
-                    <CalendarRange className="size-4" />
-                    Export Excel
+                {/* Export — uses same date range */}
+                <button type="button" onClick={() => void handleExport()}
+                    disabled={!dateFrom || !dateTo || exporting}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300 transition-colors">
+                    <Download className="size-3.5" />
+                    {exporting ? 'Exporting…' : 'Export Excel'}
                 </button>
             </div>
-
-            {/* ── Export panel ── */}
-            {showExport && (
-                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/60 px-4 py-3">
-                    <span className="text-xs font-semibold text-teal-700 uppercase tracking-wide">Date range</span>
-                    <input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)}
-                        className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-teal-500" />
-                    <span className="text-sm text-slate-400">→</span>
-                    <input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)}
-                        className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-teal-500" />
-                    <button type="button" onClick={() => void handleExport()}
-                        disabled={!exportFrom || !exportTo || exporting}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300 transition-colors">
-                        <Download className="size-3.5" />
-                        {exporting ? 'Exporting…' : 'Download'}
-                    </button>
-                </div>
-            )}
 
             {/* ── Table ── */}
             {loading ? (
@@ -302,7 +282,7 @@ function BagLog({ onLogout }: PageProps) {
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     {/* Table head */}
                     <div className="hidden md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'Out Date', 'In Date', 'Log', ''].map((h, i) => (
+                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'In Date', 'Out Date', 'Log', ''].map((h, i) => (
                             <div key={i} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</div>
                         ))}
                     </div>
@@ -348,11 +328,11 @@ function BagLog({ onLogout }: PageProps) {
                                     <StatusPill status={bag.status} />
                                 </div>
 
-                                {/* Out Date */}
-                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_out)}</div>
-
                                 {/* In Date */}
                                 <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_in)}</div>
+
+                                {/* Out Date */}
+                                <div className="text-xs text-slate-600 hidden md:block tabular-nums">{fmt(bag.date_out)}</div>
 
                                 {/* Log */}
                                 <div className="hidden md:block">
