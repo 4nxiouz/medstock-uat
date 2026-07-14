@@ -41,17 +41,6 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [newMessage, setNewMessage] = useState('')
     const [registeredBarcode, setRegisteredBarcode] = useState('')
     const [registeredName, setRegisteredName] = useState('')
-    const [categoryOptions, setCategoryOptions] = useState<string[]>([])
-
-    useEffect(() => {
-        if (!location) return
-        supabase.from('drug_master').select('category').eq('location_id', location.id)
-            .then(({ data }) => {
-                const cats = Array.from(new Set((data || []).map((d: { category: string | null }) => d.category).filter(Boolean))) as string[]
-                setCategoryOptions(cats.sort())
-            })
-    }, [location])
-
     async function handleRsScan(code: string) {
         setRsScanMsg('')
         setRsConfirmMsg('')
