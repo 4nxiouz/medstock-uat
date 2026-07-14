@@ -333,6 +333,19 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                         <div className="space-y-3">
                             <FormInput label="Name" value={editForm.drug_name} onChange={(e) => setEditForm((c) => ({ ...c, drug_name: e.target.value }))} />
+                            <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">Category (หมวดยา)</label>
+                                <input
+                                    list="category-options"
+                                    value={editForm.category}
+                                    onChange={(e) => setEditForm((c) => ({ ...c, category: e.target.value }))}
+                                    placeholder="เลือกหรือพิมพ์หมวดยา"
+                                    className="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                                />
+                                <datalist id="category-options">
+                                    {categories.filter((c) => c !== 'ทั้งหมด').map((c) => <option key={c} value={c} />)}
+                                </datalist>
+                            </div>
                             <IconPicker
                                 label="รูปไอคอน"
                                 value={editForm.category}

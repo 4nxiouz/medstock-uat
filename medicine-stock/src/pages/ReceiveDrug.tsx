@@ -238,7 +238,20 @@ function ReceiveDrug({ onLogout }: PageProps) {
                             <p className="mt-1.5 text-xs text-slate-400">This code will be the barcode label on the cabinet.</p>
                         </div>
                         <FormInput label="Medicine Name" placeholder="e.g. Paracetamol 500mg" value={newName} onChange={(e) => setNewName(e.target.value)} />
-                        <IconPicker label="รูปไอคอน / Category" value={newCategory} onChange={setNewCategory} />
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Category (หมวดยา)</label>
+                            <input
+                                list="rx-category-options"
+                                value={newCategory}
+                                onChange={(e) => setNewCategory(e.target.value)}
+                                placeholder="เลือกหรือพิมพ์หมวดยา"
+                                className="h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                            />
+                            <datalist id="rx-category-options">
+                                {['สารน้ำและอุปกรณ์','ยาพ่น','ยาแคปซูล','ยาน้ำ','ยาทา','ยาฉีด','วิตามิน','พลาสเตอร์','ยาหยอด','อุปกรณ์การแพทย์','วัสดุสิ้นเปลือง','ยาเม็ด'].map((c) => <option key={c} value={c} />)}
+                            </datalist>
+                        </div>
+                        <IconPicker label="รูปไอคอน" value={newCategory} onChange={setNewCategory} />
                         <div className="grid gap-4 sm:grid-cols-2">
                             <FormInput label="Unit / Scan (IN)" type="number" value={newUnitPerScanIn} onChange={(e) => setNewUnitPerScanIn(e.target.value)} />
                             <FormInput label="Unit / Scan (OUT)" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />
