@@ -163,14 +163,16 @@ function BagLog({ onLogout }: PageProps) {
             }
             const loopCount = Math.max(maxLogs, 1)
             for (let i = 0; i < loopCount; i++) {
-                const prefix = loopCount > 1 ? `Supervisor ${i + 1} - ` : 'Supervisor - '
+                const prefix = loopCount > 1 ? `Log ${i + 1} - ` : 'Log - '
                 const log = bagLogs[i]
-                row[prefix + 'ชื่อยา'] = log?.drug_name ?? ''
-                row[prefix + 'จำนวน'] = log?.qty_used ?? ''
-                row[prefix + 'อาการผู้ป่วย'] = log?.patient_condition ?? ''
-                row[prefix + 'เหตุผล'] = log?.reason ?? ''
-                row[prefix + 'หมายเหตุ'] = log?.notes ?? ''
-                row[prefix + 'บันทึกโดย'] = log?.created_by ?? ''
+                row[prefix + 'Opened Date'] = log?.opened_date ?? ''
+                row[prefix + 'Person'] = log?.person ?? ''
+                row[prefix + 'Illness'] = log?.illness ?? ''
+                row[prefix + 'Used Item'] = log?.used_item ?? ''
+                row[prefix + 'FLT.No.'] = log?.flt_no ?? ''
+                row[prefix + 'Seal No.'] = log?.seal_no ?? ''
+                row[prefix + 'Remark'] = log?.remark ?? ''
+                row[prefix + 'By'] = log?.created_by ?? ''
             }
             rows.push(row)
         }
