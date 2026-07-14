@@ -38,6 +38,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [newUnitPerScanIn, setNewUnitPerScanIn] = useState('1')
     const [newInitQty, setNewInitQty] = useState('1')
     const [newCategory, setNewCategory] = useState('')
+    const [newIconType, setNewIconType] = useState('')
     const [newMessage, setNewMessage] = useState('')
     const [registeredBarcode, setRegisteredBarcode] = useState('')
     const [registeredName, setRegisteredName] = useState('')
@@ -115,6 +116,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
             unit_per_scan_in: Number(newUnitPerScanIn || 1),
             location_id: location.id,
             category: newCategory.trim() || null,
+            icon_type: newIconType.trim() || null,
         }])
 
         if (error) { setNewMessage('Registration failed: ' + error.message); return }
@@ -129,6 +131,7 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setNewBarcode('')
         setNewName('')
         setNewCategory('')
+        setNewIconType('')
         setNewMinStock('5')
         setNewUnitPerScan('1')
         setNewUnitPerScanIn('1')
@@ -240,18 +243,18 @@ function ReceiveDrug({ onLogout }: PageProps) {
                         <FormInput label="Medicine Name" placeholder="e.g. Paracetamol 500mg" value={newName} onChange={(e) => setNewName(e.target.value)} />
                         <div>
                             <label className="mb-1.5 block text-sm font-medium text-slate-700">Category (หมวดยา)</label>
-                            <input
-                                list="rx-category-options"
+                            <select
                                 value={newCategory}
                                 onChange={(e) => setNewCategory(e.target.value)}
-                                placeholder="เลือกหรือพิมพ์หมวดยา"
-                                className="h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                            />
-                            <datalist id="rx-category-options">
-                                {['สารน้ำและอุปกรณ์','ยาพ่น','ยาแคปซูล','ยาน้ำ','ยาทา','ยาฉีด','วิตามิน','พลาสเตอร์','ยาหยอด','อุปกรณ์การแพทย์','วัสดุสิ้นเปลือง','ยาเม็ด'].map((c) => <option key={c} value={c} />)}
-                            </datalist>
+                                className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                            >
+                                <option value="">— ไม่ระบุ —</option>
+                                {['สารน้ำและอุปกรณ์','ยาพ่น','ยาแคปซูล','ยาน้ำ','ยาทา','ยาฉีด','วิตามิน','พลาสเตอร์','ยาหยอด','อุปกรณ์การแพทย์','วัสดุสิ้นเปลือง','ยาเม็ด'].map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
                         </div>
-                        <IconPicker label="รูปไอคอน" value={newCategory} onChange={setNewCategory} />
+                        <IconPicker label="รูปไอคอน" value={newIconType} onChange={setNewIconType} />
                         <div className="grid gap-4 sm:grid-cols-2">
                             <FormInput label="Unit / Scan (IN)" type="number" value={newUnitPerScanIn} onChange={(e) => setNewUnitPerScanIn(e.target.value)} />
                             <FormInput label="Unit / Scan (OUT)" type="number" value={newUnitPerScan} onChange={(e) => setNewUnitPerScan(e.target.value)} />

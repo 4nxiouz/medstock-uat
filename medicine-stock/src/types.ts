@@ -9,6 +9,7 @@ export type Drug = {
     image_url?: string | null
     location_id?: number | null
     category?: string | null
+    icon_type?: string | null
 }
 
 export type StockTransaction = {

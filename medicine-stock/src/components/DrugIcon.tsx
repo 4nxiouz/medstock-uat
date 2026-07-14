@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-type Props = { name: string; category?: string | null; className?: string }
+type Props = { name: string; category?: string | null; iconType?: string | null; className?: string }
 
 type Category = {
     keywords: string[]
@@ -241,8 +241,16 @@ const categories: Category[] = [
     },
 ]
 
-function detectCategory(name: string, category?: string | null): Category {
-    // 1. Try category from DB first (most reliable)
+function detectCategory(name: string, category?: string | null, iconType?: string | null): Category {
+    // 1. icon_type — explicit user pick, highest priority
+    if (iconType) {
+        const lower = iconType.toLowerCase()
+        const byIcon = categories.find((c) =>
+            c.categoryNames.some((cn) => lower.includes(cn.toLowerCase()))
+        )
+        if (byIcon) return byIcon
+    }
+    // 2. category from DB
     if (category) {
         const lowerCat = category.toLowerCase()
         const byCategory = categories.find((c) =>
@@ -250,7 +258,7 @@ function detectCategory(name: string, category?: string | null): Category {
         )
         if (byCategory) return byCategory
     }
-    // 2. Fall back to keyword detection from drug name
+    // 3. keyword fallback from drug name
     const lower = name.toLowerCase()
     return (
         categories.find((c) => c.keywords.some((kw) => lower.includes(kw))) ??
@@ -274,8 +282,8 @@ export const DRUG_ICON_OPTIONS: DrugIconOption[] = categories.map((c) => ({
     svg: c.svg,
 }))
 
-export default function DrugIcon({ name, category, className }: Props) {
-    const cat = detectCategory(name, category)
+export default function DrugIcon({ name, category, iconType, className }: Props) {
+    const cat = detectCategory(name, category, iconType)
     return (
         <div className={`flex size-full flex-col items-center justify-center bg-gradient-to-br ${cat.bg} ${className ?? ''}`}>
             {cat.svg()}

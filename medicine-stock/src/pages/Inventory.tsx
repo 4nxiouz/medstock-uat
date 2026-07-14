@@ -15,7 +15,7 @@ import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
 
 type PageProps = { onLogout: () => void }
-type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string; unit_per_scan_in: string; category: string }
+type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string; unit_per_scan_in: string; category: string; icon_type: string }
 
 function downloadCSV(drugs: Drug[], locationCode: string) {
     const header = ['Barcode', 'Name', 'Category', 'Stock', 'Min Stock', 'Unit/Scan']
@@ -34,7 +34,7 @@ function Inventory({ onLogout }: PageProps) {
     const [message, setMessage] = useState('')
     const [loading, setLoading] = useState(true)
     const [editingDrug, setEditingDrug] = useState<Drug | null>(null)
-    const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '', unit_per_scan_in: '', category: '' })
+    const [editForm, setEditForm] = useState<EditForm>({ drug_name: '', current_stock: '', min_stock: '', unit_per_scan: '', unit_per_scan_in: '', category: '', icon_type: '' })
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
@@ -47,7 +47,7 @@ function Inventory({ onLogout }: PageProps) {
         setLoading(true)
         const { data, error } = await supabase
             .from('drug_master')
-            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, unit_per_scan_in, image_url, category')
+            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, unit_per_scan_in, image_url, category, icon_type')
             .eq('location_id', location.id)
             .order('drug_name')
         setLoading(false)
@@ -95,6 +95,7 @@ function Inventory({ onLogout }: PageProps) {
             unit_per_scan: String(drug.unit_per_scan),
             unit_per_scan_in: String(drug.unit_per_scan_in ?? drug.unit_per_scan),
             category: drug.category ?? '',
+            icon_type: drug.icon_type ?? '',
         })
     }
 
@@ -119,10 +120,11 @@ function Inventory({ onLogout }: PageProps) {
             unit_per_scan: Number(editForm.unit_per_scan),
             unit_per_scan_in: Number(editForm.unit_per_scan_in) || null,
             category: editForm.category.trim() || null,
+            icon_type: editForm.icon_type.trim() || null,
         }).eq('id', editingDrug.id)
         if (error) { setMessage('Update failed.'); return }
         setDrugs((cur) => cur.map((d) => d.id === editingDrug.id
-            ? { ...d, drug_name: editForm.drug_name, current_stock: newStock, min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan), category: editForm.category || null }
+            ? { ...d, drug_name: editForm.drug_name, current_stock: newStock, min_stock: Number(editForm.min_stock), unit_per_scan: Number(editForm.unit_per_scan), category: editForm.category || null, icon_type: editForm.icon_type || null }
             : d))
         setEditingDrug(null)
         setMessage('Updated.')
@@ -198,7 +200,7 @@ function Inventory({ onLogout }: PageProps) {
                 <div className="h-28 bg-slate-50">
                     {drug.image_url
                         ? <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
-                        : <DrugIcon name={drug.drug_name} category={drug.category} />
+                        : <DrugIcon name={drug.drug_name} category={drug.category} iconType={drug.icon_type} />
                     }
                 </div>
                 <div className="space-y-3 p-4">
@@ -335,21 +337,19 @@ function Inventory({ onLogout }: PageProps) {
                             <FormInput label="Name" value={editForm.drug_name} onChange={(e) => setEditForm((c) => ({ ...c, drug_name: e.target.value }))} />
                             <div>
                                 <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">Category (หมวดยา)</label>
-                                <input
-                                    list="category-options"
+                                <select
                                     value={editForm.category}
                                     onChange={(e) => setEditForm((c) => ({ ...c, category: e.target.value }))}
-                                    placeholder="เลือกหรือพิมพ์หมวดยา"
-                                    className="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
-                                />
-                                <datalist id="category-options">
-                                    {categories.filter((c) => c !== 'ทั้งหมด').map((c) => <option key={c} value={c} />)}
-                                </datalist>
+                                    className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                                >
+                                    <option value="">— ไม่ระบุ —</option>
+                                    {categories.filter((c) => c !== 'ทั้งหมด').map((c) => <option key={c} value={c}>{c}</option>)}
+                                </select>
                             </div>
                             <IconPicker
                                 label="รูปไอคอน"
-                                value={editForm.category}
-                                onChange={(v) => setEditForm((c) => ({ ...c, category: v }))}
+                                value={editForm.icon_type}
+                                onChange={(v) => setEditForm((c) => ({ ...c, icon_type: v }))}
                             />
                             <div className="grid grid-cols-3 gap-3">
                                 <FormInput label="Stock" type="number" value={editForm.current_stock} onChange={(e) => setEditForm((c) => ({ ...c, current_stock: e.target.value }))} />
