@@ -1,4 +1,4 @@
-import { AlertTriangle, Boxes, Camera, Download, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Boxes, Camera, ClipboardList, Download, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import CameraScanner from '../components/CameraScanner'
@@ -9,10 +9,12 @@ import IconPicker from '../components/IconPicker'
 import PageLayout from '../components/PageLayout'
 import SearchInput from '../components/SearchInput'
 import StatCard from '../components/StatCard'
-import { getCreatedBy } from '../lib/auth'
+import { getCreatedBy, isAdmin } from '../lib/auth'
 import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
+
+type AdjustLog = { id: number; barcode: string; qty: number; action: string; created_by: string; created_at: string }
 
 type PageProps = { onLogout: () => void }
 type EditForm = { drug_name: string; current_stock: string; min_stock: string; unit_per_scan: string; unit_per_scan_in: string; category: string; icon_type: string }
@@ -38,7 +40,12 @@ function Inventory({ onLogout }: PageProps) {
     const [adjustDrug, setAdjustDrug] = useState<Drug | null>(null)
     const [adjustCount, setAdjustCount] = useState('')
     const [adjustRemark, setAdjustRemark] = useState('')
+    const [adjustError, setAdjustError] = useState('')
+    const [showAdjustLog, setShowAdjustLog] = useState(false)
+    const [adjustLogs, setAdjustLogs] = useState<AdjustLog[]>([])
+    const [adjustLogsLoading, setAdjustLogsLoading] = useState(false)
     const [cameraOpen, setCameraOpen] = useState(false)
+    const admin = isAdmin()
     const [activeCategory, setActiveCategory] = useState<string>('ทั้งหมด')
     const [showLowOnly, setShowLowOnly] = useState(false)
 
@@ -149,6 +156,8 @@ function Inventory({ onLogout }: PageProps) {
 
     async function handleAdjust() {
         if (!adjustDrug || !location) return
+        setAdjustError('')
+        if (!adjustRemark.trim()) { setAdjustError('กรุณาระบุเหตุผลในการปรับสต็อก'); return }
         const newStock = Number(adjustCount)
         if (!Number.isFinite(newStock) || newStock < 0) return
         const diff = newStock - Number(adjustDrug.current_stock)
@@ -158,13 +167,34 @@ function Inventory({ onLogout }: PageProps) {
             await supabase.from('stock_transaction').insert([{
                 barcode: adjustDrug.barcode, qty: Math.abs(diff),
                 action: diff > 0 ? 'IN' : 'OUT',
-                created_by: getCreatedBy() + (adjustRemark ? ` [${adjustRemark}]` : ' [adjust]'),
+                created_by: getCreatedBy() + ` [adjust: ${adjustRemark.trim()}]`,
+                location_id: location.id,
+            }])
+        } else {
+            await supabase.from('stock_transaction').insert([{
+                barcode: adjustDrug.barcode, qty: 0,
+                action: 'IN',
+                created_by: getCreatedBy() + ` [adjust: ${adjustRemark.trim()}]`,
                 location_id: location.id,
             }])
         }
         setDrugs((cur) => cur.map((d) => d.id === adjustDrug.id ? { ...d, current_stock: newStock } : d))
-        setAdjustDrug(null); setAdjustCount(''); setAdjustRemark('')
+        setAdjustDrug(null); setAdjustCount(''); setAdjustRemark(''); setAdjustError('')
         setMessage(`Stock adjusted to ${newStock}.`)
+    }
+
+    async function loadAdjustLogs() {
+        if (!location) return
+        setAdjustLogsLoading(true)
+        const { data } = await supabase
+            .from('stock_transaction')
+            .select('id, barcode, qty, action, created_by, created_at')
+            .eq('location_id', location.id)
+            .ilike('created_by', '%[adjust%')
+            .order('created_at', { ascending: false })
+            .limit(200)
+        setAdjustLogs((data || []) as AdjustLog[])
+        setAdjustLogsLoading(false)
     }
 
     function handlePrint(drug: Drug) {
@@ -224,11 +254,13 @@ function Inventory({ onLogout }: PageProps) {
                             </div>
                         ))}
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5">
-                        <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                            <Pencil className="size-3" />Edit
-                        </button>
-                        <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark('') }}
+                    <div className={`grid gap-1.5 ${admin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                        {admin && (
+                            <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                                <Pencil className="size-3" />Edit
+                            </button>
+                        )}
+                        <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark(''); setAdjustError('') }}
                             className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50">
                             <SlidersHorizontal className="size-3" />Adjust
                         </button>
@@ -237,9 +269,11 @@ function Inventory({ onLogout }: PageProps) {
                             <Printer className="size-3" />Print
                         </button>
                     </div>
-                    <button type="button" onClick={() => void handleDelete(drug.id)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-200 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
-                        <Trash2 className="size-3" />Delete
-                    </button>
+                    {admin && (
+                        <button type="button" onClick={() => void handleDelete(drug.id)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-200 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
+                            <Trash2 className="size-3" />Delete
+                        </button>
+                    )}
                 </div>
             </article>
         )
@@ -264,6 +298,10 @@ function Inventory({ onLogout }: PageProps) {
                         <Camera className="size-4" /><span className="hidden sm:inline">กล้อง</span>
                     </button>
                     <CameraScanner open={cameraOpen} onClose={() => setCameraOpen(false)} onScan={(code) => { setSearch(code); setCameraOpen(false) }} />
+                    <button type="button" onClick={() => { setShowAdjustLog(true); void loadAdjustLogs() }}
+                        className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 text-sm font-semibold text-violet-700 hover:bg-violet-100">
+                        <ClipboardList className="size-4" /><span className="hidden sm:inline">Adjust Log</span>
+                    </button>
                     <button type="button" onClick={() => downloadCSV(filteredDrugs, location?.code ?? 'export')}
                         className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
                         <Download className="size-4" />CSV
@@ -392,12 +430,93 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                         <div className="space-y-3">
                             <FormInput label="Actual stock count" type="number" value={adjustCount} onChange={(e) => setAdjustCount(e.target.value)} />
-                            <FormInput label="Reason (optional)" placeholder="e.g. physical count, expired items removed" value={adjustRemark} onChange={(e) => setAdjustRemark(e.target.value)} />
+                            <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    เหตุผล <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="เช่น นับสต็อกจริง, ของหมดอายุ, ปรับแก้ข้อมูล"
+                                    value={adjustRemark}
+                                    onChange={(e) => { setAdjustRemark(e.target.value); setAdjustError('') }}
+                                    className="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                                />
+                                {adjustError && <p className="mt-1 text-xs text-red-600">{adjustError}</p>}
+                            </div>
                         </div>
                         <div className="mt-4 flex gap-2">
-                            <button type="button" onClick={() => setAdjustDrug(null)} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
+                            <button type="button" onClick={() => { setAdjustDrug(null); setAdjustError('') }} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
                             <button type="button" onClick={() => void handleAdjust()} disabled={adjustCount === ''}
                                 className="flex-1 rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:bg-slate-300">Confirm</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+            {/* Adjust Log Modal */}
+            {showAdjustLog && createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl" style={{ maxHeight: 'calc(100vh - 3rem)' }}>
+                        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                            <div className="flex items-center gap-2">
+                                <ClipboardList className="size-4 text-violet-600" />
+                                <h3 className="font-semibold text-slate-900">Stock Adjust Log</h3>
+                                <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">ประวัติการปรับสต็อก</span>
+                            </div>
+                            <button type="button" onClick={() => setShowAdjustLog(false)}
+                                className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50">
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-5">
+                            {adjustLogsLoading ? (
+                                <p className="text-center text-sm text-slate-400 py-8">Loading…</p>
+                            ) : adjustLogs.length === 0 ? (
+                                <p className="text-center text-sm text-slate-400 py-8">ยังไม่มีประวัติการปรับสต็อก</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-slate-200 bg-slate-50 text-left">
+                                                <th className="px-3 py-2.5 text-xs font-semibold uppercase text-slate-500">วันที่</th>
+                                                <th className="px-3 py-2.5 text-xs font-semibold uppercase text-slate-500">Barcode</th>
+                                                <th className="px-3 py-2.5 text-xs font-semibold uppercase text-slate-500 text-right">จำนวน</th>
+                                                <th className="px-3 py-2.5 text-xs font-semibold uppercase text-slate-500">Action</th>
+                                                <th className="px-3 py-2.5 text-xs font-semibold uppercase text-slate-500">ผู้ปรับ / เหตุผล</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {adjustLogs.map((log) => {
+                                                const match = log.created_by.match(/^(.+?)\s*\[adjust:\s*(.+)\]$/)
+                                                const who = match ? match[1] : log.created_by
+                                                const reason = match ? match[2] : ''
+                                                return (
+                                                    <tr key={log.id} className="hover:bg-slate-50">
+                                                        <td className="px-3 py-2.5 text-xs text-slate-500 tabular-nums whitespace-nowrap">
+                                                            {new Date(log.created_at).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        </td>
+                                                        <td className="px-3 py-2.5 font-mono text-xs text-slate-700">{log.barcode}</td>
+                                                        <td className="px-3 py-2.5 text-right font-semibold tabular-nums">
+                                                            <span className={log.action === 'IN' ? 'text-emerald-600' : 'text-red-600'}>
+                                                                {log.action === 'IN' ? '+' : '-'}{log.qty}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 py-2.5">
+                                                            <span className={`inline-flex h-5 items-center rounded-full px-2 text-[10px] font-bold ${log.action === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                                {log.action}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 py-2.5">
+                                                            <div className="font-medium text-slate-900">{who}</div>
+                                                            {reason && <div className="text-xs text-slate-500">{reason}</div>}
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>,

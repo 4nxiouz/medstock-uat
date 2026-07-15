@@ -1,13 +1,13 @@
 import * as XLSX from 'xlsx'
 import {
     Backpack, ChevronLeft, ClipboardList,
-    Download, Edit2, Package, Printer, PlusCircle, X,
+    Download, Edit2, Package, Printer, PlusCircle, Trash2, X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
-import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy } from '../lib/auth'
+import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy, isAdmin } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import type { BagDispatch, BagDispatchDrug, BagUsageLog } from '../types'
 
@@ -412,6 +412,8 @@ function BagDetailModal({
         remark: bag.remark ?? '',
     })
     const [editMsg, setEditMsg] = useState('')
+    const [deleting, setDeleting] = useState(false)
+    const admin = isAdmin()
     const [logForm, setLogForm] = useState({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '' })
     const [logMsg, setLogMsg] = useState('')
 
@@ -542,6 +544,41 @@ function BagDetailModal({
         onClose(true)
     }
 
+    async function handleDeleteBag() {
+        if (!window.confirm(`ลบ ${bag.bag_type} S/N ${bag.serial_no}?\n\nสต็อกยาทั้งหมดจะถูกคืนกลับเข้าระบบ`)) return
+        setDeleting(true)
+        // Load drugs in bag to rollback stock
+        const { data: bagDrugs } = await supabase
+            .from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id)
+        const items = (bagDrugs || []) as BagDispatchDrug[]
+
+        // Rollback stock for each drug
+        for (const item of items) {
+            const { data: live } = await supabase
+                .from('drug_master').select('id, current_stock').eq('barcode', item.barcode).maybeSingle()
+            if (live) {
+                await supabase.from('drug_master')
+                    .update({ current_stock: Number(live.current_stock) + Number(item.qty) })
+                    .eq('id', (live as { id: number; current_stock: number }).id)
+                await supabase.from('stock_transaction').insert([{
+                    barcode: item.barcode,
+                    qty: item.qty,
+                    action: 'IN',
+                    created_by: getCreatedBy() + ` [bag-rollback: ${bag.bag_type} S/N ${bag.serial_no}]`,
+                    location_id: bag.location_id,
+                }])
+            }
+        }
+
+        // Delete child records, then the bag itself
+        await supabase.from('bag_dispatch_drug').delete().eq('dispatch_id', bag.id)
+        await supabase.from('bag_usage_log').delete().eq('dispatch_id', bag.id)
+        await supabase.from('bag_dispatch').delete().eq('id', bag.id)
+
+        setDeleting(false)
+        onClose(true)
+    }
+
     async function handleAddLog() {
         setLogMsg('')
         const { error } = await supabase.from('bag_usage_log').insert([{
@@ -600,10 +637,19 @@ function BagDetailModal({
                             </div>
                         </div>
                     </div>
-                    <button type="button" onClick={() => onClose()}
-                        className="mt-0.5 shrink-0 flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
-                        <X className="size-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {admin && (
+                            <button type="button" onClick={() => void handleDeleteBag()} disabled={deleting}
+                                className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                                <Trash2 className="size-3.5" />
+                                {deleting ? 'กำลังลบ…' : 'Delete Bag'}
+                            </button>
+                        )}
+                        <button type="button" onClick={() => onClose()}
+                            className="mt-0.5 shrink-0 flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
+                            <X className="size-4" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* ── Tabs ── */}

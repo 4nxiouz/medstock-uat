@@ -33,6 +33,10 @@ export function getCreatedBy(): string {
     return user?.username || user?.fullname || 'system'
 }
 
+export function isAdmin(): boolean {
+    return getCurrentUser()?.role === 'admin'
+}
+
 export function isPrivileged(): boolean {
     const role = getCurrentUser()?.role
     return role === 'admin' || role === 'supervisor'
