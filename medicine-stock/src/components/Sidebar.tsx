@@ -14,7 +14,7 @@
 } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { getCurrentUser } from '../lib/auth'
+import { getCurrentUser, isSupervisor } from '../lib/auth'
 import { hashPassword, isHashed } from '../lib/crypto'
 import { supabase } from '../lib/supabase'
 import FormInput from './FormInput'
@@ -37,9 +37,12 @@ const baseItems = [
 function Sidebar({ onLogout }: SidebarProps) {
     const user = getCurrentUser()
     const isAdmin = user?.role === 'admin'
+    const supervisor = isSupervisor()
     const allowedPages = user?.allowed_pages
     const menuItems = baseItems.filter((item) => {
         if (item.adminOnly) return isAdmin
+        // Dashboard always visible for supervisor
+        if (supervisor && item.path === '/') return true
         if (!allowedPages) return true
         return allowedPages.includes(item.path)
     })

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
 import PageLayout from '../components/PageLayout'
-import { getCreatedBy } from '../lib/auth'
+import { getCreatedBy, isSupervisor } from '../lib/auth'
 import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
@@ -449,8 +449,15 @@ function IssueDrug({ onLogout }: PageProps) {
     }
 
     // Step: Scan + cart
+    const supervisor = isSupervisor()
+
     return (
         <PageLayout title="Out Stock" subtitle={`กระเป๋า ${bagType} · S/N ${form.serial_no}`} onLogout={onLogout}>
+            {supervisor && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 font-medium">
+                    👁 View Only — Supervisor ไม่มีสิทธิ์จ่ายยาออก
+                </div>
+            )}
             <button type="button" onClick={() => setStep('form')}
                 className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
                 <ChevronLeft className="size-4" /> แก้ไขข้อมูล
@@ -548,12 +555,13 @@ function IssueDrug({ onLogout }: PageProps) {
                             confirming={confirming}
                             onConfirm={() => void handleConfirm()}
                             onClear={() => { setCart([]); setConfirmMsg('') }}
+                            readOnly={supervisor}
                         />
                     </div>
                 </div>
             </div>
 
-            {hasCart && (
+            {hasCart && !supervisor && (
                 <div className="fixed inset-x-0 bottom-16 z-30 px-4 pb-2 lg:hidden">
                     <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
                         {confirmMsg && (
@@ -618,9 +626,10 @@ type SummaryPanelProps = {
     confirming: boolean
     onConfirm: () => void
     onClear: () => void
+    readOnly?: boolean
 }
 
-function SummaryPanel({ cart, totalItems, confirmMsg, confirming, onConfirm, onClear }: SummaryPanelProps) {
+function SummaryPanel({ cart, totalItems, confirmMsg, confirming, onConfirm, onClear, readOnly }: SummaryPanelProps) {
     return (
         <Card className="p-5">
             <div className="text-sm font-semibold text-slate-700">สรุปการจ่ายยา</div>
@@ -639,16 +648,20 @@ function SummaryPanel({ cart, totalItems, confirmMsg, confirming, onConfirm, onC
                     {confirmMsg}
                 </div>
             )}
-            <button type="button" onClick={onConfirm} disabled={cart.length === 0 || confirming}
-                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-                style={cart.length > 0 ? { background: 'linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%)' } : undefined}>
-                <PackageMinus className="size-4" />Confirm Dispense All
-            </button>
-            {cart.length > 0 && (
-                <button type="button" onClick={onClear}
-                    className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                    ล้าง Cart
-                </button>
+            {!readOnly && (
+                <>
+                    <button type="button" onClick={onConfirm} disabled={cart.length === 0 || confirming}
+                        className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                        style={cart.length > 0 ? { background: 'linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%)' } : undefined}>
+                        <PackageMinus className="size-4" />Confirm Dispense All
+                    </button>
+                    {cart.length > 0 && (
+                        <button type="button" onClick={onClear}
+                            className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                            ล้าง Cart
+                        </button>
+                    )}
+                </>
             )}
         </Card>
     )

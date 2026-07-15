@@ -9,7 +9,7 @@ import IconPicker from '../components/IconPicker'
 import PageLayout from '../components/PageLayout'
 import SearchInput from '../components/SearchInput'
 import StatCard from '../components/StatCard'
-import { getCreatedBy, isAdmin } from '../lib/auth'
+import { getCreatedBy, isAdmin, isSupervisor } from '../lib/auth'
 import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
@@ -46,6 +46,7 @@ function Inventory({ onLogout }: PageProps) {
     const [adjustLogsLoading, setAdjustLogsLoading] = useState(false)
     const [cameraOpen, setCameraOpen] = useState(false)
     const admin = isAdmin()
+    const supervisor = isSupervisor()
     const [activeCategory, setActiveCategory] = useState<string>('ทั้งหมด')
     const [showLowOnly, setShowLowOnly] = useState(false)
 
@@ -254,16 +255,18 @@ function Inventory({ onLogout }: PageProps) {
                             </div>
                         ))}
                     </div>
-                    <div className={`grid gap-1.5 ${admin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                    <div className={`grid gap-1.5 ${admin ? 'grid-cols-3' : supervisor ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {admin && (
                             <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                 <Pencil className="size-3" />Edit
                             </button>
                         )}
-                        <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark(''); setAdjustError('') }}
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50">
-                            <SlidersHorizontal className="size-3" />Adjust
-                        </button>
+                        {!supervisor && (
+                            <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark(''); setAdjustError('') }}
+                                className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50">
+                                <SlidersHorizontal className="size-3" />Adjust
+                            </button>
+                        )}
                         <button type="button" onClick={() => handlePrint(drug)}
                             className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
                             <Printer className="size-3" />Print

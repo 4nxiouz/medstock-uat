@@ -6,7 +6,7 @@ import Card from '../components/Card'
 import FormInput from '../components/FormInput'
 import IconPicker from '../components/IconPicker'
 import PageLayout from '../components/PageLayout'
-import { getCreatedBy } from '../lib/auth'
+import { getCreatedBy, isSupervisor } from '../lib/auth'
 import { useLocation } from '../lib/LocationContext'
 import { supabase } from '../lib/supabase'
 import type { Drug } from '../types'
@@ -141,8 +141,15 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const totalNew = Number(newInitQty || 0) * Number(newUnitPerScanIn || 1)
     const rsTotalUnits = rsCart.reduce((s, c) => s + c.qty * Number(c.drug.unit_per_scan_in ?? c.drug.unit_per_scan ?? 1), 0)
 
+    const supervisor = isSupervisor()
+
     return (
         <PageLayout title="In Stock" subtitle="สแกนยาหลายรายการ แล้วกด Confirm ครั้งเดียว" onLogout={onLogout}>
+            {supervisor && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 font-medium">
+                    👁 View Only — Supervisor ไม่มีสิทธิ์รับยาเข้า
+                </div>
+            )}
             <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
                 {(['restock', 'new'] as Tab[]).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}
@@ -210,16 +217,20 @@ function ReceiveDrug({ onLogout }: PageProps) {
                                 {rsConfirmMsg}
                             </div>
                         )}
-                        <button type="button" onClick={() => void handleConfirmRestock()}
-                            disabled={rsCart.length === 0 || rsConfirming}
-                            className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-                            <PackagePlus className="size-4" />Confirm Restock All
-                        </button>
-                        {rsCart.length > 0 && (
-                            <button type="button" onClick={() => { setRsCart([]); setRsConfirmMsg('') }}
-                                className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                                ล้าง Cart
-                            </button>
+                        {!supervisor && (
+                            <>
+                                <button type="button" onClick={() => void handleConfirmRestock()}
+                                    disabled={rsCart.length === 0 || rsConfirming}
+                                    className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                                    <PackagePlus className="size-4" />Confirm Restock All
+                                </button>
+                                {rsCart.length > 0 && (
+                                    <button type="button" onClick={() => { setRsCart([]); setRsConfirmMsg('') }}
+                                        className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                                        ล้าง Cart
+                                    </button>
+                                )}
+                            </>
                         )}
                     </Card>
                 </div>
@@ -271,10 +282,12 @@ function ReceiveDrug({ onLogout }: PageProps) {
                             <div className="text-sm font-medium text-slate-500">Initial Stock</div>
                             <div className="mt-2 text-4xl font-bold text-teal-700">{totalNew}</div>
                             <div className="mt-1 text-xs text-slate-400">{newInitQty} scans × {newUnitPerScanIn} unit/scan (IN)</div>
-                            <button type="button" onClick={() => void handleRegister()}
-                                className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-teal-700 text-sm font-semibold text-white hover:bg-teal-800">
-                                <PackagePlus className="size-4" />Register Medicine
-                            </button>
+                            {!supervisor && (
+                                <button type="button" onClick={() => void handleRegister()}
+                                    className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-teal-700 text-sm font-semibold text-white hover:bg-teal-800">
+                                    <PackagePlus className="size-4" />Register Medicine
+                                </button>
+                            )}
                         </Card>
 
                         {registeredBarcode && (

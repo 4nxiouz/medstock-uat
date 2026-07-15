@@ -91,7 +91,7 @@ function AppInner() {
     }, [])
 
     async function loadLocations(userId: string, role: string | null | undefined): Promise<Location[]> {
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'supervisor') {
             const { data } = await supabase
                 .from('location')
                 .select('id, code, name, s_active')
