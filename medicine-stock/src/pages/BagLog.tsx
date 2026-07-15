@@ -461,7 +461,7 @@ function BagDetailModal({
     <tbody>${drugRows || '<tr><td colspan="3" style="color:#aaa">ไม่มีรายการยา</td></tr>'}</tbody>
   </table>
 
-  <h2>Usage Log (${allLogs.length} รายการ)</h2>
+  <h2>Incident Report (${allLogs.length} รายการ)</h2>
   <table style="font-size:9pt">
     <thead><tr><th>#</th><th>Opened Date</th><th>Person</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th></tr></thead>
     <tbody>${logRows || '<tr><td colspan="8" style="color:#aaa">ยังไม่มีบันทึก</td></tr>'}</tbody>

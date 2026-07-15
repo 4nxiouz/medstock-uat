@@ -266,7 +266,7 @@ function UserManage({ onLogout }: PageProps) {
                                     <div className="space-y-1.5">
                                         {[
                                             { path: '/baglog/edit', label: 'แก้ไขข้อมูล' },
-                                            { path: '/baglog/log', label: 'Usage Log' },
+                                            { path: '/baglog/log', label: 'Incident Report' },
                                         ].map((sub) => (
                                             <label key={sub.path} className="flex cursor-pointer items-center gap-2.5">
                                                 <input
@@ -319,7 +319,7 @@ function UserManage({ onLogout }: PageProps) {
                                             <div className="ml-7 mt-2 space-y-1.5 border-l-2 border-teal-200 pl-3">
                                                 {[
                                                     { path: '/baglog/edit', label: 'แก้ไขข้อมูล' },
-                                                    { path: '/baglog/log', label: 'Usage Log' },
+                                                    { path: '/baglog/log', label: 'Incident Report' },
                                                 ].map((sub) => (
                                                     <label key={sub.path} className="flex cursor-pointer items-center gap-3">
                                                         <input
