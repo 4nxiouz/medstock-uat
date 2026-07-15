@@ -60,7 +60,10 @@ export type BagDispatch = {
     cause_1?: 'Use' | 'Expire' | null
     cause_2?: string | null
     date_in?: string | null
-    date_out: string
+    date_out?: string | null
+    expiry_date?: string | null
+    repacked_by?: string | null
+    checked_by?: string | null
     remark?: string | null
     location_id?: number | null
     created_by?: string | null

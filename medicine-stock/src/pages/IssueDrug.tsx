@@ -24,6 +24,9 @@ type DispatchForm = {
     cause_2: string
     date_in: string
     date_out: string
+    expiry_date: string
+    repacked_by: string
+    checked_by: string
 }
 
 const emptyForm: DispatchForm = {
@@ -37,6 +40,9 @@ const emptyForm: DispatchForm = {
     cause_2: '',
     date_in: '',
     date_out: '',
+    expiry_date: '',
+    repacked_by: '',
+    checked_by: '',
 }
 
 function IssueDrug({ onLogout }: PageProps) {
@@ -174,6 +180,9 @@ function IssueDrug({ onLogout }: PageProps) {
                 cause_2: form.cause_2.trim() || null,
                 date_in: form.date_in || null,
                 date_out: form.date_out || null,
+                expiry_date: form.expiry_date || null,
+                repacked_by: form.repacked_by.trim() || null,
+                checked_by: form.checked_by.trim() || null,
                 location_id: location.id,
                 created_by: getCreatedBy(),
             }])
@@ -341,8 +350,13 @@ function IssueDrug({ onLogout }: PageProps) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <Field label="In Date *" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} required />
-                            <Field label="Out Date" type="date" value={form.date_out} onChange={(v) => setField('date_out', v)} />
+                            <Field label="Received Date *" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} required />
+                            <Field label="Released Date" type="date" value={form.date_out} onChange={(v) => setField('date_out', v)} />
+                        </div>
+                        <Field label="Expiry Date" type="date" value={form.expiry_date} onChange={(v) => setField('expiry_date', v)} />
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="Repacked By" value={form.repacked_by} onChange={(v) => setField('repacked_by', v)} placeholder="ชื่อผู้บรรจุ" />
+                            <Field label="Checked By" value={form.checked_by} onChange={(v) => setField('checked_by', v)} placeholder="ชื่อผู้ตรวจ" />
                         </div>
 
                         {formError && (

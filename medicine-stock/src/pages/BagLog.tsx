@@ -409,6 +409,9 @@ function BagDetailModal({
         type: bag.type ?? '', status: bag.status,
         cause_1: bag.cause_1 ?? '', cause_2: bag.cause_2 ?? '',
         date_in: bag.date_in ?? '', date_out: bag.date_out ?? '',
+        expiry_date: bag.expiry_date ?? '',
+        repacked_by: bag.repacked_by ?? '',
+        checked_by: bag.checked_by ?? '',
         remark: bag.remark ?? '',
     })
     const [editMsg, setEditMsg] = useState('')
@@ -535,6 +538,9 @@ function BagDetailModal({
                 cause_2: editForm.cause_2.trim() || null,
                 date_in: editForm.date_in || null,
                 date_out: editForm.date_out || null,
+                expiry_date: editForm.expiry_date || null,
+                repacked_by: editForm.repacked_by.trim() || null,
+                checked_by: editForm.checked_by.trim() || null,
                 remark: editForm.remark.trim() || null,
             })
             .eq('id', bag.id).select('*').single()
@@ -632,8 +638,8 @@ function BagDetailModal({
                             <div className="mt-1 text-xs text-white/60 tabular-nums">
                                 EQ: {bag.equipment_no}
                                 {bag.order_no ? ` · Order: ${bag.order_no}` : ''}
-                                {bag.date_in ? ` · In: ${fmt(bag.date_in)}` : ''}
-                                {bag.date_out ? ` · Out: ${fmt(bag.date_out)}` : ''}
+                                {bag.date_in ? ` · Received: ${fmt(bag.date_in)}` : ''}
+                                {bag.date_out ? ` · Released: ${fmt(bag.date_out)}` : ''}
                             </div>
                         </div>
                     </div>
@@ -752,8 +758,13 @@ function BagDetailModal({
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="In Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} />
-                                <Field label="Out Date" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} />
+                                <Field label="Received Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} />
+                                <Field label="Released Date" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} />
+                            </div>
+                            <Field label="Expiry Date" type="date" value={editForm.expiry_date} onChange={(v) => setEditForm((p) => ({ ...p, expiry_date: v }))} />
+                            <div className="grid grid-cols-2 gap-3">
+                                <Field label="Repacked By" value={editForm.repacked_by} onChange={(v) => setEditForm((p) => ({ ...p, repacked_by: v }))} />
+                                <Field label="Checked By" value={editForm.checked_by} onChange={(v) => setEditForm((p) => ({ ...p, checked_by: v }))} />
                             </div>
                             <Field label="Remark" value={editForm.remark} onChange={(v) => setEditForm((p) => ({ ...p, remark: v }))} />
                             {editMsg && (
