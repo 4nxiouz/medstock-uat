@@ -686,14 +686,24 @@ function BagDetailModal({
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">1st Cause</label>
-                                    <select value={editForm.cause_1} onChange={(e) => setEditForm((p) => ({ ...p, cause_1: e.target.value as 'Use' | 'Expire' | '' }))}
+                                    <select value={editForm.cause_1} onChange={(e) => setEditForm((p) => ({ ...p, cause_1: e.target.value }))}
                                         className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition">
                                         <option value="">— select —</option>
-                                        <option value="Use">Use</option>
-                                        <option value="Expire">Expire</option>
+                                        <option value="Use">Used</option>
+                                        <option value="Expire">Expired</option>
+                                        <option value="Damage">Damaged</option>
                                     </select>
                                 </div>
-                                <Field label="2nd Cause" value={editForm.cause_2} onChange={(v) => setEditForm((p) => ({ ...p, cause_2: v }))} />
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">2nd Cause</label>
+                                    <select value={editForm.cause_2} onChange={(e) => setEditForm((p) => ({ ...p, cause_2: e.target.value }))}
+                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition">
+                                        <option value="">None</option>
+                                        <option value="Expired">Expired</option>
+                                        <option value="Damaged">Damaged</option>
+                                        <option value="Expired & Damaged">Expired &amp; Damaged</option>
+                                    </select>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <Field label="In Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} />
