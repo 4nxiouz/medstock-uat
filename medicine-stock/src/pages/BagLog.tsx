@@ -84,6 +84,7 @@ function BagLog({ onLogout }: PageProps) {
     const [modalTab, setModalTab] = useState<ModalTab>('drugs')
     const [dateFrom, setDateFrom] = useState('')
     const [dateTo, setDateTo] = useState('')
+    const [searchEqSerial, setSearchEqSerial] = useState('')
     const [exporting, setExporting] = useState(false)
 
     const canEdit = canAccessBagLogEdit()
@@ -120,6 +121,11 @@ function BagLog({ onLogout }: PageProps) {
             if (logFilter === 'ALL') return true
             const has = (logCounts[b.id] ?? 0) > 0
             return logFilter === 'done' ? has : !has
+        })
+        .filter((b) => {
+            if (!searchEqSerial.trim()) return true
+            const q = searchEqSerial.trim().toLowerCase()
+            return (b.equipment_no ?? '').toLowerCase().includes(q) || (b.serial_no ?? '').toLowerCase().includes(q)
         })
 
     const fakCount = dateBased.filter((b) => b.bag_type === 'FAK').length
@@ -252,6 +258,26 @@ function BagLog({ onLogout }: PageProps) {
                     {(dateFrom || dateTo) && (
                         <button type="button" onClick={() => { setDateFrom(''); setDateTo('') }}
                             className="h-8 px-2 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 text-sm">✕</button>
+                    )}
+                </div>
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+
+                {/* EQ / Serial search */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={searchEqSerial}
+                        onChange={(e) => setSearchEqSerial(e.target.value)}
+                        placeholder="ค้นหา EQ / S/N…"
+                        className="h-8 w-44 rounded-lg border border-slate-300 bg-white pl-3 pr-7 text-sm outline-none focus:border-teal-500"
+                    />
+                    {searchEqSerial && (
+                        <button type="button" onClick={() => setSearchEqSerial('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X className="size-3.5" />
+                        </button>
                     )}
                 </div>
 

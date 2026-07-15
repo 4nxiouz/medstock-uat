@@ -1,5 +1,5 @@
 import { Backpack, ChevronLeft, PackageMinus, Trash2 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import BarcodeInput from '../components/BarcodeInput'
 import Card from '../components/Card'
 import PageLayout from '../components/PageLayout'
@@ -20,7 +20,7 @@ type DispatchForm = {
     seal_number: string
     type: string
     status: 'OPEN' | 'CLOSE'
-    cause_1: 'Use' | 'Expire' | ''
+    cause_1: 'Use' | 'Expire' | 'Damage' | ''
     cause_2: string
     date_in: string
     date_out: string
@@ -51,7 +51,26 @@ function IssueDrug({ onLogout }: PageProps) {
     const [scanMsg, setScanMsg] = useState('')
     const [confirmMsg, setConfirmMsg] = useState('')
     const [confirming, setConfirming] = useState(false)
+    const [suggestions, setSuggestions] = useState<Drug[]>([])
     const barcodeRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        const hasLetter = /[a-zA-Z]/.test(barcode)
+        if (!hasLetter || barcode.trim().length < 2 || !location) {
+            setSuggestions([])
+            return
+        }
+        const timer = setTimeout(async () => {
+            const { data } = await supabase
+                .from('drug_master')
+                .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, image_url')
+                .eq('location_id', location.id)
+                .ilike('drug_name', `%${barcode.trim()}%`)
+                .limit(8)
+            setSuggestions((data || []) as Drug[])
+        }, 200)
+        return () => clearTimeout(timer)
+    }, [barcode, location])
 
     function handleBagSelect(type: BagType) {
         handleBagSelectAndSetType(type)
@@ -302,14 +321,24 @@ function IssueDrug({ onLogout }: PageProps) {
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-slate-700">1 Cause</label>
-                                <select value={form.cause_1} onChange={(e) => setField('cause_1', e.target.value as 'Use' | 'Expire' | '')}
+                                <select value={form.cause_1} onChange={(e) => setField('cause_1', e.target.value as 'Use' | 'Expire' | 'Damage' | '')}
                                     className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
                                     <option value="">-- เลือก --</option>
-                                    <option value="Use">Use</option>
-                                    <option value="Expire">Expire</option>
+                                    <option value="Use">Used</option>
+                                    <option value="Expire">Expired</option>
+                                    <option value="Damage">Damaged</option>
                                 </select>
                             </div>
-                            <Field label="2 Cause" value={form.cause_2} onChange={(v) => setField('cause_2', v)} placeholder="หมายเหตุ" />
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">2 Cause</label>
+                                <select value={form.cause_2} onChange={(e) => setField('cause_2', e.target.value)}
+                                    className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none">
+                                    <option value="">None</option>
+                                    <option value="Expired">Expired</option>
+                                    <option value="Damaged">Damaged</option>
+                                    <option value="Expired & Damaged">Expired &amp; Damaged</option>
+                                </select>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <Field label="In Date *" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} required />
@@ -342,14 +371,36 @@ function IssueDrug({ onLogout }: PageProps) {
 
             <div className={`space-y-4 ${hasCart ? 'pb-28 lg:pb-0' : ''}`}>
                 <Card className="p-4">
-                    <BarcodeInput
-                        ref={barcodeRef}
-                        label="Scan Barcode"
-                        placeholder="สแกนหรือพิมพ์ barcode แล้วกด Enter"
-                        value={barcode}
-                        onChange={setBarcode}
-                        onScan={(code) => void handleBarcodeScan(code)}
-                    />
+                    <div className="relative">
+                        <BarcodeInput
+                            ref={barcodeRef}
+                            label="Scan Barcode"
+                            placeholder="สแกนหรือพิมพ์ barcode หรือชื่อยา แล้วกด Enter"
+                            value={barcode}
+                            onChange={(v) => { setBarcode(v); setScanMsg('') }}
+                            onScan={(code) => { setSuggestions([]); void handleBarcodeScan(code) }}
+                        />
+                        {suggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                                {suggestions.map((drug) => (
+                                    <button
+                                        key={drug.id}
+                                        type="button"
+                                        onMouseDown={(e) => {
+                                            e.preventDefault()
+                                            setSuggestions([])
+                                            setBarcode('')
+                                            void handleBarcodeScan(drug.barcode)
+                                        }}
+                                        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-slate-50"
+                                    >
+                                        <span className="text-sm font-medium text-slate-900">{drug.drug_name}</span>
+                                        <span className="shrink-0 text-xs text-slate-400">คงเหลือ {drug.current_stock}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                     {scanMsg && (
                         <div className={`mt-2.5 rounded-md px-3 py-2 text-sm ${scanMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                             {scanMsg}
