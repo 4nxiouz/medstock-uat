@@ -12,6 +12,18 @@ type PageProps = { onLogout: () => void }
 type CartItem = { drug: Drug; qty: number }
 type Step = 'bag' | 'form' | 'scan'
 type BagType = 'FAK' | 'EMK'
+type EqCheck = { item: string; checked: boolean; remark: string }
+
+const EMK_EQUIPMENT: string[] = [
+    'Sphygmomanometer (Blood Pressure Monitor)',
+    'Stethoscope',
+    'Battery AA',
+    'Battery AAA',
+    'Battery CR2032',
+    'Flashlight',
+    'Blood Glucose Monitoring System',
+    'Pulse Oximeter',
+]
 
 type DispatchForm = {
     order_no: string
@@ -58,6 +70,7 @@ function IssueDrug({ onLogout }: PageProps) {
     const [confirmMsg, setConfirmMsg] = useState('')
     const [confirming, setConfirming] = useState(false)
     const [suggestions, setSuggestions] = useState<Drug[]>([])
+    const [eqChecks, setEqChecks] = useState<EqCheck[]>([])
     const barcodeRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -93,6 +106,7 @@ function IssueDrug({ onLogout }: PageProps) {
     function handleBagSelectAndSetType(type: BagType) {
         setBagType(type)
         setForm((prev) => ({ ...prev, type }))
+        setEqChecks(type === 'EMK' ? EMK_EQUIPMENT.map((item) => ({ item, checked: false, remark: '' })) : [])
         setStep('form')
     }
 
@@ -216,8 +230,22 @@ function IssueDrug({ onLogout }: PageProps) {
             }])
         }
 
+        // Save EMK equipment checklist
+        if (bagType === 'EMK' && eqChecks.length > 0) {
+            await supabase.from('emk_equipment_check').insert(
+                eqChecks.map((c, i) => ({
+                    dispatch_id: dispatchId,
+                    item_name: c.item,
+                    checked: c.checked,
+                    remark: c.remark.trim() || null,
+                    sort_order: i,
+                }))
+            )
+        }
+
         setConfirmMsg(`✓ บันทึก Bag Log สำเร็จ — ${bagType} S/N ${form.serial_no}`)
         setCart([])
+        setEqChecks([])
         setConfirming(false)
         setTimeout(() => {
             setStep('bag')
@@ -358,6 +386,51 @@ function IssueDrug({ onLogout }: PageProps) {
                             <Field label="Repacked By" value={form.repacked_by} onChange={(v) => setField('repacked_by', v)} placeholder="ชื่อผู้บรรจุ" />
                             <Field label="Checked By" value={form.checked_by} onChange={(v) => setField('checked_by', v)} placeholder="ชื่อผู้ตรวจ" />
                         </div>
+
+                        {/* EMK Equipment Checklist */}
+                        {bagType === 'EMK' && eqChecks.length > 0 && (
+                            <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <span className="inline-flex h-5 items-center rounded px-1.5 text-[10px] font-bold bg-blue-100 text-blue-700">EMK</span>
+                                    <span className="text-sm font-semibold text-blue-900">Equipment Checklist</span>
+                                    <span className="ml-auto text-[11px] text-blue-500">
+                                        {eqChecks.filter(c => c.checked).length}/{eqChecks.length} checked
+                                    </span>
+                                </div>
+                                <div className="space-y-2.5">
+                                    {eqChecks.map((eq, i) => (
+                                        <div key={eq.item} className="rounded-lg border border-blue-100 bg-white p-3">
+                                            <label className="flex items-start gap-3 cursor-pointer">
+                                                <div className="mt-0.5 shrink-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={eq.checked}
+                                                        onChange={(e) => setEqChecks((prev) =>
+                                                            prev.map((c, idx) => idx === i ? { ...c, checked: e.target.checked } : c)
+                                                        )}
+                                                        className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={`text-sm font-medium leading-snug ${eq.checked ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                                        {eq.item}
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        value={eq.remark}
+                                                        onChange={(e) => setEqChecks((prev) =>
+                                                            prev.map((c, idx) => idx === i ? { ...c, remark: e.target.value } : c)
+                                                        )}
+                                                        placeholder="Remark…"
+                                                        className="mt-1.5 h-7 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 text-xs outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition"
+                                                    />
+                                                </div>
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {formError && (
                             <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>

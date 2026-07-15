@@ -78,6 +78,16 @@ export type BagDispatchDrug = {
     qty: number
 }
 
+export type EmkEquipmentCheck = {
+    id: number
+    dispatch_id: number
+    item_name: string
+    checked: boolean
+    remark?: string | null
+    sort_order?: number
+    created_at?: string | null
+}
+
 export type BagUsageLog = {
     id: number
     dispatch_id: number

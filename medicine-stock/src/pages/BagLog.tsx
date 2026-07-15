@@ -9,7 +9,7 @@ import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
 import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy, isAdmin } from '../lib/auth'
 import { supabase } from '../lib/supabase'
-import type { BagDispatch, BagDispatchDrug, BagUsageLog } from '../types'
+import type { BagDispatch, BagDispatchDrug, BagUsageLog, EmkEquipmentCheck } from '../types'
 
 type PageProps = { onLogout: () => void }
 type BagFilter = 'ALL' | 'FAK' | 'EMK'
@@ -401,6 +401,7 @@ function BagDetailModal({
 }) {
     const [drugs, setDrugs] = useState<BagDispatchDrug[]>([])
     const [logs, setLogs] = useState<BagUsageLog[]>([])
+    const [eqChecks, setEqChecks] = useState<EmkEquipmentCheck[]>([])
     const [drugsLoaded, setDrugsLoaded] = useState(false)
     const [logsLoaded, setLogsLoaded] = useState(false)
     const [editForm, setEditForm] = useState({
@@ -424,16 +425,23 @@ function BagDetailModal({
     useEffect(() => { if (tab === 'log' && !logsLoaded) void loadLogs() }, [tab])
 
     async function handlePrint() {
-        // Fetch everything needed (drugs may already be loaded, logs may not)
-        const [drugsRes, logsRes] = await Promise.all([
+        const [drugsRes, logsRes, eqRes] = await Promise.all([
             supabase.from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id),
             supabase.from('bag_usage_log').select('*').eq('dispatch_id', bag.id).order('created_at'),
+            bag.bag_type === 'EMK'
+                ? supabase.from('emk_equipment_check').select('*').eq('dispatch_id', bag.id).order('sort_order')
+                : Promise.resolve({ data: [] }),
         ])
         const allDrugs = (drugsRes.data || []) as BagDispatchDrug[]
         const allLogs = (logsRes.data || []) as BagUsageLog[]
+        const allEq = (eqRes.data || []) as EmkEquipmentCheck[]
 
         const drugRows = allDrugs.map((d) =>
             `<tr><td>${d.drug_name}</td><td>${d.barcode ?? ''}</td><td style="text-align:center">${d.qty}</td></tr>`
+        ).join('')
+
+        const eqRows = allEq.map((eq) =>
+            `<tr><td>${eq.item_name}</td><td style="text-align:center">${eq.checked ? '✓' : '○'}</td><td>${eq.remark ?? ''}</td></tr>`
         ).join('')
 
         const logRows = allLogs.map((l, i) => `
@@ -448,6 +456,13 @@ function BagDetailModal({
                 <td>${l.remark ?? ''}</td>
             </tr>`
         ).join('')
+
+        const eqSection = bag.bag_type === 'EMK' && allEq.length > 0 ? `
+  <h2>EMK Equipment Checklist (${allEq.filter(e => e.checked).length}/${allEq.length} checked)</h2>
+  <table style="font-size:9.5pt">
+    <thead><tr><th>Equipment</th><th style="width:60px;text-align:center">Checked</th><th>Remark</th></tr></thead>
+    <tbody>${eqRows}</tbody>
+  </table>` : ''
 
         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bag Report</title>
 <style>
@@ -486,6 +501,8 @@ function BagDetailModal({
     ${bag.remark ? `<div class="meta-item" style="grid-column:1/-1"><label>Remark</label><span>${bag.remark}</span></div>` : ''}
   </div>
 
+  ${eqSection}
+
   <h2>รายการยาในกระเป๋า (${allDrugs.length} รายการ)</h2>
   <table>
     <thead><tr><th>ชื่อยา</th><th>Barcode</th><th style="text-align:center">จำนวน (หน่วย)</th></tr></thead>
@@ -509,8 +526,14 @@ function BagDetailModal({
     }
 
     async function loadDrugs() {
-        const { data } = await supabase.from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id)
-        setDrugs((data || []) as BagDispatchDrug[])
+        const [drugsRes, eqRes] = await Promise.all([
+            supabase.from('bag_dispatch_drug').select('*').eq('dispatch_id', bag.id),
+            bag.bag_type === 'EMK'
+                ? supabase.from('emk_equipment_check').select('*').eq('dispatch_id', bag.id).order('sort_order')
+                : Promise.resolve({ data: [] }),
+        ])
+        setDrugs((drugsRes.data || []) as BagDispatchDrug[])
+        setEqChecks((eqRes.data || []) as EmkEquipmentCheck[])
         setDrugsLoaded(true)
     }
 
@@ -680,29 +703,68 @@ function BagDetailModal({
                     {tab === 'drugs' && (
                         !drugsLoaded
                             ? <p className="text-sm text-slate-400">Loading…</p>
-                            : drugs.length === 0
-                                ? <p className="text-sm text-slate-400">No drugs in this bag</p>
-                                : (
-                                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                        <div className="grid grid-cols-[1fr_auto] border-b border-slate-100 bg-slate-50 px-4 py-2">
-                                            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Drug name</div>
-                                            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Qty</div>
+                            : (
+                                <div className="space-y-4">
+                                    {/* EMK Equipment Checklist */}
+                                    {bag.bag_type === 'EMK' && eqChecks.length > 0 && (
+                                        <div className="overflow-hidden rounded-xl border border-blue-200 bg-blue-50/40">
+                                            <div className="flex items-center gap-2 border-b border-blue-100 bg-blue-50 px-4 py-2.5">
+                                                <span className="inline-flex h-5 items-center rounded px-1.5 text-[10px] font-bold bg-blue-100 text-blue-700">EMK</span>
+                                                <span className="text-sm font-semibold text-blue-900">Equipment Checklist</span>
+                                                <span className="ml-auto text-[11px] font-medium text-blue-500">
+                                                    {eqChecks.filter(c => c.checked).length}/{eqChecks.length} checked
+                                                </span>
+                                            </div>
+                                            <div className="divide-y divide-blue-100">
+                                                {eqChecks.map((eq) => (
+                                                    <div key={eq.id} className="flex items-start gap-3 px-4 py-2.5">
+                                                        <div className="mt-0.5 shrink-0">
+                                                            {eq.checked
+                                                                ? <span className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-xs">✓</span>
+                                                                : <span className="inline-flex size-5 items-center justify-center rounded-full border-2 border-slate-300 text-slate-300 text-xs">○</span>
+                                                            }
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className={`text-sm font-medium ${eq.checked ? 'text-slate-600' : 'text-slate-800'}`}>
+                                                                {eq.item_name}
+                                                            </div>
+                                                            {eq.remark && (
+                                                                <div className="mt-0.5 text-xs text-slate-500 italic">{eq.remark}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="divide-y divide-slate-100">
-                                            {drugs.map((d) => (
-                                                <div key={d.id} className="grid grid-cols-[1fr_auto] items-center px-4 py-3">
-                                                    <div>
-                                                        <div className="font-medium text-slate-900 text-sm">{d.drug_name}</div>
-                                                        {d.barcode && <div className="text-xs text-slate-400 tabular-nums">{d.barcode}</div>}
-                                                    </div>
-                                                    <div className="rounded-lg bg-teal-50 px-3 py-1 text-sm font-bold text-teal-700 tabular-nums ring-1 ring-teal-200">
-                                                        {d.qty}
-                                                    </div>
+                                    )}
+
+                                    {/* Drug list */}
+                                    {drugs.length === 0
+                                        ? <p className="text-sm text-slate-400">No drugs in this bag</p>
+                                        : (
+                                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                <div className="grid grid-cols-[1fr_auto] border-b border-slate-100 bg-slate-50 px-4 py-2">
+                                                    <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Drug name</div>
+                                                    <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Qty</div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )
+                                                <div className="divide-y divide-slate-100">
+                                                    {drugs.map((d) => (
+                                                        <div key={d.id} className="grid grid-cols-[1fr_auto] items-center px-4 py-3">
+                                                            <div>
+                                                                <div className="font-medium text-slate-900 text-sm">{d.drug_name}</div>
+                                                                {d.barcode && <div className="text-xs text-slate-400 tabular-nums">{d.barcode}</div>}
+                                                            </div>
+                                                            <div className="rounded-lg bg-teal-50 px-3 py-1 text-sm font-bold text-teal-700 tabular-nums ring-1 ring-teal-200">
+                                                                {d.qty}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                </div>
+                            )
                     )}
 
                     {/* Edit form */}
