@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
-import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy, isAdmin, isSupervisor } from '../lib/auth'
+import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy, isAdmin } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import type { BagDispatch, BagDispatchDrug, BagUsageLog, EmkEquipmentCheck } from '../types'
 
