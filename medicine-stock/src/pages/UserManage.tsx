@@ -73,29 +73,21 @@ function PagePermissions({
             </p>
         )
     }
-    if (role === 'supervisor') {
-        return (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
-                <p className="mb-2 text-xs font-semibold text-blue-700">Bag Log — เลือกสิทธิ์ที่ให้เข้าถึง</p>
-                <div className="space-y-1.5">
-                    {BAG_LOG_SUBS.map((sub) => (
-                        <label key={sub.path} className="flex cursor-pointer items-center gap-2.5">
-                            <input type="checkbox" checked={pages.includes(sub.path)}
-                                onChange={() => onToggle(sub.path)}
-                                className="size-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                            <span className="text-xs text-slate-700">{sub.label}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-    // user role
+
+    const borderColor = role === 'supervisor' ? 'border-blue-100' : 'border-blue-100'
+    const bgColor = role === 'supervisor' ? 'bg-blue-50/50' : 'bg-teal-50'
+    const checkColor = role === 'supervisor' ? 'text-blue-600 focus:ring-blue-500' : 'text-teal-700 focus:ring-teal-500'
+
     return (
-        <div className="rounded-xl border-2 border-blue-100 bg-teal-50 p-4">
+        <div className={`rounded-xl border-2 p-4 ${borderColor} ${bgColor}`}>
             <div className="mb-3 flex items-center gap-2">
-                <Shield className="size-4 text-teal-700" />
+                <Shield className={`size-4 ${role === 'supervisor' ? 'text-blue-600' : 'text-teal-700'}`} />
                 <span className="text-sm font-bold text-slate-800">Page Access</span>
+                {role === 'supervisor' && (
+                    <span className="ml-auto rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                        ดูได้เท่านั้น ยกเว้น Incident Report
+                    </span>
+                )}
             </div>
             <div className="space-y-2.5">
                 {PAGE_PERMISSIONS.map((page) => (
@@ -103,19 +95,28 @@ function PagePermissions({
                         <label className="flex cursor-pointer items-center gap-3">
                             <input type="checkbox" checked={pages.includes(page.path)}
                                 onChange={() => onToggle(page.path)}
-                                className="size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500" />
+                                className={`size-4 rounded border-slate-300 ${checkColor}`} />
                             <span className="text-sm text-slate-700">{page.label}</span>
                         </label>
                         {page.path === '/baglog' && pages.includes('/baglog') && (
-                            <div className="ml-7 mt-2 space-y-1.5 border-l-2 border-teal-200 pl-3">
-                                {BAG_LOG_SUBS.map((sub) => (
-                                    <label key={sub.path} className="flex cursor-pointer items-center gap-3">
-                                        <input type="checkbox" checked={pages.includes(sub.path)}
-                                            onChange={() => onToggle(sub.path)}
-                                            className="size-3.5 rounded border-slate-300 text-teal-700 focus:ring-teal-500" />
-                                        <span className="text-xs text-slate-600">{sub.label}</span>
-                                    </label>
-                                ))}
+                            <div className="ml-7 mt-2 space-y-1.5 border-l-2 border-blue-200 pl-3">
+                                {BAG_LOG_SUBS.map((sub) => {
+                                    const isIncidentReport = sub.path === '/baglog/log'
+                                    const lockedForSupervisor = role === 'supervisor' && isIncidentReport
+                                    return (
+                                        <label key={sub.path} className={`flex items-center gap-3 ${lockedForSupervisor ? 'cursor-default' : 'cursor-pointer'}`}>
+                                            <input type="checkbox"
+                                                checked={lockedForSupervisor ? true : pages.includes(sub.path)}
+                                                onChange={() => !lockedForSupervisor && onToggle(sub.path)}
+                                                disabled={lockedForSupervisor}
+                                                className={`size-3.5 rounded border-slate-300 ${checkColor} disabled:opacity-100`} />
+                                            <span className="text-xs text-slate-600">{sub.label}</span>
+                                            {lockedForSupervisor && (
+                                                <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] font-bold text-blue-600 uppercase tracking-wide">required</span>
+                                            )}
+                                        </label>
+                                    )
+                                })}
                             </div>
                         )}
                     </div>
@@ -171,10 +172,18 @@ function UserManage({ onLogout }: PageProps) {
         setMessage(text); setMessageType(type)
     }
 
+    function ensureSupervisorPages(pages: string[]): string[] {
+        // Supervisor always has Incident Report access
+        const result = [...pages]
+        if (!result.includes('/baglog')) result.push('/baglog')
+        if (!result.includes('/baglog/log')) result.push('/baglog/log')
+        return result
+    }
+
     function handleNewRoleChange(role: Role) {
         setNewUserRole(role)
-        if (role === 'user') setNewUserPages([...ALL_PATHS])
-        else if (role === 'supervisor') setNewUserPages(['/baglog'])
+        if (role === 'supervisor') setNewUserPages(ensureSupervisorPages(['/baglog']))
+        else if (role === 'admin') setNewUserPages([...ALL_PATHS])
         else setNewUserPages([...ALL_PATHS])
     }
 
@@ -190,7 +199,11 @@ function UserManage({ onLogout }: PageProps) {
             role: newUserRole,
             s_active: true,
         }
-        if (!columnMissing) insertPayload.allowed_pages = newUserPages
+        if (!columnMissing) {
+            insertPayload.allowed_pages = newUserRole === 'supervisor'
+                ? ensureSupervisorPages(newUserPages)
+                : newUserPages
+        }
 
         const { data, error } = await supabase.from('user_profile')
             .insert([insertPayload])
@@ -222,7 +235,11 @@ function UserManage({ onLogout }: PageProps) {
         if (!editingUser) return
 
         const updatePayload: Record<string, unknown> = { role: editRole }
-        if (!columnMissing) updatePayload.allowed_pages = editPages
+        if (!columnMissing) {
+            updatePayload.allowed_pages = editRole === 'supervisor'
+                ? ensureSupervisorPages(editPages)
+                : editPages
+        }
 
         const { error } = await supabase.from('user_profile')
             .update(updatePayload)
@@ -360,13 +377,11 @@ function UserManage({ onLogout }: PageProps) {
                                                         <Shield className="size-3" />All pages (Admin)
                                                     </span>
                                                 ) : isSupervisor ? (
-                                                    <div>
-                                                        <span className="text-xs text-blue-700 font-medium">Bag Log</span>
-                                                        <div className="flex flex-wrap gap-1 mt-1">
-                                                            {BAG_LOG_SUBS.filter((s) => pages.includes(s.path)).map((s) => (
-                                                                <span key={s.path} className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">{s.label}</span>
-                                                            ))}
-                                                        </div>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {visiblePages.map((p) => (
+                                                            <span key={p.path} className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">{p.label}</span>
+                                                        ))}
+                                                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">↳ Incident Report ✓</span>
                                                     </div>
                                                 ) : visiblePages.length === 0 ? (
                                                     <span className="flex items-center gap-1 text-xs text-red-500">
@@ -436,8 +451,7 @@ function UserManage({ onLogout }: PageProps) {
                                 <div className="mb-2 text-sm font-medium text-slate-700">Role</div>
                                 <RolePicker value={editRole} onChange={(r) => {
                                     setEditRole(r)
-                                    if (r === 'user') setEditPages([...ALL_PATHS])
-                                    else if (r === 'supervisor') setEditPages(['/baglog'])
+                                    if (r === 'supervisor') setEditPages(ensureSupervisorPages(['/baglog']))
                                     else setEditPages([...ALL_PATHS])
                                 }} />
                             </div>
