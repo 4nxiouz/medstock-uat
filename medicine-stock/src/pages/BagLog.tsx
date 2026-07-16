@@ -485,8 +485,6 @@ function BagDetailModal({
 </style>
 </head><body>
   <h1>Bag Report — ${bag.bag_type} · ${bag.serial_no}</h1>
-  <div class="subtitle">พิมพ์เมื่อ ${new Date().toLocaleString('th-TH')}</div>
-
   <div class="meta-grid">
     <div class="meta-item"><label>Type</label><span>${bag.bag_type}</span></div>
     <div class="meta-item"><label>S/N</label><span>${bag.serial_no}</span></div>
@@ -494,8 +492,11 @@ function BagDetailModal({
     <div class="meta-item"><label>Status</label><span class="badge ${bag.status === 'OPEN' ? 'open' : 'close'}">${bag.status}</span></div>
     <div class="meta-item"><label>Order No</label><span>${bag.order_no ?? '—'}</span></div>
     <div class="meta-item"><label>Seal No</label><span>${bag.seal_number ?? '—'}</span></div>
-    <div class="meta-item"><label>In Date</label><span>${fmt(bag.date_in)}</span></div>
-    <div class="meta-item"><label>Out Date</label><span>${fmt(bag.date_out)}</span></div>
+    <div class="meta-item"><label>Received Date</label><span>${fmt(bag.date_in)}</span></div>
+    <div class="meta-item"><label>Released Date</label><span>${fmt(bag.date_out)}</span></div>
+    ${bag.expiry_date ? `<div class="meta-item"><label>Expiry Date</label><span>${fmt(bag.expiry_date)}</span></div>` : ''}
+    ${bag.repacked_by ? `<div class="meta-item"><label>Repacked By</label><span>${bag.repacked_by}</span></div>` : ''}
+    ${bag.checked_by ? `<div class="meta-item"><label>Checked By</label><span>${bag.checked_by}</span></div>` : ''}
     ${bag.cause_1 ? `<div class="meta-item"><label>1st Cause</label><span>${bag.cause_1}</span></div>` : ''}
     ${bag.cause_2 ? `<div class="meta-item"><label>2nd Cause</label><span>${bag.cause_2}</span></div>` : ''}
     ${bag.remark ? `<div class="meta-item" style="grid-column:1/-1"><label>Remark</label><span>${bag.remark}</span></div>` : ''}
@@ -667,13 +668,11 @@ function BagDetailModal({
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {admin && (
-                            <button type="button" onClick={() => void handleDeleteBag()} disabled={deleting}
-                                className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-50">
-                                <Trash2 className="size-3.5" />
-                                {deleting ? 'กำลังลบ…' : 'Delete Bag'}
-                            </button>
-                        )}
+                        <button type="button" onClick={() => void handleDeleteBag()} disabled={deleting}
+                            className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                            <Trash2 className="size-3.5" />
+                            {deleting ? 'กำลังลบ…' : 'Delete Bag'}
+                        </button>
                         <button type="button" onClick={() => onClose()}
                             className="mt-0.5 shrink-0 flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
                             <X className="size-4" />

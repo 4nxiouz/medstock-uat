@@ -41,37 +41,65 @@ type DispatchForm = {
     checked_by: string
 }
 
-const emptyForm: DispatchForm = {
-    order_no: '',
-    serial_no: '',
-    equipment_no: '',
-    seal_number: '',
-    type: '',
-    status: 'OPEN',
-    cause_1: '',
-    cause_2: '',
-    date_in: '',
-    date_out: '',
-    expiry_date: '',
-    repacked_by: '',
-    checked_by: '',
+function makeEmptyForm(): DispatchForm {
+    const nextYear = new Date()
+    nextYear.setFullYear(nextYear.getFullYear() + 1)
+    return {
+        order_no: '',
+        serial_no: '',
+        equipment_no: '',
+        seal_number: '',
+        type: '',
+        status: 'OPEN',
+        cause_1: '',
+        cause_2: '',
+        date_in: new Date().toISOString().slice(0, 10),
+        date_out: new Date().toISOString().slice(0, 10),
+        expiry_date: nextYear.toISOString().slice(0, 10),
+        repacked_by: '',
+        checked_by: '',
+    }
+}
+
+const ISSUE_DRAFT_KEY = 'medstock_issue_draft'
+
+function saveDraft(step: Step, bagType: BagType | null, form: DispatchForm, cart: CartItem[], eqChecks: EqCheck[]) {
+    sessionStorage.setItem(ISSUE_DRAFT_KEY, JSON.stringify({ step, bagType, form, cart, eqChecks }))
+}
+
+function loadDraft(): { step: Step; bagType: BagType | null; form: DispatchForm; cart: CartItem[]; eqChecks: EqCheck[] } | null {
+    try {
+        const raw = sessionStorage.getItem(ISSUE_DRAFT_KEY)
+        return raw ? JSON.parse(raw) : null
+    } catch { return null }
+}
+
+function clearDraft() {
+    sessionStorage.removeItem(ISSUE_DRAFT_KEY)
 }
 
 function IssueDrug({ onLogout }: PageProps) {
     const { location } = useLocation()
-    const [step, setStep] = useState<Step>('bag')
-    const [bagType, setBagType] = useState<BagType | null>(null)
-    const [form, setForm] = useState<DispatchForm>(emptyForm)
+    const draft = loadDraft()
+    const [step, setStep] = useState<Step>(draft?.step ?? 'bag')
+    const [bagType, setBagType] = useState<BagType | null>(draft?.bagType ?? null)
+    const [form, setForm] = useState<DispatchForm>(draft?.form ?? makeEmptyForm())
     const [formError, setFormError] = useState('')
 
     const [barcode, setBarcode] = useState('')
-    const [cart, setCart] = useState<CartItem[]>([])
+    const [cart, setCart] = useState<CartItem[]>(draft?.cart ?? [])
     const [scanMsg, setScanMsg] = useState('')
     const [confirmMsg, setConfirmMsg] = useState('')
     const [confirming, setConfirming] = useState(false)
     const [suggestions, setSuggestions] = useState<Drug[]>([])
-    const [eqChecks, setEqChecks] = useState<EqCheck[]>([])
+    const [eqChecks, setEqChecks] = useState<EqCheck[]>(draft?.eqChecks ?? [])
     const barcodeRef = useRef<HTMLInputElement>(null)
+
+    // Save draft on every state change
+    useEffect(() => {
+        if (step === 'bag' && !bagType) { clearDraft(); return }
+        saveDraft(step, bagType, form, cart, eqChecks)
+    }, [step, bagType, form, cart, eqChecks])
 
     useEffect(() => {
         const hasLetter = /[a-zA-Z]/.test(barcode)
@@ -250,7 +278,8 @@ function IssueDrug({ onLogout }: PageProps) {
         setTimeout(() => {
             setStep('bag')
             setBagType(null)
-            setForm(emptyForm)
+            setForm(makeEmptyForm())
+            clearDraft()
             setConfirmMsg('')
         }, 2500)
     }
