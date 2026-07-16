@@ -95,10 +95,13 @@ function IssueDrug({ onLogout }: PageProps) {
     const [eqChecks, setEqChecks] = useState<EqCheck[]>(draft?.eqChecks ?? [])
     const barcodeRef = useRef<HTMLInputElement>(null)
 
-    // Save draft on every state change
+    // Save draft only when on scan step (to preserve cart when navigating away)
     useEffect(() => {
-        if (step === 'bag' && !bagType) { clearDraft(); return }
-        saveDraft(step, bagType, form, cart, eqChecks)
+        if (step === 'scan') {
+            saveDraft(step, bagType, form, cart, eqChecks)
+        } else {
+            clearDraft()
+        }
     }, [step, bagType, form, cart, eqChecks])
 
     useEffect(() => {
