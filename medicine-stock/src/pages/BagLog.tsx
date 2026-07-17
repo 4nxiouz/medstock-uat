@@ -446,7 +446,7 @@ function BagDetailModal({
         const logRows = allLogs.map((l, i) => `
             <tr>
                 <td style="text-align:center">${i + 1}</td>
-                <td>${l.opened_date ? new Date(l.opened_date).toLocaleDateString('th-TH') : ''}</td>
+                <td>${l.opened_date ? new Date(l.opened_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</td>
                 <td>${l.person ?? ''}</td>
                 <td>${l.illness ?? ''}</td>
                 <td>${l.used_item ?? ''}</td>
