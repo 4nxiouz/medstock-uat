@@ -68,7 +68,7 @@ function LogIndicator({ count }: { count: number }) {
     return (
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200">
             <span className="size-1.5 rounded-full bg-amber-400 inline-block" />
-            No log
+            No report
         </span>
     )
 }
@@ -193,13 +193,13 @@ function BagLog({ onLogout }: PageProps) {
             rows.push(row)
         }
         const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Bag Log')
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Bag Report')
         XLSX.writeFile(wb, `BagLog_${dateFrom}_${dateTo}.xlsx`)
         setExporting(false)
     }
 
     return (
-        <PageLayout title="Bag Log" subtitle="บันทึกการจ่ายยาเข้ากระเป๋า FAK / EMK" onLogout={onLogout}>
+        <PageLayout title="Bag Report" subtitle="บันทึกการจ่ายยาเข้ากระเป๋า FAK / EMK" onLogout={onLogout}>
 
             {/* ── Stats strip ── */}
             <div className="mb-5 flex flex-wrap gap-2">
@@ -866,7 +866,7 @@ function BagDetailModal({
                                 )}
                                 <button type="button" onClick={() => void handleAddLog()}
                                     className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-teal-700 text-sm font-bold text-white hover:bg-teal-800 transition-colors active:scale-[.98]">
-                                    <PlusCircle className="size-4" /> Add log
+                                    <PlusCircle className="size-4" /> Add Report
                                 </button>
                             </div>
 
