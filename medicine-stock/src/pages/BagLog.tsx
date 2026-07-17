@@ -178,12 +178,13 @@ function BagLog({ onLogout }: PageProps) {
                 const found = bagDrugs.find((d) => d.drug_name === name)
                 row[name] = found ? found.qty : ''
             }
-            row['Check In'] = bag.date_in ? fmt(bag.date_in) : ''
-            row['Check Out'] = bag.date_out ? fmt(bag.date_out) : ''
+            const fmtEn = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
+            row['Check In'] = fmtEn(bag.date_in)
+            row['Check Out'] = fmtEn(bag.date_out)
             row['Duration (Days)'] = durationDays
             const latestLog = bagLogs[bagLogs.length - 1]
-            row['Opened Date'] = latestLog?.opened_date ?? ''
-            row['Person'] = latestLog?.person ?? ''
+            row['Opened Date'] = latestLog?.opened_date ? fmtEn(latestLog.opened_date) : ''
+            row['Opened for'] = latestLog?.person ?? ''
             row['Illness'] = latestLog?.illness ?? ''
             row['Used Item'] = latestLog?.used_item ?? ''
             row['FLT.No.'] = latestLog?.flt_no ?? ''
