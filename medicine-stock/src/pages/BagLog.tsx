@@ -511,7 +511,7 @@ function BagDetailModal({
 
   <h2>Incident Report</h2>
   <table style="font-size:9pt">
-    <thead><tr><th>#</th><th>Opened Date</th><th>Person</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th></tr></thead>
+    <thead><tr><th>#</th><th>Opened Date</th><th>Opened for</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th></tr></thead>
     <tbody>${logRows || '<tr><td colspan="8" style="color:#aaa">No Record</td></tr>'}</tbody>
   </table>
 
@@ -849,7 +849,7 @@ function BagDetailModal({
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <Field label="Opened Date" type="date" value={logForm.opened_date} onChange={(v) => setLogForm((p) => ({ ...p, opened_date: v }))} />
-                                    <Field label="Person" value={logForm.person} onChange={(v) => setLogForm((p) => ({ ...p, person: v }))} />
+                                    <Field label="Opened for" value={logForm.person} onChange={(v) => setLogForm((p) => ({ ...p, person: v }))} />
                                 </div>
                                 <Field label="Illness" value={logForm.illness} onChange={(v) => setLogForm((p) => ({ ...p, illness: v }))} />
                                 <Field label="Used Item" value={logForm.used_item} onChange={(v) => setLogForm((p) => ({ ...p, used_item: v }))} />
@@ -880,7 +880,7 @@ function BagDetailModal({
                                             <div className="flex items-center justify-between gap-2">
                                                 <span className="font-semibold text-slate-900 text-sm">{log.person || '—'}</span>
                                                 {log.opened_date && (
-                                                    <span className="text-[10px] text-slate-400 tabular-nums">{new Date(log.opened_date).toLocaleDateString('th-TH')}</span>
+                                                    <span className="text-[10px] text-slate-400 tabular-nums">{new Date(log.opened_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                                                 )}
                                             </div>
                                             {log.illness && <div className="text-xs text-slate-600">Illness: <span className="font-medium">{log.illness}</span></div>}
