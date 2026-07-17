@@ -463,7 +463,7 @@ function BagDetailModal({
     <tbody>${eqRows}</tbody>
   </table>` : ''
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bag Report</title>
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title> </title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: 'Sarabun', sans-serif; font-size: 11pt; margin: 0; padding: 20mm 15mm; color: #111; }
