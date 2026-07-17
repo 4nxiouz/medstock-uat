@@ -45,7 +45,7 @@ export const PAGE_PERMISSIONS: { path: string; label: string }[] = [
     { path: '/issue', label: 'Out Stock' },
     { path: '/print', label: 'Print Barcode' },
     { path: '/history', label: 'Transaction History' },
-    { path: '/baglog', label: 'Bag Log' },
+    { path: '/baglog', label: 'Bag Report' },
 ]
 
 export type BagDispatch = {
@@ -98,6 +98,7 @@ export type BagUsageLog = {
     flt_no?: string | null
     seal_no?: string | null
     remark?: string | null
+    recorded_by?: string | null
     created_by?: string | null
     created_at?: string | null
 }

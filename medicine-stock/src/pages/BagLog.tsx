@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
-import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy } from '../lib/auth'
+import { canAccessBagLogEdit, canAccessBagLogLog, getCreatedBy, isSupervisor } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import type { BagDispatch, BagDispatchDrug, BagUsageLog, EmkEquipmentCheck } from '../types'
 
@@ -89,6 +89,7 @@ function BagLog({ onLogout }: PageProps) {
 
     const canEdit = canAccessBagLogEdit()
     const canLog = canAccessBagLogLog()
+    const supervisor = isSupervisor()
 
     useEffect(() => { void loadBags() }, [])
 
@@ -190,6 +191,7 @@ function BagLog({ onLogout }: PageProps) {
             row['FLT.No.'] = latestLog?.flt_no ?? ''
             row['Log Seal No.'] = latestLog?.seal_no ?? ''
             row['Remark'] = latestLog?.remark ?? ''
+            row['Recorded by'] = latestLog?.recorded_by ?? ''
             rows.push(row)
         }
         const wb = XLSX.utils.book_new()
@@ -383,6 +385,7 @@ function BagLog({ onLogout }: PageProps) {
                     setTab={setModalTab}
                     canEdit={canEdit}
                     canLog={canLog}
+                    supervisorMode={supervisor}
                     onClose={closeModal}
                     onBagUpdated={(updated) => setSelectedBag(updated)}
                 />
@@ -393,10 +396,10 @@ function BagLog({ onLogout }: PageProps) {
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function BagDetailModal({
-    bag, tab, setTab, canEdit, canLog, onClose, onBagUpdated,
+    bag, tab, setTab, canEdit, canLog, supervisorMode, onClose, onBagUpdated,
 }: {
     bag: BagDispatch; tab: ModalTab; setTab: (t: ModalTab) => void
-    canEdit: boolean; canLog: boolean
+    canEdit: boolean; canLog: boolean; supervisorMode?: boolean
     onClose: (dirty?: boolean) => void
     onBagUpdated: (b: BagDispatch) => void
 }) {
@@ -418,7 +421,7 @@ function BagDetailModal({
     })
     const [editMsg, setEditMsg] = useState('')
     const [deleting, setDeleting] = useState(false)
-    const [logForm, setLogForm] = useState({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '' })
+    const [logForm, setLogForm] = useState({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '', recorded_by: '' })
     const [logMsg, setLogMsg] = useState('')
 
     useEffect(() => { void loadDrugs() }, [])
@@ -454,6 +457,7 @@ function BagDetailModal({
                 <td>${l.flt_no ?? ''}</td>
                 <td>${l.seal_no ?? ''}</td>
                 <td>${l.remark ?? ''}</td>
+                <td>${l.recorded_by ?? ''}</td>
             </tr>`
         ).join('')
 
@@ -512,8 +516,8 @@ function BagDetailModal({
 
   <h2>Incident Report</h2>
   <table style="font-size:9pt">
-    <thead><tr><th>#</th><th>Opened Date</th><th>Opened for</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th></tr></thead>
-    <tbody>${logRows || '<tr><td colspan="8" style="color:#aaa">No Record</td></tr>'}</tbody>
+    <thead><tr><th>#</th><th>Opened Date</th><th>Opened for</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th><th>Recorded by</th></tr></thead>
+    <tbody>${logRows || '<tr><td colspan="9" style="color:#aaa">No Record</td></tr>'}</tbody>
   </table>
 
   <div class="footer">MedStock · ID #${bag.id}</div>
@@ -620,17 +624,18 @@ function BagDetailModal({
             flt_no: logForm.flt_no.trim() || null,
             seal_no: logForm.seal_no.trim() || null,
             remark: logForm.remark.trim() || null,
+            recorded_by: logForm.recorded_by.trim() || null,
             created_by: getCreatedBy(),
         }])
         if (error) { setLogMsg('Failed: ' + error.message); return }
         setLogMsg('✓ Log added')
-        setLogForm({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '' })
+        setLogForm({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '', recorded_by: '' })
         void loadLogs()
     }
 
     const tabs: { key: ModalTab; label: string; icon: React.ReactNode }[] = [
         { key: 'drugs', label: 'Drug list', icon: <Package className="size-3.5" /> },
-        ...(canEdit ? [{ key: 'edit' as ModalTab, label: 'Edit info', icon: <Edit2 className="size-3.5" /> }] : []),
+        ...((canEdit || supervisorMode) ? [{ key: 'edit' as ModalTab, label: 'Edit info', icon: <Edit2 className="size-3.5" /> }] : []),
         ...(canLog ? [{ key: 'log' as ModalTab, label: 'Incident Report', icon: <ClipboardList className="size-3.5" /> }] : []),
     ]
 
@@ -767,21 +772,27 @@ function BagDetailModal({
                     )}
 
                     {/* Edit form */}
-                    {tab === 'edit' && canEdit && (
+                    {tab === 'edit' && (canEdit || supervisorMode) && (
                         <div className="space-y-4">
+                            {supervisorMode && (
+                                <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+                                    View only — supervisors cannot edit bag info
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="Order No" value={editForm.order_no} onChange={(v) => setEditForm((p) => ({ ...p, order_no: v }))} />
-                                <Field label="S/N *" value={editForm.serial_no} onChange={(v) => setEditForm((p) => ({ ...p, serial_no: v }))} />
+                                <Field label="Order No" value={editForm.order_no} onChange={(v) => setEditForm((p) => ({ ...p, order_no: v }))} readOnly={supervisorMode} />
+                                <Field label="S/N *" value={editForm.serial_no} onChange={(v) => setEditForm((p) => ({ ...p, serial_no: v }))} readOnly={supervisorMode} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="EQ *" value={editForm.equipment_no} onChange={(v) => setEditForm((p) => ({ ...p, equipment_no: v }))} />
-                                <Field label="Seal Number" value={editForm.seal_number} onChange={(v) => setEditForm((p) => ({ ...p, seal_number: v }))} />
+                                <Field label="EQ *" value={editForm.equipment_no} onChange={(v) => setEditForm((p) => ({ ...p, equipment_no: v }))} readOnly={supervisorMode} />
+                                <Field label="Seal Number" value={editForm.seal_number} onChange={(v) => setEditForm((p) => ({ ...p, seal_number: v }))} readOnly={supervisorMode} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</label>
                                     <select value={editForm.type} onChange={(e) => setEditForm((p) => ({ ...p, type: e.target.value }))}
-                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition">
+                                        disabled={supervisorMode}
+                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition disabled:bg-slate-50 disabled:text-slate-400">
                                         <option value="">— select —</option>
                                         <option value="FAK">FAK</option>
                                         <option value="EMK">EMK</option>
@@ -790,7 +801,8 @@ function BagDetailModal({
                                 <div>
                                     <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</label>
                                     <select value={editForm.status} onChange={(e) => setEditForm((p) => ({ ...p, status: e.target.value as 'OPEN' | 'CLOSE' }))}
-                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition">
+                                        disabled={supervisorMode}
+                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition disabled:bg-slate-50 disabled:text-slate-400">
                                         <option value="OPEN">OPEN</option>
                                         <option value="CLOSE">CLOSE</option>
                                     </select>
@@ -800,7 +812,8 @@ function BagDetailModal({
                                 <div>
                                     <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">1st Cause</label>
                                     <select value={editForm.cause_1} onChange={(e) => setEditForm((p) => ({ ...p, cause_1: e.target.value }))}
-                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition">
+                                        disabled={supervisorMode}
+                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition disabled:bg-slate-50 disabled:text-slate-400">
                                         <option value="">— select —</option>
                                         <option value="Use">Used</option>
                                         <option value="Expire">Expired</option>
@@ -810,7 +823,8 @@ function BagDetailModal({
                                 <div>
                                     <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">2nd Cause</label>
                                     <select value={editForm.cause_2} onChange={(e) => setEditForm((p) => ({ ...p, cause_2: e.target.value }))}
-                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition">
+                                        disabled={supervisorMode}
+                                        className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition disabled:bg-slate-50 disabled:text-slate-400">
                                         <option value="">None</option>
                                         <option value="Expired">Expired</option>
                                         <option value="Damaged">Damaged</option>
@@ -819,25 +833,27 @@ function BagDetailModal({
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="Received Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} />
-                                <Field label="Released Date" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} />
+                                <Field label="Received Date" type="date" value={editForm.date_in} onChange={(v) => setEditForm((p) => ({ ...p, date_in: v }))} readOnly={supervisorMode} />
+                                <Field label="Released Date" type="date" value={editForm.date_out} onChange={(v) => setEditForm((p) => ({ ...p, date_out: v }))} readOnly={supervisorMode} />
                             </div>
-                            <Field label="Expiry Date" type="date" value={editForm.expiry_date} onChange={(v) => setEditForm((p) => ({ ...p, expiry_date: v }))} />
+                            <Field label="Expiry Date" type="date" value={editForm.expiry_date} onChange={(v) => setEditForm((p) => ({ ...p, expiry_date: v }))} readOnly={supervisorMode} />
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="Repacked By" value={editForm.repacked_by} onChange={(v) => setEditForm((p) => ({ ...p, repacked_by: v }))} />
-                                <Field label="Checked By" value={editForm.checked_by} onChange={(v) => setEditForm((p) => ({ ...p, checked_by: v }))} />
+                                <Field label="Repacked By" value={editForm.repacked_by} onChange={(v) => setEditForm((p) => ({ ...p, repacked_by: v }))} readOnly={supervisorMode} />
+                                <Field label="Checked By" value={editForm.checked_by} onChange={(v) => setEditForm((p) => ({ ...p, checked_by: v }))} readOnly={supervisorMode} />
                             </div>
-                            <Field label="Remark" value={editForm.remark} onChange={(v) => setEditForm((p) => ({ ...p, remark: v }))} />
-                            {editMsg && (
+                            <Field label="Remark" value={editForm.remark} onChange={(v) => setEditForm((p) => ({ ...p, remark: v }))} readOnly={supervisorMode} />
+                            {editMsg && !supervisorMode && (
                                 <div className={`rounded-lg px-3 py-2.5 text-sm font-medium ${editMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-red-50 text-red-700 ring-1 ring-red-200'}`}>
                                     {editMsg}
                                 </div>
                             )}
-                            <button type="button" onClick={() => void handleSaveEdit()}
-                                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 active:scale-[.98]"
-                                style={{ background: 'linear-gradient(135deg, #0f766e 0%, #1e3a5f 100%)' }}>
-                                <Edit2 className="size-4" /> Save changes
-                            </button>
+                            {!supervisorMode && (
+                                <button type="button" onClick={() => void handleSaveEdit()}
+                                    className="flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 active:scale-[.98]"
+                                    style={{ background: 'linear-gradient(135deg, #0f766e 0%, #1e3a5f 100%)' }}>
+                                    <Edit2 className="size-4" /> Save changes
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -859,6 +875,7 @@ function BagDetailModal({
                                     <Field label="Seal No." value={logForm.seal_no} onChange={(v) => setLogForm((p) => ({ ...p, seal_no: v }))} />
                                 </div>
                                 <Field label="Remark" value={logForm.remark} onChange={(v) => setLogForm((p) => ({ ...p, remark: v }))} />
+                                <Field label="Recorded by" value={logForm.recorded_by} onChange={(v) => setLogForm((p) => ({ ...p, recorded_by: v }))} />
                                 {logMsg && (
                                     <div className={`rounded-lg px-3 py-2 text-sm font-medium ${logMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                         {logMsg}
@@ -891,6 +908,7 @@ function BagDetailModal({
                                                 {log.seal_no && <div className="text-xs text-slate-500">Seal: {log.seal_no}</div>}
                                             </div>
                                             {log.remark && <div className="text-xs text-slate-400 italic">{log.remark}</div>}
+                                            {log.recorded_by && <div className="text-xs text-slate-600">Recorded by: <span className="font-medium">{log.recorded_by}</span></div>}
                                             <div className="pt-1 text-[10px] text-slate-300 tabular-nums">
                                                 By {log.created_by} · {log.created_at ? new Date(log.created_at).toLocaleString('th-TH') : ''}
                                             </div>
@@ -920,14 +938,15 @@ function BagDetailModal({
 }
 
 // ─── Field ────────────────────────────────────────────────────────────────────
-function Field({ label, value, onChange, type = 'text' }: {
-    label: string; value: string; onChange: (v: string) => void; type?: string
+function Field({ label, value, onChange, type = 'text', readOnly }: {
+    label: string; value: string; onChange: (v: string) => void; type?: string; readOnly?: boolean
 }) {
     return (
         <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</label>
             <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
-                className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
+                readOnly={readOnly}
+                className={`h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition ${readOnly ? 'bg-slate-50 text-slate-400' : 'bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100'}`} />
         </div>
     )
 }

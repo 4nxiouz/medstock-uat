@@ -27,7 +27,7 @@ const ROLE_LABELS: Record<Role, string> = {
 }
 
 const BAG_LOG_SUBS = [
-    { path: '/baglog/edit', label: 'แก้ไขข้อมูล' },
+    { path: '/baglog/edit', label: 'Edit Info' },
     { path: '/baglog/log', label: 'Incident Report' },
 ]
 
