@@ -68,7 +68,7 @@ function LogIndicator({ count }: { count: number }) {
     return (
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200">
             <span className="size-1.5 rounded-full bg-amber-400 inline-block" />
-            No report
+            Unreported
         </span>
     )
 }
@@ -179,8 +179,8 @@ function BagLog({ onLogout }: PageProps) {
                 row[name] = found ? found.qty : ''
             }
             const fmtEn = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
-            row['Check In'] = fmtEn(bag.date_in)
-            row['Check Out'] = fmtEn(bag.date_out)
+            row['Received Date'] = fmtEn(bag.date_in)
+            row['Released Date'] = fmtEn(bag.date_out)
             row['Duration (Days)'] = durationDays
             const latestLog = bagLogs[bagLogs.length - 1]
             row['Opened Date'] = latestLog?.opened_date ? fmtEn(latestLog.opened_date) : ''
