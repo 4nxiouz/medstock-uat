@@ -410,15 +410,15 @@ function IssueDrug({ onLogout }: PageProps) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <Field label="Received Date *" type="date" value={form.date_in} onChange={(v) => {
-                                setField('date_in', v)
+                            <Field label="Received Date *" type="date" value={form.date_in} onChange={(v) => setField('date_in', v)} required />
+                            <Field label="Released Date" type="date" value={form.date_out} onChange={(v) => {
+                                setField('date_out', v)
                                 if (v) {
                                     const d = new Date(v)
-                                    d.setFullYear(d.getFullYear() + 1)
+                                    d.setDate(d.getDate() + 365)
                                     setField('expiry_date', d.toISOString().slice(0, 10))
                                 }
-                            }} required />
-                            <Field label="Released Date" type="date" value={form.date_out} onChange={(v) => setField('date_out', v)} />
+                            }} />
                         </div>
                         <Field label="Expiry Date" type="date" value={form.expiry_date} onChange={(v) => setField('expiry_date', v)} />
                         <div className="grid grid-cols-2 gap-3">

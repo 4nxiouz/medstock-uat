@@ -486,18 +486,18 @@ function BagDetailModal({
   <h1>Bag Report — ${bag.bag_type} · ${bag.serial_no}</h1>
   <div class="meta-grid">
     <div class="meta-item"><label>Type</label><span>${bag.bag_type}</span></div>
+    <div class="meta-item"><label>Order No</label><span>${bag.order_no ?? '—'}</span></div>
     <div class="meta-item"><label>S/N</label><span>${bag.serial_no}</span></div>
     <div class="meta-item"><label>EQ</label><span>${bag.equipment_no}</span></div>
-    <div class="meta-item"><label>Status</label><span class="badge ${bag.status === 'OPEN' ? 'open' : 'close'}">${bag.status}</span></div>
-    <div class="meta-item"><label>Order No</label><span>${bag.order_no ?? '—'}</span></div>
     <div class="meta-item"><label>Seal No</label><span>${bag.seal_number ?? '—'}</span></div>
-    <div class="meta-item"><label>Received Date</label><span>${fmt(bag.date_in)}</span></div>
-    <div class="meta-item"><label>Released Date</label><span>${fmt(bag.date_out)}</span></div>
-    ${bag.expiry_date ? `<div class="meta-item"><label>Expiry Date</label><span>${fmt(bag.expiry_date)}</span></div>` : ''}
-    ${bag.repacked_by ? `<div class="meta-item"><label>Repacked By</label><span>${bag.repacked_by}</span></div>` : ''}
-    ${bag.checked_by ? `<div class="meta-item"><label>Checked By</label><span>${bag.checked_by}</span></div>` : ''}
+    <div class="meta-item"><label>Status</label><span class="badge ${bag.status === 'OPEN' ? 'open' : 'close'}">${bag.status}</span></div>
     ${bag.cause_1 ? `<div class="meta-item"><label>1st Cause</label><span>${bag.cause_1}</span></div>` : ''}
     ${bag.cause_2 ? `<div class="meta-item"><label>2nd Cause</label><span>${bag.cause_2}</span></div>` : ''}
+    <div class="meta-item"><label>Received Date</label><span>${bag.date_in ? new Date(bag.date_in).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span></div>
+    <div class="meta-item"><label>Released Date</label><span>${bag.date_out ? new Date(bag.date_out).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span></div>
+    ${bag.expiry_date ? `<div class="meta-item"><label>Expiry Date</label><span>${new Date(bag.expiry_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>` : ''}
+    ${bag.repacked_by ? `<div class="meta-item"><label>Repacked By</label><span>${bag.repacked_by}</span></div>` : ''}
+    ${bag.checked_by ? `<div class="meta-item"><label>Checked By</label><span>${bag.checked_by}</span></div>` : ''}
     ${bag.remark ? `<div class="meta-item" style="grid-column:1/-1"><label>Remark</label><span>${bag.remark}</span></div>` : ''}
   </div>
 
