@@ -503,16 +503,16 @@ function BagDetailModal({
 
   ${eqSection}
 
-  <h2>รายการยาในกระเป๋า (${allDrugs.length} รายการ)</h2>
+  <h2>Material Name (${allDrugs.length} Items)</h2>
   <table>
-    <thead><tr><th>ชื่อยา</th><th>Barcode</th><th style="text-align:center">จำนวน (หน่วย)</th></tr></thead>
-    <tbody>${drugRows || '<tr><td colspan="3" style="color:#aaa">ไม่มีรายการยา</td></tr>'}</tbody>
+    <thead><tr><th>Description</th><th>Barcode</th><th style="text-align:center">QTY</th></tr></thead>
+    <tbody>${drugRows || '<tr><td colspan="3" style="color:#aaa">No Record</td></tr>'}</tbody>
   </table>
 
-  <h2>Incident Report (${allLogs.length} รายการ)</h2>
+  <h2>Incident Report</h2>
   <table style="font-size:9pt">
     <thead><tr><th>#</th><th>Opened Date</th><th>Person</th><th>Illness</th><th>Used Item</th><th>FLT.No.</th><th>Seal No.</th><th>Remark</th></tr></thead>
-    <tbody>${logRows || '<tr><td colspan="8" style="color:#aaa">ยังไม่มีบันทึก</td></tr>'}</tbody>
+    <tbody>${logRows || '<tr><td colspan="8" style="color:#aaa">No Record</td></tr>'}</tbody>
   </table>
 
   <div class="footer">MedStock · ID #${bag.id}</div>
