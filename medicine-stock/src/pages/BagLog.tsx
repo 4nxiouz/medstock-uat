@@ -421,6 +421,7 @@ function BagDetailModal({
     })
     const [editMsg, setEditMsg] = useState('')
     const [deleting, setDeleting] = useState(false)
+    const [confirmDelete, setConfirmDelete] = useState(false)
     const [logForm, setLogForm] = useState({ opened_date: '', person: '', illness: '', used_item: '', flt_no: '', seal_no: '', remark: '', recorded_by: '' })
     const [logMsg, setLogMsg] = useState('')
 
@@ -645,7 +646,7 @@ function BagDetailModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6">
-            <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
+            <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
                 style={{ maxHeight: 'calc(100vh - 3rem)' }}>
 
                 {/* ── Modal header ── */}
@@ -673,10 +674,10 @@ function BagDetailModal({
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => void handleDeleteBag()} disabled={deleting}
-                            className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-50">
-                            <Trash2 className="size-3.5" />
-                            {deleting ? 'กำลังลบ…' : 'Delete Bag'}
+                        <button type="button" onClick={() => setConfirmDelete(true)} disabled={deleting}
+                            title="Delete Bag"
+                            className="flex size-8 items-center justify-center rounded-lg bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                            <Trash2 className="size-4" />
                         </button>
                         <button type="button" onClick={() => onClose()}
                             className="mt-0.5 shrink-0 flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
@@ -919,6 +920,32 @@ function BagDetailModal({
                         </div>
                     )}
                 </div>
+
+                {/* ── Delete confirmation ── */}
+                {confirmDelete && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 rounded-2xl">
+                        <div className="mx-4 w-full max-w-xs rounded-xl bg-white p-5 shadow-2xl">
+                            <div className="mb-1 flex items-center gap-2 text-red-600">
+                                <Trash2 className="size-5" />
+                                <span className="font-bold">Delete Bag</span>
+                            </div>
+                            <p className="mb-4 text-sm text-slate-600">
+                                ยืนยันลบกระเป๋า <span className="font-semibold">{bag.bag_type} · {bag.serial_no}</span>?<br />
+                                ยอดยาจะถูกคืนกลับสต็อก
+                            </p>
+                            <div className="flex gap-2">
+                                <button type="button" onClick={() => setConfirmDelete(false)}
+                                    className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                                    Cancel
+                                </button>
+                                <button type="button" disabled={deleting} onClick={() => { setConfirmDelete(false); void handleDeleteBag() }}
+                                    className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50">
+                                    {deleting ? 'กำลังลบ…' : 'Delete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Footer ── */}
                 <div className="flex items-center justify-between border-t border-slate-100 bg-white px-6 py-3 shrink-0">
