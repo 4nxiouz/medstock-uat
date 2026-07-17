@@ -61,7 +61,7 @@ function LogIndicator({ count }: { count: number }) {
         return (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 <span className="size-1.5 rounded-full bg-emerald-500 inline-block" />
-                {count} log{count > 1 ? 's' : ''}
+                {count} report{count > 1 ? 's' : ''}
             </span>
         )
     }
@@ -306,7 +306,7 @@ function BagLog({ onLogout }: PageProps) {
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     {/* Table head */}
                     <div className="hidden md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'In Date', 'Out Date', 'Log', ''].map((h, i) => (
+                        {['Type', 'S/N — EQ', 'Order No', 'Status', 'In Date', 'Out Date', 'Report', ''].map((h, i) => (
                             <div key={i} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</div>
                         ))}
                     </div>
