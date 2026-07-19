@@ -49,11 +49,11 @@ export function isSupervisor(): boolean {
 export function canAccessBagLogEdit(): boolean {
     const user = getCurrentUser()
     if (user?.role === 'admin') return true
-    return user?.allowed_pages?.includes('/baglog/edit') ?? false
+    return user?.allowed_pages?.includes('/bag-report/edit') ?? false
 }
 
 export function canAccessBagLogLog(): boolean {
     const user = getCurrentUser()
     if (user?.role === 'admin' || user?.role === 'supervisor') return true
-    return user?.allowed_pages?.includes('/baglog/log') ?? false
+    return user?.allowed_pages?.includes('/bag-report/log') ?? false
 }

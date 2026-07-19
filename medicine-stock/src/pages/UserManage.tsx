@@ -27,8 +27,8 @@ const ROLE_LABELS: Record<Role, string> = {
 }
 
 const BAG_LOG_SUBS = [
-    { path: '/baglog/edit', label: 'Edit Info' },
-    { path: '/baglog/log', label: 'Incident Report' },
+    { path: '/bag-report/edit', label: 'Edit Info' },
+    { path: '/bag-report/log', label: 'Incident Report' },
 ]
 
 function RoleBadge({ role }: { role: string }) {
@@ -98,10 +98,10 @@ function PagePermissions({
                                 className={`size-4 rounded border-slate-300 ${checkColor}`} />
                             <span className="text-sm text-slate-700">{page.label}</span>
                         </label>
-                        {page.path === '/baglog' && pages.includes('/baglog') && (
+                        {page.path === '/bag-report' && pages.includes('/bag-report') && (
                             <div className="ml-7 mt-2 space-y-1.5 border-l-2 border-blue-200 pl-3">
                                 {BAG_LOG_SUBS.map((sub) => {
-                                    const isIncidentReport = sub.path === '/baglog/log'
+                                    const isIncidentReport = sub.path === '/bag-report/log'
                                     const lockedForSupervisor = role === 'supervisor' && isIncidentReport
                                     return (
                                         <label key={sub.path} className={`flex items-center gap-3 ${lockedForSupervisor ? 'cursor-default' : 'cursor-pointer'}`}>
@@ -175,14 +175,14 @@ function UserManage({ onLogout }: PageProps) {
     function ensureSupervisorPages(pages: string[]): string[] {
         // Supervisor always has Incident Report access
         const result = [...pages]
-        if (!result.includes('/baglog')) result.push('/baglog')
-        if (!result.includes('/baglog/log')) result.push('/baglog/log')
+        if (!result.includes('/bag-report')) result.push('/bag-report')
+        if (!result.includes('/bag-report/log')) result.push('/bag-report/log')
         return result
     }
 
     function handleNewRoleChange(role: Role) {
         setNewUserRole(role)
-        if (role === 'supervisor') setNewUserPages(ensureSupervisorPages(['/baglog']))
+        if (role === 'supervisor') setNewUserPages(ensureSupervisorPages(['/bag-report']))
         else if (role === 'admin') setNewUserPages([...ALL_PATHS])
         else setNewUserPages([...ALL_PATHS])
     }
@@ -451,7 +451,7 @@ function UserManage({ onLogout }: PageProps) {
                                 <div className="mb-2 text-sm font-medium text-slate-700">Role</div>
                                 <RolePicker value={editRole} onChange={(r) => {
                                     setEditRole(r)
-                                    if (r === 'supervisor') setEditPages(ensureSupervisorPages(['/baglog']))
+                                    if (r === 'supervisor') setEditPages(ensureSupervisorPages(['/bag-report']))
                                     else setEditPages([...ALL_PATHS])
                                 }} />
                             </div>

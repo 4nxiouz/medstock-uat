@@ -41,13 +41,13 @@ function AppRoutes({ onLogout }: { onLogout: () => void }) {
     return (
         <Routes>
             <Route path="/" element={<Home onLogout={onLogout} />} />
-            <Route path="/inventory" element={<Guarded path="/inventory" element={<Inventory onLogout={onLogout} />} />} />
-            <Route path="/receive" element={<Guarded path="/receive" element={<ReceiveDrug onLogout={onLogout} />} />} />
-            <Route path="/issue" element={<Guarded path="/issue" element={<IssueDrug onLogout={onLogout} />} />} />
-<Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
+            <Route path="/stock" element={<Guarded path="/stock" element={<Inventory onLogout={onLogout} />} />} />
+            <Route path="/in-stock" element={<Guarded path="/in-stock" element={<ReceiveDrug onLogout={onLogout} />} />} />
+            <Route path="/out-stock" element={<Guarded path="/out-stock" element={<IssueDrug onLogout={onLogout} />} />} />
+            <Route path="/print" element={<Guarded path="/print" element={<PrintBarcode onLogout={onLogout} />} />} />
             <Route path="/user" element={<AdminOnly element={<UserManage onLogout={onLogout} />} />} />
             <Route path="/history" element={<TransactionHistory onLogout={onLogout} />} />
-            <Route path="/baglog" element={<Guarded path="/baglog" element={<BagLog onLogout={onLogout} />} />} />
+            <Route path="/bag-report" element={<Guarded path="/bag-report" element={<BagLog onLogout={onLogout} />} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )

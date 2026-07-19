@@ -40,12 +40,12 @@ export type Location = {
 }
 
 export const PAGE_PERMISSIONS: { path: string; label: string }[] = [
-    { path: '/receive', label: 'In Stock' },
-    { path: '/inventory', label: 'Stock' },
-    { path: '/issue', label: 'Out Stock' },
+    { path: '/in-stock', label: 'In Stock' },
+    { path: '/stock', label: 'Stock' },
+    { path: '/out-stock', label: 'Out Stock' },
     { path: '/print', label: 'Print Barcode' },
     { path: '/history', label: 'Transaction History' },
-    { path: '/baglog', label: 'Bag Report' },
+    { path: '/bag-report', label: 'Bag Report' },
 ]
 
 export type BagDispatch = {

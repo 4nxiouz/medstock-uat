@@ -16,9 +16,9 @@ import { getCurrentUser } from '../lib/auth'
 
 const mainItems = [
     { label: 'Home', path: '/', icon: Home },
-    { label: 'In Stock', path: '/receive', icon: PackagePlus },
-    { label: 'Stock', path: '/inventory', icon: Pill },
-    { label: 'Out Stock', path: '/issue', icon: PackageMinus },
+    { label: 'In Stock', path: '/in-stock', icon: PackagePlus },
+    { label: 'Stock', path: '/stock', icon: Pill },
+    { label: 'Out Stock', path: '/out-stock', icon: PackageMinus },
 ]
 
 function MobileNav() {
@@ -39,7 +39,7 @@ function MobileNav() {
     )
 
     const moreItems = [
-        ...(canSee('/baglog') ? [{ label: 'Bag Report', path: '/baglog', icon: Backpack }] : []),
+        ...(canSee('/bag-report') ? [{ label: 'Bag Report', path: '/bag-report', icon: Backpack }] : []),
         ...(canSee('/print') ? [{ label: 'Print Barcode', path: '/print', icon: Printer }] : []),
         ...(canSee('/history') ? [{ label: 'Transaction History', path: '/history', icon: History }] : []),
         ...(isAdmin ? [{ label: 'User Management', path: '/user', icon: Users }] : []),
