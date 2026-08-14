@@ -434,6 +434,7 @@ function BagDetailModal({
     const [logsLoaded, setLogsLoaded] = useState(false)
     const [drugEditMsg, setDrugEditMsg] = useState('')
     const [drugBusy, setDrugBusy] = useState<number | null>(null)
+    const [pendingQty, setPendingQty] = useState<Record<number, string>>({})
     const [addDrugQuery, setAddDrugQuery] = useState('')
     const [addDrugSuggestions, setAddDrugSuggestions] = useState<{ barcode: string; drug_name: string; current_stock: number; unit_per_scan: number }[]>([])
     const [addDrugShowDrop, setAddDrugShowDrop] = useState(false)
@@ -609,6 +610,29 @@ function BagDetailModal({
         setDrugBusy(null)
         setDrugEditMsg(`✓ อัปเดต ${drug.drug_name} → ${newQty}`)
         setTimeout(() => setDrugEditMsg(''), 2500)
+    }
+
+    async function handleDrugQtyCommit(drug: BagDispatchDrug, rawVal: string) {
+        const newQty = parseInt(rawVal)
+        if (!Number.isFinite(newQty) || newQty < 1 || newQty === drug.qty) {
+            setPendingQty((p) => { const n = { ...p }; delete n[drug.id]; return n })
+            return
+        }
+        const delta = newQty - drug.qty
+        if (delta > 0) {
+            // Need to check stock
+            const { data: live } = await supabase
+                .from('drug_master').select('current_stock').eq('barcode', drug.barcode).maybeSingle()
+            const available = Number((live as { current_stock: number } | null)?.current_stock ?? 0)
+            if (delta > available) {
+                setDrugEditMsg(`สต็อกไม่พอ — มีแค่ ${available} หน่วย`)
+                setTimeout(() => setDrugEditMsg(''), 3000)
+                setPendingQty((p) => { const n = { ...p }; delete n[drug.id]; return n })
+                return
+            }
+        }
+        setPendingQty((p) => { const n = { ...p }; delete n[drug.id]; return n })
+        await handleDrugQtyChange(drug, delta)
     }
 
     async function handleDrugRemove(drug: BagDispatchDrug) {
@@ -924,7 +948,16 @@ function BagDetailModal({
                                                                         className="flex size-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-colors">
                                                                         <Minus className="size-3.5" />
                                                                     </button>
-                                                                    <span className="w-8 text-center text-sm font-bold text-teal-700 tabular-nums">{d.qty}</span>
+                                                                    <input
+                                                                        type="number"
+                                                                        min={1}
+                                                                        disabled={drugBusy === d.id}
+                                                                        value={pendingQty[d.id] ?? d.qty}
+                                                                        onChange={(e) => setPendingQty((p) => ({ ...p, [d.id]: e.target.value }))}
+                                                                        onBlur={(e) => void handleDrugQtyCommit(d, e.target.value)}
+                                                                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                                                                        className="w-12 rounded-md border border-slate-200 bg-white px-1 py-0.5 text-center text-sm font-bold text-teal-700 tabular-nums outline-none focus:border-teal-500 disabled:opacity-40"
+                                                                    />
                                                                     <button type="button" disabled={drugBusy === d.id}
                                                                         onClick={() => void handleDrugQtyChange(d, 1)}
                                                                         className="flex size-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-colors">
