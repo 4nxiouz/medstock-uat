@@ -1,9 +1,9 @@
 import * as XLSX from 'xlsx'
 import {
     Backpack, ChevronLeft, ClipboardList,
-    Download, Edit2, Package, Printer, PlusCircle, Trash2, X,
+    Download, Edit2, Minus, Package, Plus, Printer, PlusCircle, Trash2, X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import EmptyState from '../components/EmptyState'
 import PageLayout from '../components/PageLayout'
@@ -86,12 +86,16 @@ function BagLog({ onLogout }: PageProps) {
     const [dateTo, setDateTo] = useState('')
     const [searchEqSerial, setSearchEqSerial] = useState('')
     const [exporting, setExporting] = useState(false)
+    const [currentPage, setCurrentPage] = useState(0)
+
+    const PAGE_SIZE = 50
 
     const canEdit = canAccessBagLogEdit()
     const canLog = canAccessBagLogLog()
     const supervisor = isSupervisor()
 
     useEffect(() => { void loadBags() }, [])
+    useEffect(() => { setCurrentPage(0) }, [bagFilter, logFilter, dateFrom, dateTo, searchEqSerial])
 
     async function loadBags() {
         setLoading(true)
@@ -128,6 +132,9 @@ function BagLog({ onLogout }: PageProps) {
             const q = searchEqSerial.trim().toLowerCase()
             return (b.equipment_no ?? '').toLowerCase().includes(q) || (b.serial_no ?? '').toLowerCase().includes(q)
         })
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+    const paginated = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
 
     const fakCount = dateBased.filter((b) => b.bag_type === 'FAK').length
     const emkCount = dateBased.filter((b) => b.bag_type === 'EMK').length
@@ -315,7 +322,7 @@ function BagLog({ onLogout }: PageProps) {
 
                     {/* Rows */}
                     <div className="divide-y divide-slate-100 animate-rows">
-                        {filtered.map((bag) => (
+                        {paginated.map((bag) => (
                             <button key={bag.id} type="button" onClick={() => openBag(bag)}
                                 className="w-full text-left px-4 py-3.5 transition-colors hover:bg-slate-50 active:bg-slate-100 md:grid md:grid-cols-[88px_1fr_110px_72px_100px_100px_110px_44px] md:items-center gap-2 group">
 
@@ -371,9 +378,26 @@ function BagLog({ onLogout }: PageProps) {
                         ))}
                     </div>
 
-                    {/* Footer count */}
-                    <div className="border-t border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-400 tabular-nums">
-                        Showing {filtered.length} of {bags.length} bags
+                    {/* Footer pagination */}
+                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2">
+                        <span className="text-xs text-slate-400 tabular-nums">
+                            {filtered.length === 0 ? '0 bags' : `${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, filtered.length)} of ${filtered.length} bags`}
+                        </span>
+                        {totalPages > 1 && (
+                            <div className="flex items-center gap-1">
+                                <button type="button" disabled={currentPage === 0}
+                                    onClick={() => setCurrentPage((p) => p - 1)}
+                                    className="h-7 px-2.5 rounded-md border border-slate-200 text-xs font-semibold text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                    ← Prev
+                                </button>
+                                <span className="px-2 text-xs text-slate-500 tabular-nums">{currentPage + 1} / {totalPages}</span>
+                                <button type="button" disabled={currentPage >= totalPages - 1}
+                                    onClick={() => setCurrentPage((p) => p + 1)}
+                                    className="h-7 px-2.5 rounded-md border border-slate-200 text-xs font-semibold text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                    Next →
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -408,6 +432,15 @@ function BagDetailModal({
     const [eqChecks, setEqChecks] = useState<EmkEquipmentCheck[]>([])
     const [drugsLoaded, setDrugsLoaded] = useState(false)
     const [logsLoaded, setLogsLoaded] = useState(false)
+    const [drugEditMsg, setDrugEditMsg] = useState('')
+    const [drugBusy, setDrugBusy] = useState<number | null>(null)
+    const [addDrugQuery, setAddDrugQuery] = useState('')
+    const [addDrugSuggestions, setAddDrugSuggestions] = useState<{ barcode: string; drug_name: string; current_stock: number; unit_per_scan: number }[]>([])
+    const [addDrugShowDrop, setAddDrugShowDrop] = useState(false)
+    const [addDrugQty, setAddDrugQty] = useState(1)
+    const [addDrugSelected, setAddDrugSelected] = useState<{ barcode: string; drug_name: string; current_stock: number } | null>(null)
+    const [addDrugBusy, setAddDrugBusy] = useState(false)
+    const addDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const [editForm, setEditForm] = useState({
         order_no: bag.order_no ?? '', serial_no: bag.serial_no,
         equipment_no: bag.equipment_no, seal_number: bag.seal_number ?? '',
@@ -547,6 +580,130 @@ function BagDetailModal({
         const { data } = await supabase.from('bag_usage_log').select('*').eq('dispatch_id', bag.id).order('created_at', { ascending: false })
         setLogs((data || []) as BagUsageLog[])
         setLogsLoaded(true)
+    }
+
+    async function handleDrugQtyChange(drug: BagDispatchDrug, delta: number) {
+        const newQty = drug.qty + delta
+        if (newQty < 1) return
+        setDrugBusy(drug.id)
+        setDrugEditMsg('')
+
+        // Adjust stock: delta > 0 = deduct more from stock; delta < 0 = return to stock
+        const { data: live } = await supabase
+            .from('drug_master').select('id, current_stock').eq('barcode', drug.barcode).maybeSingle()
+        if (live) {
+            const liveData = live as { id: number; current_stock: number }
+            const newStock = Number(liveData.current_stock) - delta
+            await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', liveData.id)
+            await supabase.from('stock_transaction').insert([{
+                barcode: drug.barcode,
+                qty: Math.abs(delta),
+                action: delta > 0 ? 'OUT' : 'IN',
+                created_by: getCreatedBy() + ` [bag-edit: ${bag.bag_type} S/N ${bag.serial_no}]`,
+                location_id: bag.location_id,
+            }])
+        }
+
+        await supabase.from('bag_dispatch_drug').update({ qty: newQty }).eq('id', drug.id)
+        setDrugs((prev) => prev.map((d) => d.id === drug.id ? { ...d, qty: newQty } : d))
+        setDrugBusy(null)
+        setDrugEditMsg(`✓ อัปเดต ${drug.drug_name} → ${newQty}`)
+        setTimeout(() => setDrugEditMsg(''), 2500)
+    }
+
+    async function handleDrugRemove(drug: BagDispatchDrug) {
+        setDrugBusy(drug.id)
+        setDrugEditMsg('')
+
+        const { data: live } = await supabase
+            .from('drug_master').select('id, current_stock').eq('barcode', drug.barcode).maybeSingle()
+        if (live) {
+            const liveData = live as { id: number; current_stock: number }
+            await supabase.from('drug_master').update({ current_stock: Number(liveData.current_stock) + drug.qty }).eq('id', liveData.id)
+            await supabase.from('stock_transaction').insert([{
+                barcode: drug.barcode,
+                qty: drug.qty,
+                action: 'IN',
+                created_by: getCreatedBy() + ` [bag-remove: ${bag.bag_type} S/N ${bag.serial_no}]`,
+                location_id: bag.location_id,
+            }])
+        }
+
+        await supabase.from('bag_dispatch_drug').delete().eq('id', drug.id)
+        setDrugs((prev) => prev.filter((d) => d.id !== drug.id))
+        setDrugBusy(null)
+        setDrugEditMsg(`✓ นำ ${drug.drug_name} ออกจากกระเป๋า (คืนสต็อก ${drug.qty})`)
+        setTimeout(() => setDrugEditMsg(''), 3000)
+    }
+
+    function handleAddDrugQueryChange(val: string) {
+        setAddDrugQuery(val)
+        setAddDrugShowDrop(false)
+        setAddDrugSelected(null)
+        if (addDebounceRef.current) clearTimeout(addDebounceRef.current)
+        if (val.length < 3) { setAddDrugSuggestions([]); return }
+        addDebounceRef.current = setTimeout(() => { void searchAddDrug(val) }, 300)
+    }
+
+    async function searchAddDrug(q: string) {
+        const { data } = await supabase
+            .from('drug_master')
+            .select('barcode, drug_name, current_stock, unit_per_scan')
+            .ilike('drug_name', `%${q}%`)
+            .order('drug_name')
+            .limit(10)
+        setAddDrugSuggestions((data || []) as { barcode: string; drug_name: string; current_stock: number; unit_per_scan: number }[])
+        setAddDrugShowDrop(true)
+    }
+
+    async function handleAddDrugConfirm() {
+        if (!addDrugSelected || addDrugQty < 1) return
+        setAddDrugBusy(true)
+        setDrugEditMsg('')
+
+        // Check stock
+        const { data: live } = await supabase
+            .from('drug_master').select('id, current_stock').eq('barcode', addDrugSelected.barcode).maybeSingle()
+        if (!live) { setDrugEditMsg('ไม่พบยาในระบบ'); setAddDrugBusy(false); return }
+        const liveData = live as { id: number; current_stock: number }
+        if (Number(liveData.current_stock) < addDrugQty) {
+            setDrugEditMsg(`สต็อกไม่พอ (มี ${liveData.current_stock})`)
+            setAddDrugBusy(false)
+            return
+        }
+
+        // Check if drug already in bag
+        const existing = drugs.find((d) => d.barcode === addDrugSelected.barcode)
+        if (existing) {
+            // Increase qty of existing row
+            await handleDrugQtyChange(existing, addDrugQty)
+        } else {
+            // Insert new row
+            const { data: inserted } = await supabase.from('bag_dispatch_drug').insert([{
+                dispatch_id: bag.id,
+                barcode: addDrugSelected.barcode,
+                drug_name: addDrugSelected.drug_name,
+                qty: addDrugQty,
+            }]).select('*').single()
+            if (inserted) setDrugs((prev) => [...prev, inserted as BagDispatchDrug])
+            // Deduct stock
+            await supabase.from('drug_master').update({ current_stock: Number(liveData.current_stock) - addDrugQty }).eq('id', liveData.id)
+            await supabase.from('stock_transaction').insert([{
+                barcode: addDrugSelected.barcode,
+                qty: addDrugQty,
+                action: 'OUT',
+                created_by: getCreatedBy() + ` [bag-add: ${bag.bag_type} S/N ${bag.serial_no}]`,
+                location_id: bag.location_id,
+            }])
+        }
+
+        setAddDrugQuery('')
+        setAddDrugSelected(null)
+        setAddDrugQty(1)
+        setAddDrugSuggestions([])
+        setAddDrugBusy(false)
+        setDrugEditMsg(`✓ เพิ่ม ${addDrugSelected.drug_name} x${addDrugQty}`)
+        setTimeout(() => setDrugEditMsg(''), 3000)
     }
 
     async function handleSaveEdit() {
@@ -748,26 +905,103 @@ function BagDetailModal({
                                         ? <p className="text-sm text-slate-400">No drugs in this bag</p>
                                         : (
                                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                <div className="grid grid-cols-[1fr_auto] border-b border-slate-100 bg-slate-50 px-4 py-2">
+                                                <div className={`grid border-b border-slate-100 bg-slate-50 px-4 py-2 ${canEdit ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}>
                                                     <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Drug name</div>
                                                     <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Qty</div>
+                                                    {canEdit && <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400"></div>}
                                                 </div>
                                                 <div className="divide-y divide-slate-100">
                                                     {drugs.map((d) => (
-                                                        <div key={d.id} className="grid grid-cols-[1fr_auto] items-center px-4 py-3">
+                                                        <div key={d.id} className={`grid items-center px-4 py-3 gap-2 ${canEdit ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}>
                                                             <div>
                                                                 <div className="font-medium text-slate-900 text-sm">{d.drug_name}</div>
                                                                 {d.barcode && <div className="text-xs text-slate-400 tabular-nums">{d.barcode}</div>}
                                                             </div>
-                                                            <div className="rounded-lg bg-teal-50 px-3 py-1 text-sm font-bold text-teal-700 tabular-nums ring-1 ring-teal-200">
-                                                                {d.qty}
-                                                            </div>
+                                                            {canEdit ? (
+                                                                <div className="flex items-center gap-1">
+                                                                    <button type="button" disabled={drugBusy === d.id || d.qty <= 1}
+                                                                        onClick={() => void handleDrugQtyChange(d, -1)}
+                                                                        className="flex size-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-colors">
+                                                                        <Minus className="size-3.5" />
+                                                                    </button>
+                                                                    <span className="w-8 text-center text-sm font-bold text-teal-700 tabular-nums">{d.qty}</span>
+                                                                    <button type="button" disabled={drugBusy === d.id}
+                                                                        onClick={() => void handleDrugQtyChange(d, 1)}
+                                                                        className="flex size-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-colors">
+                                                                        <Plus className="size-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="rounded-lg bg-teal-50 px-3 py-1 text-sm font-bold text-teal-700 tabular-nums ring-1 ring-teal-200">
+                                                                    {d.qty}
+                                                                </div>
+                                                            )}
+                                                            {canEdit && (
+                                                                <button type="button" disabled={drugBusy === d.id}
+                                                                    onClick={() => void handleDrugRemove(d)}
+                                                                    className="flex size-7 items-center justify-center rounded-md text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-30 transition-colors">
+                                                                    <Trash2 className="size-3.5" />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         )
                                     }
+
+                                    {/* Add drug to bag */}
+                                    {canEdit && (
+                                        <div className="rounded-xl border border-dashed border-teal-300 bg-teal-50/40 p-3.5 space-y-2.5">
+                                            <div className="text-xs font-semibold text-teal-700 flex items-center gap-1.5">
+                                                <PlusCircle className="size-3.5" /> เพิ่มยาเข้ากระเป๋า
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={addDrugQuery}
+                                                    onChange={(e) => handleAddDrugQueryChange(e.target.value)}
+                                                    onBlur={() => setTimeout(() => setAddDrugShowDrop(false), 150)}
+                                                    onFocus={() => { if (addDrugSuggestions.length > 0) setAddDrugShowDrop(true) }}
+                                                    placeholder="พิมพ์ชื่อยา 3 ตัวขึ้นไป…"
+                                                    className="h-8 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-500 transition"
+                                                />
+                                                {addDrugShowDrop && (
+                                                    <div className="absolute top-full left-0 z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                                                        {addDrugSuggestions.length === 0
+                                                            ? <div className="px-4 py-2.5 text-sm text-slate-400">ไม่พบยา</div>
+                                                            : addDrugSuggestions.map((drug) => (
+                                                                <button key={drug.barcode} type="button"
+                                                                    onMouseDown={() => { setAddDrugSelected(drug); setAddDrugQuery(drug.drug_name); setAddDrugShowDrop(false) }}
+                                                                    className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm hover:bg-teal-50 border-b border-slate-50 last:border-0">
+                                                                    <span className="font-medium text-slate-900">{drug.drug_name}</span>
+                                                                    <span className="text-xs text-teal-600 shrink-0">สต็อก {drug.current_stock}</span>
+                                                                </button>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {addDrugSelected && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-slate-500">จำนวน</span>
+                                                    <input type="number" min={1} max={addDrugSelected.current_stock} value={addDrugQty}
+                                                        onChange={(e) => setAddDrugQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                        className="h-8 w-20 rounded-lg border border-slate-300 px-2 text-center text-sm" />
+                                                    <button type="button" disabled={addDrugBusy}
+                                                        onClick={() => void handleAddDrugConfirm()}
+                                                        className="flex h-8 items-center gap-1.5 rounded-lg bg-teal-700 px-3 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-50 transition-colors">
+                                                        <Plus className="size-3.5" /> เพิ่ม
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {drugEditMsg && (
+                                                <div className={`rounded-lg px-3 py-1.5 text-xs font-medium ${drugEditMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                    {drugEditMsg}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )
                     )}

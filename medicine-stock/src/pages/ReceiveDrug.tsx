@@ -1,4 +1,4 @@
-﻿import { PackagePlus, Printer, Trash2, Wand2 } from 'lucide-react'
+﻿import { PackagePlus, Printer, Search, Trash2, Wand2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import Barcode from 'react-barcode'
 import BarcodeInput from '../components/BarcodeInput'
@@ -30,6 +30,13 @@ function ReceiveDrug({ onLogout }: PageProps) {
     const [rsConfirmMsg, setRsConfirmMsg] = useState('')
     const [rsConfirming, setRsConfirming] = useState(false)
     const rsInputRef = useRef<HTMLInputElement>(null)
+
+    // Drug name search
+    const [nameQuery, setNameQuery] = useState('')
+    const [nameSuggestions, setNameSuggestions] = useState<Drug[]>([])
+    const [nameSearching, setNameSearching] = useState(false)
+    const [showDropdown, setShowDropdown] = useState(false)
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const [newBarcode, setNewBarcode] = useState('')
     const [newName, setNewName] = useState('')
@@ -69,6 +76,42 @@ function ReceiveDrug({ onLogout }: PageProps) {
         setRsScanMsg(`✓ ${drug.drug_name} เพิ่มลง cart`)
         setTimeout(() => setRsScanMsg(''), 2000)
         rsInputRef.current?.focus()
+    }
+
+    function handleNameQueryChange(val: string) {
+        setNameQuery(val)
+        setShowDropdown(false)
+        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+        if (val.length < 3) { setNameSuggestions([]); return }
+        searchDebounceRef.current = setTimeout(() => { void searchByName(val) }, 300)
+    }
+
+    async function searchByName(q: string) {
+        if (!location) return
+        setNameSearching(true)
+        const { data } = await supabase
+            .from('drug_master')
+            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, unit_per_scan_in, image_url')
+            .eq('location_id', location.id)
+            .ilike('drug_name', `%${q}%`)
+            .order('drug_name')
+            .limit(10)
+        setNameSuggestions((data || []) as Drug[])
+        setNameSearching(false)
+        setShowDropdown(true)
+    }
+
+    function selectDrugFromSearch(drug: Drug) {
+        setShowDropdown(false)
+        setNameQuery('')
+        setNameSuggestions([])
+        setRsCart((prev) => {
+            const existing = prev.find((c) => c.drug.barcode === drug.barcode)
+            if (existing) return prev.map((c) => c.drug.barcode === drug.barcode ? { ...c, qty: c.qty + 1 } : c)
+            return [...prev, { drug, qty: 1 }]
+        })
+        setRsScanMsg(`✓ ${drug.drug_name} เพิ่มลง cart`)
+        setTimeout(() => setRsScanMsg(''), 2000)
     }
 
     function updateRsQty(barcode: string, val: string) {
@@ -162,10 +205,60 @@ function ReceiveDrug({ onLogout }: PageProps) {
             {tab === 'restock' && (
                 <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
                     <div className="space-y-4">
-                        <Card className="p-5">
-                            <BarcodeInput ref={rsInputRef} label="Scan Barcode" placeholder="สแกนหรือพิมพ์ barcode แล้วกด Enter" value={rsBarcode} onChange={setRsBarcode} onScan={(code) => void handleRsScan(code)} />
+                        <Card className="p-5 space-y-4">
+                            {/* Drug name search */}
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-slate-700">ค้นหายาด้วยชื่อ</label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        value={nameQuery}
+                                        onChange={(e) => handleNameQueryChange(e.target.value)}
+                                        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                                        onFocus={() => { if (nameSuggestions.length > 0) setShowDropdown(true) }}
+                                        placeholder="พิมพ์ชื่อยา 3 ตัวขึ้นไป…"
+                                        className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-8 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                                    />
+                                    {nameQuery && (
+                                        <button type="button" onClick={() => { setNameQuery(''); setNameSuggestions([]); setShowDropdown(false) }}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                            <X className="size-4" />
+                                        </button>
+                                    )}
+                                    {showDropdown && (
+                                        <div className="absolute top-full left-0 z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                                            {nameSearching ? (
+                                                <div className="px-4 py-3 text-sm text-slate-400">กำลังค้นหา…</div>
+                                            ) : nameSuggestions.length === 0 ? (
+                                                <div className="px-4 py-3 text-sm text-slate-400">ไม่พบยาที่ตรงกัน</div>
+                                            ) : (
+                                                nameSuggestions.map((drug) => (
+                                                    <button key={drug.barcode} type="button"
+                                                        onMouseDown={() => selectDrugFromSearch(drug)}
+                                                        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm hover:bg-teal-50 transition-colors border-b border-slate-50 last:border-0">
+                                                        <div>
+                                                            <div className="font-medium text-slate-900">{drug.drug_name}</div>
+                                                            <div className="text-xs text-slate-400 tabular-nums">{drug.barcode}</div>
+                                                        </div>
+                                                        <div className="shrink-0 text-right">
+                                                            <div className="text-xs font-semibold text-teal-700 tabular-nums">คงเหลือ {drug.current_stock}</div>
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                {nameQuery.length > 0 && nameQuery.length < 3 && (
+                                    <p className="mt-1 text-xs text-slate-400">พิมพ์อีก {3 - nameQuery.length} ตัวเพื่อค้นหา</p>
+                                )}
+                            </div>
+
+                            {/* Barcode scan (still available) */}
+                            <BarcodeInput ref={rsInputRef} label="หรือสแกน Barcode" placeholder="สแกนหรือพิมพ์ barcode แล้วกด Enter" value={rsBarcode} onChange={setRsBarcode} onScan={(code) => void handleRsScan(code)} />
                             {rsScanMsg && (
-                                <div className={`mt-3 rounded-md px-3 py-2 text-sm ${rsScanMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                <div className={`rounded-md px-3 py-2 text-sm ${rsScanMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                     {rsScanMsg}
                                 </div>
                             )}
