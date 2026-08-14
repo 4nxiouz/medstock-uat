@@ -594,6 +594,12 @@ function BagDetailModal({
             .from('drug_master').select('id, current_stock').eq('barcode', drug.barcode).maybeSingle()
         if (live) {
             const liveData = live as { id: number; current_stock: number }
+            if (delta > 0 && Number(liveData.current_stock) < delta) {
+                setDrugEditMsg(`สต็อกไม่พอ — มีแค่ ${liveData.current_stock} หน่วย`)
+                setTimeout(() => setDrugEditMsg(''), 3000)
+                setDrugBusy(null)
+                return
+            }
             const newStock = Number(liveData.current_stock) - delta
             await supabase.from('drug_master').update({ current_stock: newStock }).eq('id', liveData.id)
             await supabase.from('stock_transaction').insert([{
