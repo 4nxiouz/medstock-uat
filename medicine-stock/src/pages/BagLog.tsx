@@ -860,17 +860,10 @@ function BagDetailModal({
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => setConfirmDelete(true)} disabled={deleting}
-                            title="Delete Bag"
-                            className="flex size-8 items-center justify-center rounded-lg bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-50">
-                            <Trash2 className="size-4" />
-                        </button>
-                        <button type="button" onClick={() => onClose()}
-                            className="mt-0.5 shrink-0 flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
-                            <X className="size-4" />
-                        </button>
-                    </div>
+                    <button type="button" onClick={() => onClose()}
+                        className="mt-0.5 shrink-0 flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
+                        <X className="size-4" />
+                    </button>
                 </div>
 
                 {/* ── Tabs ── */}
@@ -1222,10 +1215,18 @@ function BagDetailModal({
 
                 {/* ── Footer ── */}
                 <div className="flex items-center justify-between border-t border-slate-100 bg-white px-6 py-3 shrink-0">
-                    <button type="button" onClick={() => onClose()}
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-slate-700 transition-colors">
-                        <ChevronLeft className="size-4" /> Close
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button type="button" onClick={() => onClose()}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-slate-700 transition-colors">
+                            <ChevronLeft className="size-4" /> Close
+                        </button>
+                        <div className="h-4 w-px bg-slate-200" />
+                        <button type="button" onClick={() => setConfirmDelete(true)} disabled={deleting}
+                            title="Delete Bag"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-red-400 hover:text-red-600 transition-colors disabled:opacity-40">
+                            <Trash2 className="size-3.5" /> Delete
+                        </button>
+                    </div>
                     <button type="button" onClick={() => void handlePrint()}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                         <Printer className="size-3.5" /> Print A4
