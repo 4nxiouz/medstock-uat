@@ -92,23 +92,33 @@ function TransactionHistory({ onLogout }: PageProps) {
 
     async function load() {
         setLoading(true)
-        const txPromise = location
-            ? supabase.from('stock_transaction')
-                .select('id, barcode, qty, action, created_by, created_at, location_id')
-                .eq('location_id', location.id)
-                .order('id', { ascending: false })
-                .limit(5000)
-            : supabase.from('stock_transaction')
-                .select('id, barcode, qty, action, created_by, created_at, location_id')
-                .order('id', { ascending: false })
-                .limit(5000)
 
-        const drugPromise = location
-            ? supabase.from('drug_master').select('barcode, drug_name').eq('location_id', location.id)
-            : Promise.resolve({ data: [] as { barcode: string; drug_name: string }[], error: null })
+        // Fetch all pages (Supabase caps at 1000/request)
+        const CHUNK = 1000
+        let all: StockTransaction[] = []
+        let from = 0
+        while (true) {
+            const q = location
+                ? supabase.from('stock_transaction')
+                    .select('id, barcode, qty, action, created_by, created_at, location_id')
+                    .eq('location_id', location.id)
+                    .order('id', { ascending: false })
+                    .range(from, from + CHUNK - 1)
+                : supabase.from('stock_transaction')
+                    .select('id, barcode, qty, action, created_by, created_at, location_id')
+                    .order('id', { ascending: false })
+                    .range(from, from + CHUNK - 1)
+            const { data } = await q
+            const rows = (data || []) as StockTransaction[]
+            all = all.concat(rows)
+            if (rows.length < CHUNK) break
+            from += CHUNK
+        }
+        setTransactions(all)
 
-        const [txRes, drugRes] = await Promise.all([txPromise, drugPromise])
-        setTransactions((txRes.data || []) as StockTransaction[])
+        const drugRes = location
+            ? await supabase.from('drug_master').select('barcode, drug_name').eq('location_id', location.id)
+            : { data: [] as { barcode: string; drug_name: string }[] }
 
         const map: Record<string, string> = {}
         for (const d of (drugRes.data || []) as { barcode: string; drug_name: string }[])
