@@ -227,59 +227,68 @@ function Inventory({ onLogout }: PageProps) {
     function DrugCard({ drug }: { drug: Drug }) {
         const isLow = Number(drug.min_stock) > 0 && Number(drug.current_stock) <= Number(drug.min_stock)
         return (
-            <article className={`overflow-hidden rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
-                {/* Icon strip — smaller */}
-                <div className="relative h-14 bg-slate-50">
-                    {drug.image_url
-                        ? <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
-                        : <DrugIcon name={drug.drug_name} category={drug.category} iconType={drug.icon_type} />
-                    }
-                    {admin && (
-                        <button type="button" onClick={() => setConfirmDeleteDrug(drug)}
-                            title="Delete"
-                            className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-md bg-white/80 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors shadow-sm">
-                            <Trash2 className="size-3.5" />
-                        </button>
-                    )}
-                </div>
-                <div className="space-y-2 p-3">
-                    <div className="flex items-start justify-between gap-1">
-                        <div className="min-w-0">
-                            <h3 className="truncate text-sm font-semibold text-slate-950">{drug.drug_name}</h3>
-                            <p className="text-[11px] text-slate-400">{drug.barcode}</p>
-                            {drug.category && (
-                                <span className="mt-1 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
-                                    {drug.category}
-                                </span>
-                            )}
-                        </div>
-                        {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700">Low</span>}
+            <article className={`rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-3 p-3">
+                    {/* Small square icon */}
+                    <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-slate-50">
+                        {drug.image_url
+                            ? <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
+                            : <DrugIcon name={drug.drug_name} category={drug.category} iconType={drug.icon_type} />
+                        }
                     </div>
+                    {/* Name + meta */}
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-1">
+                            <h3 className="text-sm font-semibold leading-snug text-slate-900">{drug.drug_name}</h3>
+                            {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-600">Low</span>}
+                        </div>
+                        <p className="text-[11px] text-slate-400">{drug.barcode}</p>
+                        {drug.category && (
+                            <span className="mt-0.5 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
+                                {drug.category}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="space-y-2 border-t border-slate-100 px-3 pb-3 pt-2">
+                    {/* Stats */}
                     <div className="grid grid-cols-3 gap-1.5 text-center">
-                        {([['Stock', drug.current_stock, isLow ? 'text-red-700' : 'text-slate-950'], ['Min', drug.min_stock, 'text-slate-950'], ['Unit', drug.unit_per_scan, 'text-slate-950']] as [string, number, string][]).map(([label, val, cls]) => (
-                            <div key={label} className="rounded-md bg-slate-50 py-1.5">
-                                <div className="text-[9px] uppercase text-slate-400">{label}</div>
+                        {([['STOCK', drug.current_stock, isLow ? 'text-red-600' : 'text-slate-900'], ['MIN', drug.min_stock, 'text-slate-900'], ['UNIT', drug.unit_per_scan, 'text-slate-900']] as [string, number, string][]).map(([label, val, cls]) => (
+                            <div key={label} className="rounded-lg bg-slate-50 py-1.5">
+                                <div className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">{label}</div>
                                 <div className={`text-base font-bold ${cls}`}>{val}</div>
                             </div>
                         ))}
                     </div>
+                    {/* Action buttons */}
                     <div className={`grid gap-1 ${admin ? 'grid-cols-3' : supervisor ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {admin && (
-                            <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                            <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">
                                 <Pencil className="size-3" />Edit
                             </button>
                         )}
                         {!supervisor && (
                             <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark(''); setAdjustError('') }}
-                                className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50">
+                                className="inline-flex items-center justify-center gap-1 rounded-lg border border-amber-200 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50">
                                 <SlidersHorizontal className="size-3" />Adjust
                             </button>
                         )}
                         <button type="button" onClick={() => handlePrint(drug)}
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                            className="inline-flex items-center justify-center gap-1 rounded-lg border border-teal-200 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
                             <Printer className="size-3" />Print
                         </button>
                     </div>
+                    {/* Delete — icon only, admin */}
+                    {admin && (
+                        <div className="flex justify-end pt-0.5">
+                            <button type="button" onClick={() => setConfirmDeleteDrug(drug)}
+                                title="Delete"
+                                className="flex items-center justify-center rounded-md p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors">
+                                <Trash2 className="size-3.5" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </article>
         )
