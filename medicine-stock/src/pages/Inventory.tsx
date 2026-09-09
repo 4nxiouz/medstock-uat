@@ -373,7 +373,7 @@ function Inventory({ onLogout }: PageProps) {
             {/* Edit Modal — portal to escape any parent stacking context */}
             {editingDrug && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl">
+                    <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
                                 <h3 className="text-lg font-semibold text-slate-950">Edit Item</h3>
@@ -421,7 +421,7 @@ function Inventory({ onLogout }: PageProps) {
             {/* Adjust Stock Modal — portal */}
             {adjustDrug && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
+                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-slate-900">Stock Adjustment</h3>
@@ -466,7 +466,7 @@ function Inventory({ onLogout }: PageProps) {
             {/* Delete confirmation */}
             {confirmDeleteDrug && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-xs rounded-xl bg-white p-5 shadow-2xl">
+                    <div className="w-full max-w-xs rounded-xl bg-white p-5 shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto">
                         <div className="mb-1 flex items-center gap-2 text-red-600">
                             <Trash2 className="size-4" />
                             <span className="font-bold text-sm">ลบรายการยา</span>

@@ -203,7 +203,7 @@ function LocationManage({ onLogout }: PageProps) {
             {/* Edit location modal */}
             {editingLoc && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
+                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="font-semibold text-slate-900">Edit Location</h3>
                             <button type="button" onClick={() => setEditingLoc(null)} className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-500"><X className="size-4" /></button>
@@ -223,7 +223,7 @@ function LocationManage({ onLogout }: PageProps) {
             {/* Assign locations to user modal */}
             {assignUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
+                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-slate-900">Assign Locations</h3>

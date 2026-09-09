@@ -117,7 +117,7 @@ function Sidebar({ onLogout }: SidebarProps) {
             {/* Change Password Modal */}
             {changePwOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
+                    <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="font-semibold text-slate-900">Change Password</h3>
                             <button type="button" onClick={() => setChangePwOpen(false)}
