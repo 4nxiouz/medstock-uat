@@ -243,11 +243,6 @@ function Inventory({ onLogout }: PageProps) {
                             {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-600">Low</span>}
                         </div>
                         <p className="text-[11px] text-slate-400">{drug.barcode}</p>
-                        {drug.category && (
-                            <span className="mt-0.5 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
-                                {drug.category}
-                            </span>
-                        )}
                     </div>
                 </div>
 
@@ -284,7 +279,7 @@ function Inventory({ onLogout }: PageProps) {
                         <div className="flex justify-end pt-0.5">
                             <button type="button" onClick={() => setConfirmDeleteDrug(drug)}
                                 title="Delete"
-                                className="flex items-center justify-center rounded-md p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors">
+                                className="flex items-center justify-center rounded-md p-1 text-red-300 hover:bg-red-50 hover:text-red-600 transition-colors">
                                 <Trash2 className="size-3.5" />
                             </button>
                         </div>
@@ -360,7 +355,7 @@ function Inventory({ onLogout }: PageProps) {
                                         <span className="text-xs text-slate-400">{items.length} รายการ</span>
                                         <div className="flex-1 border-t border-slate-200" />
                                     </div>
-                                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                                         {items.map((drug) => <DrugCard key={drug.id} drug={drug} />)}
                                     </div>
                                 </div>
@@ -368,7 +363,7 @@ function Inventory({ onLogout }: PageProps) {
                         </div>
                     ) : (
                         /* Filtered single-category view */
-                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                             {filteredDrugs.map((drug) => <DrugCard key={drug.id} drug={drug} />)}
                         </div>
                     )}
