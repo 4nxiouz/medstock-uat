@@ -1,7 +1,6 @@
 import { Lock, PillBottle, ShieldCheck, User, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { setCurrentUser } from '../lib/auth'
-import { hashPassword, isHashed } from '../lib/crypto'
 import { supabase } from '../lib/supabase'
 import type { UserProfile } from '../types'
 
@@ -22,28 +21,34 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
         setMessage('')
         if (!cleanUsername || !password) { setMessage('Please enter username and password.'); return }
         setIsSubmitting(true)
-        const { data, error } = await supabase.from('user_profile').select('id, username, password_hash, fullname, role, s_active, allowed_pages')
-        setIsSubmitting(false)
-        if (error) { setMessage('Cannot connect to user database.'); return }
-        const users = (data || []) as UserProfile[]
-        const user = users.find((item) => item.username === cleanUsername)
-        if (!user) { setMessage('User not found.'); return }
-        if (!user.s_active) { setMessage('This account is disabled.'); return }
 
-        const hashed = await hashPassword(password)
-        const storedHash = user.password_hash
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-migrate`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+                    body: JSON.stringify({ username: cleanUsername, password }),
+                }
+            )
+            const json = await res.json()
+            if (!res.ok) {
+                setIsSubmitting(false)
+                const msg: Record<number, string> = { 401: json.error ?? 'Invalid credentials.', 400: 'Please enter username and password.' }
+                setMessage(msg[res.status] ?? 'Login failed. Please try again.')
+                return
+            }
 
-        if (isHashed(storedHash)) {
-            // Normal hashed comparison
-            if (storedHash !== hashed) { setMessage('Password is incorrect.'); return }
-        } else {
-            // Plaintext (legacy) — compare then silently migrate to hash
-            if (storedHash !== password) { setMessage('Password is incorrect.'); return }
-            await supabase.from('user_profile').update({ password_hash: hashed }).eq('id', user.id!)
+            // Set Supabase session so RLS works
+            await supabase.auth.setSession({ access_token: json.session.access_token, refresh_token: json.session.refresh_token })
+
+            setCurrentUser(json.profile as UserProfile)
+            setIsSubmitting(false)
+            onLoginSuccess(rememberSession)
+        } catch {
+            setIsSubmitting(false)
+            setMessage('Cannot connect to server. Please try again.')
         }
-
-        setCurrentUser(user)
-        onLoginSuccess(rememberSession)
     }
 
     return (
