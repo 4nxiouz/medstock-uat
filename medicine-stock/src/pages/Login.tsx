@@ -34,7 +34,8 @@ function Login({ onLoginSuccess, errorMessage }: LoginProps) {
             const json = await res.json()
             if (!res.ok) {
                 setIsSubmitting(false)
-                setMessage(`[${res.status}] ${json.error ?? 'Login failed'}`)
+                const msg: Record<number, string> = { 401: json.error ?? 'Invalid credentials.', 400: 'Please enter username and password.' }
+                setMessage(msg[res.status] ?? 'Login failed. Please try again.')
                 return
             }
 
