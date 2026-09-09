@@ -138,10 +138,9 @@ function Inventory({ onLogout }: PageProps) {
         setMessage('Updated.')
     }
 
-    async function handleDelete(id: number) {
-        const drug = drugs.find((d) => d.id === id)
-        if (!drug) return
-        if (!window.confirm(`Delete "${drug.drug_name}"? This cannot be undone.`)) return
+    const [confirmDeleteDrug, setConfirmDeleteDrug] = useState<Drug | null>(null)
+
+    async function handleDelete(drug: Drug) {
         setMessage('')
         if (drug.current_stock > 0) {
             await supabase.from('stock_transaction').insert([{
@@ -149,9 +148,10 @@ function Inventory({ onLogout }: PageProps) {
                 created_by: getCreatedBy() + ' [deleted]', location_id: location?.id,
             }])
         }
-        const { error } = await supabase.from('drug_master').delete().eq('id', id)
+        const { error } = await supabase.from('drug_master').delete().eq('id', drug.id)
         if (error) { setMessage('Delete failed.'); return }
-        setDrugs((cur) => cur.filter((d) => d.id !== id))
+        setDrugs((cur) => cur.filter((d) => d.id !== drug.id))
+        setConfirmDeleteDrug(null)
         setMessage('Deleted.')
     }
 
@@ -228,55 +228,58 @@ function Inventory({ onLogout }: PageProps) {
         const isLow = Number(drug.min_stock) > 0 && Number(drug.current_stock) <= Number(drug.min_stock)
         return (
             <article className={`overflow-hidden rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
-                <div className="h-28 bg-slate-50">
+                {/* Icon strip — smaller */}
+                <div className="relative h-14 bg-slate-50">
                     {drug.image_url
                         ? <img src={drug.image_url} alt={drug.drug_name} className="size-full object-cover" />
                         : <DrugIcon name={drug.drug_name} category={drug.category} iconType={drug.icon_type} />
                     }
+                    {admin && (
+                        <button type="button" onClick={() => setConfirmDeleteDrug(drug)}
+                            title="Delete"
+                            className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-md bg-white/80 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors shadow-sm">
+                            <Trash2 className="size-3.5" />
+                        </button>
+                    )}
                 </div>
-                <div className="space-y-3 p-4">
-                    <div className="flex items-start justify-between gap-2">
-                        <div>
-                            <h3 className="font-semibold text-slate-950">{drug.drug_name}</h3>
-                            <p className="mt-1 break-all text-xs text-slate-500">{drug.barcode}</p>
+                <div className="space-y-2 p-3">
+                    <div className="flex items-start justify-between gap-1">
+                        <div className="min-w-0">
+                            <h3 className="truncate text-sm font-semibold text-slate-950">{drug.drug_name}</h3>
+                            <p className="text-[11px] text-slate-400">{drug.barcode}</p>
                             {drug.category && (
-                                <span className="mt-1.5 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
+                                <span className="mt-1 inline-block rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
                                     {drug.category}
                                 </span>
                             )}
                         </div>
-                        {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase text-red-700">Low</span>}
+                        {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700">Low</span>}
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-3 gap-1.5 text-center">
                         {([['Stock', drug.current_stock, isLow ? 'text-red-700' : 'text-slate-950'], ['Min', drug.min_stock, 'text-slate-950'], ['Unit', drug.unit_per_scan, 'text-slate-950']] as [string, number, string][]).map(([label, val, cls]) => (
-                            <div key={label} className="rounded-md bg-slate-50 p-2">
-                                <div className="text-[10px] uppercase text-slate-500">{label}</div>
-                                <div className={`text-lg font-semibold ${cls}`}>{val}</div>
+                            <div key={label} className="rounded-md bg-slate-50 py-1.5">
+                                <div className="text-[9px] uppercase text-slate-400">{label}</div>
+                                <div className={`text-base font-bold ${cls}`}>{val}</div>
                             </div>
                         ))}
                     </div>
-                    <div className={`grid gap-1.5 ${admin ? 'grid-cols-3' : supervisor ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <div className={`grid gap-1 ${admin ? 'grid-cols-3' : supervisor ? 'grid-cols-1' : 'grid-cols-2'}`}>
                         {admin && (
-                            <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                            <button type="button" onClick={() => openEdit(drug)} className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                 <Pencil className="size-3" />Edit
                             </button>
                         )}
                         {!supervisor && (
                             <button type="button" onClick={() => { setAdjustDrug(drug); setAdjustCount(String(drug.current_stock)); setAdjustRemark(''); setAdjustError('') }}
-                                className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50">
+                                className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-200 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50">
                                 <SlidersHorizontal className="size-3" />Adjust
                             </button>
                         )}
                         <button type="button" onClick={() => handlePrint(drug)}
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-teal-200 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
                             <Printer className="size-3" />Print
                         </button>
                     </div>
-                    {admin && (
-                        <button type="button" onClick={() => void handleDelete(drug.id)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-200 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
-                            <Trash2 className="size-3" />Delete
-                        </button>
-                    )}
                 </div>
             </article>
         )
@@ -456,6 +459,33 @@ function Inventory({ onLogout }: PageProps) {
                 </div>,
                 document.body
             )}
+            {/* Delete confirmation */}
+            {confirmDeleteDrug && createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-xs rounded-xl bg-white p-5 shadow-2xl">
+                        <div className="mb-1 flex items-center gap-2 text-red-600">
+                            <Trash2 className="size-4" />
+                            <span className="font-bold text-sm">ลบรายการยา</span>
+                        </div>
+                        <p className="mb-4 text-sm text-slate-600">
+                            ยืนยันลบ <span className="font-semibold">{confirmDeleteDrug.drug_name}</span>?<br />
+                            <span className="text-xs text-slate-400">การกระทำนี้ไม่สามารถเรียกคืนได้</span>
+                        </p>
+                        <div className="flex gap-2">
+                            <button type="button" onClick={() => setConfirmDeleteDrug(null)}
+                                className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                                Cancel
+                            </button>
+                            <button type="button" onClick={() => void handleDelete(confirmDeleteDrug)}
+                                className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-bold text-white hover:bg-red-700">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {/* Adjust Log Modal */}
             {showAdjustLog && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
