@@ -227,8 +227,8 @@ function Inventory({ onLogout }: PageProps) {
     function DrugCard({ drug }: { drug: Drug }) {
         const isLow = Number(drug.min_stock) > 0 && Number(drug.current_stock) <= Number(drug.min_stock)
         return (
-            <article className={`rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
-                <div className="flex items-center gap-3 p-3">
+            <article className={`flex flex-col rounded-xl border bg-white shadow-sm ${isLow ? 'border-red-200' : 'border-slate-200'}`}>
+                <div className="flex min-h-[4.5rem] items-center gap-3 p-3">
                     {/* Small square icon */}
                     <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-slate-50">
                         {drug.image_url
@@ -239,7 +239,7 @@ function Inventory({ onLogout }: PageProps) {
                     {/* Name + meta */}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-1">
-                            <h3 className="text-sm font-semibold leading-snug text-slate-900">{drug.drug_name}</h3>
+                            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">{drug.drug_name}</h3>
                             {isLow && <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-600">Low</span>}
                         </div>
                         <p className="text-[11px] text-slate-400">{drug.barcode}</p>
