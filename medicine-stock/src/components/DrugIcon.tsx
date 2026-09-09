@@ -285,11 +285,8 @@ export const DRUG_ICON_OPTIONS: DrugIconOption[] = categories.map((c) => ({
 export default function DrugIcon({ name, category, iconType, className }: Props) {
     const cat = detectCategory(name, category, iconType)
     return (
-        <div className={`flex size-full flex-col items-center justify-center bg-gradient-to-br ${cat.bg} ${className ?? ''}`}>
+        <div className={`flex size-full items-center justify-center bg-gradient-to-br ${cat.bg} ${className ?? ''}`}>
             {cat.svg()}
-            <span className="mt-1 text-[10px] font-medium" style={{ color: cat.iconBg }}>
-                {cat.label}
-            </span>
         </div>
     )
 }
