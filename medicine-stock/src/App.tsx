@@ -35,7 +35,7 @@ function AdminOnly({ element }: { element: ReactElement }) {
     return isAdmin() ? element : <Navigate to="/" replace />
 }
 
-type AppStatus = 'login' | 'ready'
+type AppStatus = 'checking' | 'login' | 'ready'
 
 function AppRoutes({ onLogout }: { onLogout: () => void }) {
     return (
@@ -57,70 +57,65 @@ function AppInner() {
     const navigate = useNavigate()
     const { setLocation, setAvailableLocations, clearLocation } = useLocation()
 
-    const [status, setStatus] = useState<AppStatus>(() => {
-        // Check session storage (tab-scoped, no expiry needed)
-        const sessionLogin = sessionStorage.getItem('isLogin') === 'true'
-        // Check localStorage with 12-hour expiry
-        let localLogin = false
-        const expiry = localStorage.getItem('isLoginExpiry')
-        if (localStorage.getItem('isLogin') === 'true' && expiry) {
-            if (Date.now() < parseInt(expiry)) {
-                localLogin = true
-            } else {
-                // Expired — clear it
-                localStorage.removeItem('isLogin')
-                localStorage.removeItem('isLoginExpiry')
-            }
-        }
-        if (!sessionLogin && !localLogin) return 'login'
-        return 'ready'
-    })
-
+    const [status, setStatus] = useState<AppStatus>('checking')
     const [locationError, setLocationError] = useState('')
 
-    // On mount: verify Supabase session is still valid (RLS needs it)
+    // On mount: check if Supabase session is still valid
     useEffect(() => {
-        if (status !== 'ready') return
         void supabase.auth.getSession().then(({ data }) => {
             if (!data.session) {
-                // No valid session — force re-login
-                localStorage.removeItem('isLogin')
-                localStorage.removeItem('isLoginExpiry')
-                sessionStorage.removeItem('isLogin')
+                // No active Supabase session — require re-login
                 clearCurrentUser()
                 clearLocation()
+                localStorage.removeItem('rememberMe')
+                sessionStorage.removeItem('sessionActive')
                 setStatus('login')
+                return
             }
+
+            // Session exists — check remember me flag
+            const remembered = localStorage.getItem('rememberMe') === 'true'
+            const sessionActive = sessionStorage.getItem('sessionActive') === 'true'
+
+            if (!remembered && !sessionActive) {
+                // New browser opened without "remember me" — sign out
+                void supabase.auth.signOut().then(() => {
+                    clearCurrentUser()
+                    clearLocation()
+                    setStatus('login')
+                })
+                return
+            }
+
+            const user = getCurrentUser()
+            if (!user?.id) {
+                setStatus('login')
+                return
+            }
+
+            // Valid session — load locations and show app
+            void loadLocations(user.id, user.role).then((locs) => {
+                setAvailableLocations(locs)
+                if (locs.length > 0) setLocation(locs[0])
+                setStatus('ready')
+            })
         })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // Listen for token expiry — force re-login if session cannot be refreshed
+    // Listen for token expiry — auto-logout if session cannot be refreshed
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'SIGNED_OUT') {
-                localStorage.removeItem('isLogin')
-                localStorage.removeItem('isLoginExpiry')
-                sessionStorage.removeItem('isLogin')
                 clearCurrentUser()
                 clearLocation()
+                localStorage.removeItem('rememberMe')
+                sessionStorage.removeItem('sessionActive')
                 setStatus('login')
                 navigate('/')
             }
         })
         return () => subscription.unsubscribe()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    // On mount when already logged in: auto-pick the first available location
-    useEffect(() => {
-        if (status !== 'ready') return
-        const user = getCurrentUser()
-        if (!user?.id) return
-        void loadLocations(user.id, user.role).then((locs) => {
-            setAvailableLocations(locs)
-            if (locs.length > 0) setLocation(locs[0])
-        })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -145,13 +140,14 @@ function AppInner() {
     }
 
     async function handleLoginSuccess(rememberSession: boolean) {
+        // Store remember preference
         if (rememberSession) {
-            const expiry = Date.now() + 12 * 60 * 60 * 1000 // 12 hours
-            localStorage.setItem('isLogin', 'true')
-            localStorage.setItem('isLoginExpiry', String(expiry))
+            localStorage.setItem('rememberMe', 'true')
         } else {
-            sessionStorage.setItem('isLogin', 'true')
+            localStorage.removeItem('rememberMe')
         }
+        // Always mark current browser session as active
+        sessionStorage.setItem('sessionActive', 'true')
 
         const user = getCurrentUser()
         if (!user?.id) return
@@ -161,10 +157,10 @@ function AppInner() {
 
         if (locs.length === 0 && user.role !== 'admin' && user.role !== 'supervisor') {
             setLocationError('No location assigned to your account. Contact an administrator.')
-            localStorage.removeItem('isLogin')
-            localStorage.removeItem('isLoginExpiry')
-            sessionStorage.removeItem('isLogin')
+            void supabase.auth.signOut()
             clearCurrentUser()
+            localStorage.removeItem('rememberMe')
+            sessionStorage.removeItem('sessionActive')
             return
         }
 
@@ -174,14 +170,16 @@ function AppInner() {
     }
 
     function handleLogout() {
-        localStorage.removeItem('isLogin')
-        localStorage.removeItem('isLoginExpiry')
-        sessionStorage.removeItem('isLogin')
+        void supabase.auth.signOut()
         clearCurrentUser()
         clearLocation()
+        localStorage.removeItem('rememberMe')
+        sessionStorage.removeItem('sessionActive')
         setStatus('login')
         navigate('/')
     }
+
+    if (status === 'checking') return null
 
     if (status === 'login') {
         return <Login onLoginSuccess={handleLoginSuccess} errorMessage={locationError} />
