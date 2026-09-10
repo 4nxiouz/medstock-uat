@@ -78,6 +78,40 @@ function AppInner() {
 
     const [locationError, setLocationError] = useState('')
 
+    // On mount: verify Supabase session is still valid (RLS needs it)
+    useEffect(() => {
+        if (status !== 'ready') return
+        void supabase.auth.getSession().then(({ data }) => {
+            if (!data.session) {
+                // No valid session — force re-login
+                localStorage.removeItem('isLogin')
+                localStorage.removeItem('isLoginExpiry')
+                sessionStorage.removeItem('isLogin')
+                clearCurrentUser()
+                clearLocation()
+                setStatus('login')
+            }
+        })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // Listen for token expiry — force re-login if session cannot be refreshed
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                localStorage.removeItem('isLogin')
+                localStorage.removeItem('isLoginExpiry')
+                sessionStorage.removeItem('isLogin')
+                clearCurrentUser()
+                clearLocation()
+                setStatus('login')
+                navigate('/')
+            }
+        })
+        return () => subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     // On mount when already logged in: auto-pick the first available location
     useEffect(() => {
         if (status !== 'ready') return
