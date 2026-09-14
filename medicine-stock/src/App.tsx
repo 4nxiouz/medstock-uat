@@ -181,12 +181,20 @@ function AppInner() {
 
     if (status === 'checking') return null
 
+    const isUAT = window.location.hostname.includes('uat')
+
     if (status === 'login') {
-        return <Login onLoginSuccess={handleLoginSuccess} errorMessage={locationError} />
+        return (
+            <>
+                {isUAT && <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-400 py-1 text-center text-xs font-bold text-amber-900">⚠ UAT Environment — ข้อมูลทดสอบเท่านั้น ไม่ใช่ระบบจริง</div>}
+                <Login onLoginSuccess={handleLoginSuccess} errorMessage={locationError} />
+            </>
+        )
     }
 
     return (
         <>
+            {isUAT && <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-400 py-1 text-center text-xs font-bold text-amber-900">⚠ UAT Environment — ข้อมูลทดสอบเท่านั้น ไม่ใช่ระบบจริง</div>}
             <AppRoutes onLogout={handleLogout} />
             <InstallPrompt />
         </>
