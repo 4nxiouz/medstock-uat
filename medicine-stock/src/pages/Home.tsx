@@ -82,7 +82,7 @@ function Home({ onLogout }: PageProps) {
     const hasActivity = chart.some((d) => d.inn > 0 || d.out > 0)
 
     return (
-        <PageLayout title="Dashboard" subtitle="Stock overview" onLogout={onLogout}>
+        <PageLayout title="YaaaHooo" subtitle="Stock overview" onLogout={onLogout}>
 
             {/* Stat cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
