@@ -70,9 +70,16 @@ function Inventory({ onLogout }: PageProps) {
     useEffect(() => {
         const target = searchParams.get('edit')
         if (!target || loading) return
-        const drug = drugs.find((d) => d.barcode === target)
-        if (drug) openEdit(drug)
         setSearchParams({}, { replace: true })
+        const drug = drugs.find((d) => d.barcode === target)
+        if (drug) { openEdit(drug); return }
+        // ไม่อยู่ในรายการของคลังที่เลือกอยู่ -> ดึงตรงจาก drug_master แล้วเปิดฟอร์มเลย
+        void supabase
+            .from('drug_master')
+            .select('id, barcode, drug_name, current_stock, min_stock, unit_per_scan, unit_per_scan_in, image_url, category, icon_type')
+            .eq('barcode', target)
+            .limit(1)
+            .then(({ data }) => { if (data?.[0]) openEdit(data[0] as Drug) })
     }, [searchParams, drugs, loading])
 
     const categories = useMemo(() => {
@@ -140,6 +147,8 @@ function Inventory({ onLogout }: PageProps) {
             unit_per_scan_in: Number(editForm.unit_per_scan_in) || null,
             category: editForm.category.trim() || null,
             icon_type: editForm.icon_type.trim() || null,
+            // ตั้งหมวดยาแล้ว = ถือว่าตั้งค่ายาใหม่เสร็จ -> popup เตือนจะหายไป
+            ...(editForm.category.trim() ? { needs_setup: false } : {}),
         }).eq('id', editingDrug.id)
         if (error) { setMessage('Update failed.'); return }
         setDrugs((cur) => cur.map((d) => d.id === editingDrug.id
