@@ -7,8 +7,15 @@ const LAST_SEEN_KEY = 'medstock_notifier_last_tx_id'
 const POLL_MS = 60_000
 const TOAST_MS = 10_000
 
-type SetupItem = { barcode: string; drugName: string; stock: number; missing: string[] }
-type RestockItem = { key: string; drugName: string; qty: number }
+type SetupItem = { barcode: string; drugName: string; stock: number; missing: string[]; addedAt: string | null }
+type RestockItem = { key: string; drugName: string; qty: number; at: string | null }
+
+function fmtTime(iso: string | null): string {
+    if (!iso) return ''
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' น.'
+}
 
 function readLastSeen(): number | null {
     try {
@@ -48,12 +55,23 @@ function StockNotifier() {
                 .eq('needs_setup', true)
                 .order('id', { ascending: false })
                 .limit(50)
+            // เวลาที่ยาเข้ามาครั้งแรก = transaction แรกของ system
+            const addedAt = new Map<string, string>()
+            if (pending && pending.length > 0) {
+                const { data: firstTx } = await supabase
+                    .from('stock_transaction')
+                    .select('barcode, created_at')
+                    .eq('created_by', 'system')
+                    .in('barcode', pending.map((d) => d.barcode))
+                    .order('created_at', { ascending: true })
+                for (const t of firstTx ?? []) if (!addedAt.has(t.barcode)) addedAt.set(t.barcode, t.created_at)
+            }
             const setups: SetupItem[] = (pending ?? []).map((d) => {
                 const missing: string[] = []
                 if (!d.category) missing.push('หมวดยา')
                 if (d.unit_per_scan_in == null) missing.push('จำนวนต่อการสแกน')
                 if (!d.min_stock) missing.push('Min stock')
-                return { barcode: d.barcode, drugName: d.drug_name, stock: Number(d.current_stock), missing }
+                return { barcode: d.barcode, drugName: d.drug_name, stock: Number(d.current_stock), missing, addedAt: addedAt.get(d.barcode) ?? null }
             })
             setSetupItems(setups)
             const setupBarcodes = new Set(setups.map((s) => s.barcode))
@@ -70,7 +88,7 @@ function StockNotifier() {
 
             const { data: txs, error } = await supabase
                 .from('stock_transaction')
-                .select('id, barcode, qty')
+                .select('id, barcode, qty, created_at')
                 .eq('created_by', 'system')
                 .eq('action', 'IN')
                 .gt('id', lastSeen)
@@ -80,9 +98,11 @@ function StockNotifier() {
             writeLastSeen(Math.max(...txs.map((t) => t.id as number)))
 
             const totals = new Map<string, number>()
+            const latestAt = new Map<string, string>()
             for (const t of txs) {
                 if (setupBarcodes.has(t.barcode)) continue // ยาใหม่มีการ์ดตั้งค่าอยู่แล้ว
                 totals.set(t.barcode, (totals.get(t.barcode) ?? 0) + Number(t.qty))
+                latestAt.set(t.barcode, t.created_at)
             }
             if (totals.size === 0) return
 
@@ -94,6 +114,7 @@ function StockNotifier() {
                 key: `${barcode}-${Date.now()}`,
                 drugName: names.get(barcode) ?? barcode,
                 qty,
+                at: latestAt.get(barcode) ?? null,
             }))
             setRestocks((cur) => [...next, ...cur])
             for (const n of next) setTimeout(() => dismissRestock(n.key), TOAST_MS)
@@ -130,6 +151,7 @@ function StockNotifier() {
                         <div className="min-w-0 flex-1">
                             <div className="text-sm font-bold text-amber-900">ยาใหม่เข้าระบบ — ยังไม่ได้ตั้งค่า</div>
                             <div className="truncate text-sm text-amber-800">{n.drugName} · คงเหลือ {n.stock}</div>
+                            {n.addedAt && <div className="text-xs text-amber-700">เข้าระบบเมื่อ {fmtTime(n.addedAt)}</div>}
                             {n.missing.length > 0 && (
                                 <div className="mt-0.5 text-xs text-amber-700">ยังไม่ได้ใส่: {n.missing.join(', ')}</div>
                             )}
@@ -155,6 +177,7 @@ function StockNotifier() {
                     <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-slate-900">ยาเข้าล่าสุด</div>
                         <div className="truncate text-sm text-slate-600">{n.drugName} · เข้ามา {n.qty}</div>
+                        {n.at && <div className="text-xs text-slate-400">{fmtTime(n.at)}</div>}
                     </div>
                     <button type="button" onClick={() => dismissRestock(n.key)} className="text-slate-400 hover:text-slate-600"><X className="size-4" /></button>
                 </div>
