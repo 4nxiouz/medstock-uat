@@ -1,6 +1,7 @@
 import { AlertTriangle, Boxes, Camera, ClipboardList, Download, Package, Pencil, Printer, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import CameraScanner from '../components/CameraScanner'
 import DrugIcon from '../components/DrugIcon'
 import EmptyState from '../components/EmptyState'
@@ -31,6 +32,7 @@ function downloadCSV(drugs: Drug[], locationCode: string) {
 
 function Inventory({ onLogout }: PageProps) {
     const { location } = useLocation()
+    const [searchParams, setSearchParams] = useSearchParams()
     const [drugs, setDrugs] = useState<Drug[]>([])
     const [search, setSearch] = useState('')
     const [message, setMessage] = useState('')
@@ -63,6 +65,15 @@ function Inventory({ onLogout }: PageProps) {
     }
 
     useEffect(() => { void loadDrugs() }, [location])
+
+    // เปิดฟอร์มแก้ไขอัตโนมัติเมื่อมาจาก popup ยาใหม่ (/stock?edit=<barcode>)
+    useEffect(() => {
+        const target = searchParams.get('edit')
+        if (!target || loading) return
+        const drug = drugs.find((d) => d.barcode === target)
+        if (drug) openEdit(drug)
+        setSearchParams({}, { replace: true })
+    }, [searchParams, drugs, loading])
 
     const categories = useMemo(() => {
         const cats = Array.from(new Set(drugs.map((d) => d.category || 'อื่นๆ'))).sort()
